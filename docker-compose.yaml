@@ -73,12 +73,18 @@ services:
       - packs:/app/public/packs
       - cache:/app/tmp/cache
       - bundle:/usr/local/bundle
+      - bundle:/gems
     ports:
       - "3036:3036" # Vite dev server
     environment:
       - VITE_DEV_SERVER_HOST=0.0.0.0
       - NODE_ENV=development
       - RAILS_ENV=development
+      - GEM_HOME=/gems
+      - BUNDLE_PATH=/gems
+      - GEM_PATH=/gems:/usr/local/lib/ruby/gems/3.4.0:/usr/local/bundle:/root/.local/share/gem/ruby/3.4.0
+      - BUNDLE_WITHOUT=
+      - BUNDLER_VERSION=2.5.11
     entrypoint: docker/entrypoints/vite.sh
     command: bin/vite dev
 

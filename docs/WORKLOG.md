@@ -1,5 +1,38 @@
 # Worklog
 
+## 2025-12-27 09:01
+- Tarih/Saat (TR): 2025-12-27 09:01
+- Amac: Vite container restart'larinda bundler 2.5.11 ve bundler-audit eksikligini kalici olarak gidermek.
+- Sorun / Belirti: Vite loglarinda "Activating bundler (2.5.11) failed" ve "bundler-audit missing".
+- Kok Neden (Varsa): GEM_HOME/GEM_PATH uyumsuzlugu ve gem install'in ephemeral katmanda kalmasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker-compose.yaml
+  - docker/entrypoints/vite.sh
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git branch --show-current
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose up -d --force-recreate vite
+  - docker compose logs -f --tail=120 vite
+  - Start-Sleep -Seconds 10
+  - docker compose logs --tail=120 vite
+  - docker compose logs --since 5m vite | Select-String -Pattern "bundler"
+  - docker compose run --rm --entrypoint sh vite -lc "echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v"
+  - docker compose run --rm --entrypoint sh vite -lc 'echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v'
+  - docker compose up -d --force-recreate vite
+  - Start-Sleep -Seconds 10
+  - docker compose logs --tail=120 vite
+  - docker compose logs --since 10m vite | Select-String -Pattern "bundler"
+- Dogrulama:
+  - docker compose logs --tail=120 vite ciktisinda "bundler 2.5.11 failed" veya "bundler-audit missing" gorulmedi (pnpm install devam ediyor).
+  - docker compose run --rm --entrypoint sh vite -lc 'echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v' ciktisinda bundler 2.5.11 gorunuyor.
+- Notlar / Riskler:
+  - Rollback: docker-compose.yaml ve docker/entrypoints/vite.sh degisikliklerini geri al.
+- Sonraki Adimlar:
+  - docker compose up -d --force-recreate vite
+  - docker compose logs -f --tail=120 vite
+  - docker compose run --rm --entrypoint sh vite -lc "echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v"
+
 ## 2025-12-27 08:40
 - Tarih/Saat (TR): 2025-12-27 08:40
 - Amac: Vite container'da "ruby\r" hatasini kalici kapatmak icin bin scriptlerini LF'e normalize etmek.
