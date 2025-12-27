@@ -1,5 +1,152 @@
 # Worklog
 
+## 2025-12-27 19:59
+- Tarih/Saat (TR): 2025-12-27 19:59
+- Amac: Host'ta guncellenen dark favicon SVG'nin repo'ya aynen alinmasi ve cache-bust versiyonunun v9'a alinmasi.
+- Sorun / Belirti: Favicon guncellemesi istemci cache'i nedeniyle yansimiyor; versiyon artirilmasi gerekiyor.
+- Kok Neden (Varsa): Cache-bust v8'de kalmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/layouts/vueapp.html.erb
+  - app/services/cebi/force_dark_branding_service.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git diff -- public/brand-assets/cebi-favicon-dark.svg
+  - curl.exe -s http://localhost:3000/brand-assets/cebi-favicon-dark.svg | Select-Object -First 5
+  - rg -n "cebi-favicon\\.svg" .
+  - rg -n "cebi-favicon-dark\\.svg" .
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rake cebi:branding:diagnose
+  - docker compose exec -T rails bundle exec rake cebi:branding:force_dark
+  - docker compose restart rails sidekiq vite
+  - Incognito: /app/login HTML'de cebi-v9 ve /brand-assets/cebi-favicon-dark.svg?v=cebi-v9
+- Notlar / Riskler:
+  - Rollback: cache-bust versiyonunu onceki degere geri al.
+
+## 2025-12-27 19:23
+- Tarih/Saat (TR): 2025-12-27 19:23
+- Amac: Dark favicon SVG'yi kare canvas'a almak ve cache-bust versiyonunu v8'e tasimak.
+- Sorun / Belirti: Favicon SVG dikdortgen canvas ile servis ediliyor; cache bust versiyonu eskide kalmis olabilir.
+- Kok Neden (Varsa): SVG viewBox kare degil; cache-bust sabiti guncellenmemis.
+- Yapilan Degisiklikler (dosya bazli):
+  - public/brand-assets/cebi-favicon-dark.svg
+  - app/views/layouts/vueapp.html.erb
+  - app/services/cebi/force_dark_branding_service.rb
+  - lib/tasks/cebi_branding.rake
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "cebi-favicon-dark\\.svg" .
+  - Get-Content public/brand-assets/cebi-favicon-dark.svg
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-Content app/services/cebi/force_dark_branding_service.rb
+  - Get-Content lib/tasks/cebi_branding.rake
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama:
+  - curl.exe -s http://localhost:3000/brand-assets/cebi-favicon-dark.svg | Select-String -Pattern "viewBox"
+  - curl.exe -s http://localhost:3000/app/login | Select-String -Pattern "cebi-v9"
+- Notlar / Riskler:
+  - Rollback: SVG viewBox/transform ve favicon cache-bust degisikliklerini geri al.
+
+## 2025-12-27 18:24
+- Tarih/Saat (TR): 2025-12-27 18:24
+- Amac: Sidebar logo ve favicon'un hangi kaynaktan geldigini teshis etmek ve karanlik ikonlari zorunlu hale getirmek.
+- Sorun / Belirti: Sol ust ikon ve favicon eski dosyaya geri donuyor; degerler hangi katmanda override ediliyor belli degil.
+- Kok Neden (Varsa): InstallationConfig/ENV/cache zinciri netlesmedigi icin efektif degerler takip edilemiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/cebi/force_dark_branding_service.rb
+  - lib/tasks/cebi_branding.rake
+  - app/views/layouts/vueapp.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "LOGO_THUMBNAIL|logoThumbnail|favicon" app lib config
+  - rg -n "globalConfig|APP_CONFIG|app_config" app/controllers app/javascript
+  - rg -n "cebi-favicon" .
+  - rg -n "/brand-assets/cebi-favicon" .
+  - Get-Content lib/global_config.rb
+  - Get-Content lib/global_config_service.rb
+  - Get-Content app/models/installation_config.rb
+  - Get-Content app/controllers/dashboard_controller.rb
+  - Get-Content app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - Get-Content app/javascript/dashboard/components-next/icon/Logo.vue
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - apply_patch (cebi branding task/service + favicon cache-bust v7)
+  - git add public/brand-assets/cebi-favicon-dark.svg
+  - git status --short
+  - git diff --stat
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rake cebi:branding:diagnose
+  - docker compose exec -T rails bundle exec rake cebi:branding:force_dark
+  - docker compose restart rails sidekiq vite
+  - Incognito: /app/login ve /app/accounts/1/dashboard (favicon + sidebar ikon dark dosya)
+- Notlar / Riskler:
+  - Dashboard global config HTML layout icinde window.globalConfig ile enjekte ediliyor; Network'te /app veya /app/login yanitindan kontrol edilebilir.
+  - Rollback: cebi branding task/service kaldirilabilir; favicon cache-bust degeri eski haline alinabilir.
+
+## 2025-12-27 16:37
+- Tarih/Saat (TR): 2025-12-27 16:37
+- Amac: Favicon ve sidebar brand icon varsayilanlarini karanlik SVG ikonuna sabitlemek.
+- Sorun / Belirti: UI kaynaklarinda eski favicon ismi gorunuyor ve sidebar ikon beklenen dosyaya dusmuyor.
+- Kok Neden (Varsa): Layout cache-bust surumu eskiydi; notlarda eski dosya ismi geciyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/layouts/vueapp.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "cebi-favicon\\.svg" .
+  - rg -n "/brand-assets/cebi-favicon\\.svg" .
+  - rg -n "favicon" app config public .
+  - rg -n "cebi-v5" .
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-ChildItem public -Filter "manifest*"
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - apply_patch (vueapp favicon cache bust v6)
+  - apply_patch (worklog eski favicon ismini kaldirma)
+- Dogrulama: Beklemede (docker compose up -d --build rails sidekiq vite + incognito kontrol).
+- Notlar / Riskler:
+  - Rollback: favicon cache-bust degerini eski versiyona cevir ve eski notlari geri koy.
+
+## 2025-12-27 16:03
+- Tarih/Saat (TR): 2025-12-27 16:03
+- Amac: Varsayilan dili TR yapmak ve favicon/brand icon'u cebi-favicon-dark.svg'ye gecirmek.
+- Sorun / Belirti: Fresh session'da UI EN aciliyor; favicon ve sidebar ikon eski dosyayi kullaniyor.
+- Kok Neden (Varsa): Backend default_locale ayari yok; frontend entrypoint'lerde locale 'en' hardcode; favicon fallback ve branding defaultlari eski dosyaya isaret ediyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/application.rb
+  - app/javascript/entrypoints/dashboard.js
+  - app/javascript/entrypoints/v3app.js
+  - app/javascript/entrypoints/widget.js
+  - app/javascript/entrypoints/survey.js
+  - app/javascript/survey/views/Response.vue
+  - app/views/layouts/vueapp.html.erb
+  - lib/branding_config.rb
+  - config/installation_config.yml
+  - enterprise/config/premium_installation_config.yml
+  - .env.example
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "default_locale|DEFAULT_LOCALE|selectedLocale|locale" config app/javascript app/views
+  - rg -n "cebi-favicon"
+  - rg -n "fallbackLocale: 'en'|locale: 'en'" app/javascript/entrypoints app/javascript/survey
+  - rg -n "LOGO_THUMBNAIL|logoThumbnail|logo_thumbnail" app/javascript app/views
+  - rg -n "LOGO_THUMBNAIL|logo_thumbnail|brand.*icon|sidebar" app/javascript app/views lib
+  - Get-Content app/javascript/entrypoints/dashboard.js
+  - Get-Content app/javascript/entrypoints/v3app.js
+  - Get-Content app/javascript/entrypoints/widget.js
+  - Get-Content app/javascript/entrypoints/survey.js
+  - Get-Content app/javascript/survey/views/Response.vue
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-Content config/application.rb
+  - Get-Content lib/branding_config.rb
+  - Get-Content .env.example
+  - Get-Content config/installation_config.yml
+  - Get-Content enterprise/config/premium_installation_config.yml
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - git status --short
+  - git diff --stat
+  - apply_patch (.env.example DEFAULT_LOCALE comment)
+- Dogrulama: Beklemede (docker compose up -d --build rails sidekiq vite ve fresh session ile kontrol).
+- Notlar / Riskler:
+  - Rollback: i18n default locale ve entrypoint locale degisikliklerini geri al; favicon URL'lerini eski dosyaya dondur.
+
 ## 2025-12-27 15:40
 - Tarih/Saat (TR): 2025-12-27 15:40
 - Amac: Vite start suresini kisaltmak ve ENOMEM riskini azaltmak icin pnpm adimlarini idempotent yapmak.

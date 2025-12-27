@@ -2,7 +2,7 @@
 - name: INSTALLATION_NAME
   value: "\u00c7ebi Medya AI Panel"
 - name: LOGO_THUMBNAIL
-  value: '/brand-assets/cebi-favicon.svg'
+  value: '/brand-assets/cebi-favicon-dark.svg'
 - name: LOGO
   value: '/brand-assets/cebi-logo.svg'
 - name: LOGO_DARK
@@ -24,7 +24,7 @@
 - name: MANIFEST_SHORT_NAME
   value:
 - name: FAVICON_URL
-  value: '/brand-assets/cebi-favicon.svg'
+  value: '/brand-assets/cebi-favicon-dark.svg'
 - name: TERMS_URL
   value: 'https://www.chatwoot.com/terms-of-service'
 - name: PRIVACY_URL

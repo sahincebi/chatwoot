@@ -2,8 +2,14 @@
 <html>
   <head>
     <% app_title = @global_config['APP_TITLE'].presence || @global_config['INSTALLATION_NAME'] %>
-    <% favicon_url = @global_config['FAVICON_URL'].presence || '/brand-assets/cebi-favicon.svg' %>
-    <% favicon_type = favicon_url.end_with?('.svg') ? 'image/svg+xml' : 'image/png' %>
+    <% favicon_base_url = @global_config['FAVICON_URL'].presence || '/brand-assets/cebi-favicon-dark.svg' %>
+    <% favicon_version = 'cebi-v9' %>
+    <% if favicon_base_url.include?('v=cebi-') %>
+      <% favicon_url = favicon_base_url.gsub(/v=cebi-[^&]+/, "v=#{favicon_version}") %>
+    <% else %>
+      <% favicon_url = favicon_base_url.include?('?') ? "#{favicon_base_url}&v=#{favicon_version}" : "#{favicon_base_url}?v=#{favicon_version}" %>
+    <% end %>
+    <% favicon_type = favicon_base_url.end_with?('.svg') ? 'image/svg+xml' : 'image/png' %>
     <title>
       <%= app_title %>
     </title>

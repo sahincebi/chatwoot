@@ -25,7 +25,7 @@ class BrandingConfig
     end
 
     def logo_thumbnail
-      value('LOGO_THUMBNAIL', '/brand-assets/cebi-favicon.svg')
+      value('LOGO_THUMBNAIL', '/brand-assets/cebi-favicon-dark.svg')
     end
 
     def brand_logo_url
@@ -49,7 +49,7 @@ class BrandingConfig
     end
 
     def favicon_url
-      value('FAVICON_URL', '/brand-assets/cebi-favicon.svg')
+      value('FAVICON_URL', '/brand-assets/cebi-favicon-dark.svg')
     end
 
     def mailer_support_email

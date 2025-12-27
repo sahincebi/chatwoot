@@ -140,7 +140,7 @@ export default {
       }
     },
     setLocale(locale) {
-      this.$root.$i18n.locale = locale || 'en';
+      this.$root.$i18n.locale = locale || 'tr';
     },
   },
 };
