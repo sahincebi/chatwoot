@@ -1,0 +1,11 @@
+* text=auto
+bin/* text eol=lf
+*.rb text eol=lf
+*.sh text eol=lf
+*.rake text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.js text eol=lf
+*.vue text eol=lf
+*.json text eol=lf

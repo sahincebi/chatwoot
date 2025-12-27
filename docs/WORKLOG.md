@@ -1,5 +1,28 @@
 # Worklog
 
+## 2025-12-27 08:40
+- Tarih/Saat (TR): 2025-12-27 08:40
+- Amac: Vite container'da "ruby\r" hatasini kalici kapatmak icin bin scriptlerini LF'e normalize etmek.
+- Sorun / Belirti: Vite loglarinda "env: can't execute 'ruby\r'" ve exit 127.
+- Kok Neden (Varsa): bin/vite (ve bin/*) CRLF ile checkout edildigi icin shebang satirinda CR kalmasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - .gitattributes
+  - bin/*
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git config core.autocrlf false
+  - git config core.eol lf
+  - git add --renormalize bin .gitattributes
+  - python - (bin/* CRLF -> LF)
+  - python - (bin/vite shebang kontrolu)
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Vite restart ve log kontrolu sonrasi kaydedilecek.
+- Notlar / Riskler:
+  - Rollback: .gitattributes'i eski haline al ve bin/* dosyalarini onceki line ending'lere dondur.
+- Sonraki Adimlar:
+  - docker compose restart vite
+  - docker compose logs -f --tail=120 vite
+
 ## 2025-12-27 08:19
 - Tarih/Saat (TR): 2025-12-27 08:19
 - Amac: Postgres container ilk init sirasinda sifre enjekte edilsin ve Windows Docker'da restart loop olmasin.
