@@ -1,5 +1,6 @@
 /* global axios */
 import ApiClient from '../ApiClient';
+import { isEnterpriseEnabled } from 'dashboard/helper/enterpriseFlag';
 
 class EnterpriseAccountAPI extends ApiClient {
   constructor() {
@@ -14,7 +15,10 @@ class EnterpriseAccountAPI extends ApiClient {
     return axios.post(`${this.url}subscription`);
   }
 
-  getLimits() {
+  getLimits(accountId) {
+    if (!isEnterpriseEnabled() || !accountId) {
+      return Promise.resolve({ data: { limits: null } });
+    }
     return axios.get(`${this.url}limits`);
   }
 

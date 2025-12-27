@@ -1,5 +1,24 @@
 # Worklog
 
+## 2025-12-28 02:35
+- Tarih/Saat (TR): 2025-12-28 02:35
+- Amac: CE kurulumda enterprise limits istegini tamamen engellemek.
+- Sorun / Belirti: /enterprise/api/.../limits 404 (CE'de endpoint yok).
+- Kok Neden (Varsa): enterprise guard eksik/gevsek oldugu icin FE request atiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/helper/enterpriseFlag.js
+  - app/javascript/dashboard/api/enterprise/account.js
+  - app/javascript/dashboard/store/modules/accounts.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "enterprise/api/v1/accounts/.*/limits|getLimits\\(" app/javascript/dashboard
+  - rg -n "EnterpriseAccountAPI\\.getLimits|accounts/limits" app/javascript/dashboard
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (Network'te /enterprise/api/.../limits istegi gorunmemeli).
+- Notlar / Riskler:
+  - Rollback: enterpriseFlag helper ve limits guard degisikliklerini geri al.
+
 ## 2025-12-28 02:06
 - Tarih/Saat (TR): 2025-12-28 02:06
 - Amac: CE kurulumda enterprise limits istegini tamamen engellemek.

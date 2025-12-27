@@ -5,6 +5,7 @@ import { differenceInDays } from 'date-fns';
 import EnterpriseAccountAPI from '../../api/enterprise/account';
 import { throwErrorMessage } from '../utils/api';
 import { getLanguageDirection } from 'dashboard/components/widgets/conversation/advancedFilterItems/languages';
+import { isEnterpriseEnabled } from 'dashboard/helper/enterpriseFlag';
 
 const findRecordById = ($state, id) =>
   $state.records.find(record => record.id === Number(id)) || {};
@@ -143,41 +144,34 @@ export const actions = {
 
   limits: async ({ commit }) => {
     commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: true });
-    const raw =
-      window?.chatwootConfig?.isEnterprise ??
-      window?.globalConfig?.isEnterprise ??
-      window?.globalConfig?.IS_ENTERPRISE;
-    const isEnterprise =
-      raw === true || raw === 'true' || raw === 1 || raw === '1';
     const getAccountIdFromRoute = () => {
       const parts = window.location.pathname.split('/');
       const idx = parts.indexOf('accounts');
       return idx >= 0 ? parts[idx + 1] : null;
     };
-    if (!isEnterprise) {
-      const accountId = getAccountIdFromRoute();
-      if (accountId) {
-        commit(types.default.SET_ACCOUNT_LIMITS, {
-          id: Number(accountId) || accountId,
-          limits: null,
-        });
-      }
+    const accountId = getAccountIdFromRoute();
+    if (!accountId) {
+      commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
+      return;
+    }
+    if (!isEnterpriseEnabled()) {
+      commit(types.default.SET_ACCOUNT_LIMITS, {
+        id: Number(accountId) || accountId,
+        limits: null,
+      });
       commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
       return;
     }
 
     try {
-      const response = await EnterpriseAccountAPI.getLimits();
+      const response = await EnterpriseAccountAPI.getLimits(accountId);
       commit(types.default.SET_ACCOUNT_LIMITS, response.data);
     } catch (error) {
       if (error?.response?.status === 404) {
-        const accountId = getAccountIdFromRoute();
-        if (accountId) {
-          commit(types.default.SET_ACCOUNT_LIMITS, {
-            id: Number(accountId) || accountId,
-            limits: null,
-          });
-        }
+        commit(types.default.SET_ACCOUNT_LIMITS, {
+          id: Number(accountId) || accountId,
+          limits: null,
+        });
         return;
       }
       // eslint-disable-next-line no-console
