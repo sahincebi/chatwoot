@@ -7,7 +7,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 const { modalType, closeOnBackdropClick, onClose } = defineProps({
   closeOnBackdropClick: { type: Boolean, default: true },
   showCloseButton: { type: Boolean, default: true },
-  onClose: { type: Function, required: true },
+  onClose: { type: Function, default: null },
   fullWidth: { type: Boolean, default: false },
   modalType: { type: String, default: 'centered' },
   size: { type: String, default: '' },
@@ -35,7 +35,9 @@ const handleMouseDown = () => {
 const close = () => {
   show.value = false;
   emit('close');
-  onClose();
+  if (onClose) {
+    onClose();
+  }
 };
 
 const onMouseUp = () => {

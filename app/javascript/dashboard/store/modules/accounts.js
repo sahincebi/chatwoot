@@ -141,13 +141,16 @@ export const actions = {
     }
   },
 
-  limits: async ({ commit }) => {
+  limits: async ({ commit, rootGetters }) => {
     commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: true });
     const isEnterprise =
       window?.chatwootConfig?.isEnterprise === 'true' ||
-      window?.globalConfig?.IS_ENTERPRISE === true;
+      window?.chatwootConfig?.isEnterprise === true;
+    const accountId = rootGetters.getCurrentAccountId;
     if (!isEnterprise) {
-      commit(types.default.SET_ACCOUNT_LIMITS, null);
+      if (accountId) {
+        commit(types.default.SET_ACCOUNT_LIMITS, { id: accountId, limits: null });
+      }
       commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
       return;
     }
@@ -157,7 +160,9 @@ export const actions = {
       commit(types.default.SET_ACCOUNT_LIMITS, response.data);
     } catch (error) {
       if (error?.response?.status === 404) {
-        commit(types.default.SET_ACCOUNT_LIMITS, null);
+        if (accountId) {
+          commit(types.default.SET_ACCOUNT_LIMITS, { id: accountId, limits: null });
+        }
         return;
       }
       // eslint-disable-next-line no-console
