@@ -1,5 +1,31 @@
 # Worklog
 
+## 2025-12-27 23:19
+- Tarih/Saat (TR): 2025-12-27 23:19
+- Amac: SPA route degisimlerinde favicon'un /favicon-*.png'e geri donmesini engellemek ve root fallback'leri branded yapmak.
+- Sorun / Belirti: Ilk yuklemede FAVICON_URL dogruyken, route degisiminden sonra /favicon-32x32.png istekleri goruluyor.
+- Kok Neden (Varsa): vueapp layout'ta birden fazla ikon tag'i ve JS tarafinda faviconHelper default /favicon-*.png'e geri aliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/layouts/vueapp.html.erb
+  - app/views/layouts/portal.html.erb
+  - app/javascript/dashboard/helper/AudioAlerts/faviconHelper.js
+  - public/favicon-16x16.png
+  - public/favicon-32x32.png
+  - public/favicon-96x96.png
+  - public/favicon-badge-16x16.png
+  - public/favicon-badge-32x32.png
+  - public/favicon-badge-96x96.png
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n -S -e "favicon-32x32" -e "favicon-96x96" -e "favicon-16x16" -e "favicon\\.ico" -e "shortcut icon" -e "rel=\"icon\"" -e "apple-touch-icon" -e "android-icon-192x192" -e "manifest\\.json" app/views app/javascript public config
+  - rg -n -S -e "setFavicon" -e "updateFavicon" -e "favicon" app/javascript
+  - Get-ChildItem public -File | Where-Object { $_.Name -match "^favicon-(16|32|96)x(16|32|96)\\.png$|^favicon-badge-(16|32|96)x(16|32|96)\\.png$" } | Select-Object Name, Length
+  - docker run --rm -v "$PWD:/repo" -w /repo debian:bookworm-slim sh -lc "apt-get update && apt-get install -y --no-install-recommends librsvg2-bin && rsvg-convert ..."
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (favicon linkleri tek kaynaga cekildi; SPA route degisimlerinde /favicon-*.png fallback'i branded PNG'lere dusmeli).
+- Notlar / Riskler:
+  - Rollback: faviconHelper degisikliklerini ve layout linklerini eski haline al; PNG dosyalarini onceki iceriklere geri dondur.
+
 ## 2025-12-27 19:59
 - Tarih/Saat (TR): 2025-12-27 19:59
 - Amac: Host'ta guncellenen dark favicon SVG'nin repo'ya aynen alinmasi ve cache-bust versiyonunun v9'a alinmasi.

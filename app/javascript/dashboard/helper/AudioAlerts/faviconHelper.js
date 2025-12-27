@@ -1,21 +1,26 @@
-export const showBadgeOnFavicon = () => {
+const getDefaultFaviconUrl = () => {
+  const globalConfig = window.globalConfig || {};
+  return globalConfig.FAVICON_URL || document.querySelector('.favicon')?.href;
+};
+
+const setFaviconHref = () => {
   const favicons = document.querySelectorAll('.favicon');
+  const faviconUrl = getDefaultFaviconUrl();
+  if (!faviconUrl) return;
 
   favicons.forEach(favicon => {
-    const newFileName = `/favicon-badge-${favicon.sizes[[0]]}.png`;
-    favicon.href = newFileName;
+    favicon.href = faviconUrl;
   });
 };
 
-export const initFaviconSwitcher = () => {
-  const favicons = document.querySelectorAll('.favicon');
+export const showBadgeOnFavicon = () => {
+  setFaviconHref();
+};
 
+export const initFaviconSwitcher = () => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      favicons.forEach(favicon => {
-        const oldFileName = `/favicon-${favicon.sizes[[0]]}.png`;
-        favicon.href = oldFileName;
-      });
+      setFaviconHref();
     }
   });
 };
