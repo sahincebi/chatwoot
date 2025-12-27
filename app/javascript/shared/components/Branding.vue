@@ -1,9 +1,8 @@
 <script>
-import { useBranding } from 'shared/composables/useBranding';
-
 const {
   LOGO_THUMBNAIL: logoThumbnail,
   BRAND_NAME: brandName,
+  INSTALLATION_NAME: installationName,
   WIDGET_BRAND_URL: widgetBrandURL,
 } = window.globalConfig || {};
 
@@ -14,22 +13,20 @@ export default {
       default: false,
     },
   },
-  setup() {
-    const { replaceInstallationName } = useBranding();
-    return {
-      replaceInstallationName,
-    };
-  },
   data() {
     return {
       globalConfig: {
         brandName,
+        installationName,
         logoThumbnail,
         widgetBrandURL,
       },
     };
   },
   computed: {
+    displayBrandName() {
+      return this.globalConfig.brandName || this.globalConfig.installationName;
+    },
     brandRedirectURL() {
       try {
         const referrerHost = this.$store.getters['appConfig/getReferrerHost'];
@@ -52,10 +49,7 @@ export default {
 </script>
 
 <template>
-  <div
-    v-if="globalConfig.brandName && !disableBranding"
-    class="px-0 py-3 flex justify-center"
-  >
+  <div v-if="displayBrandName && !disableBranding" class="px-0 py-3 flex justify-center">
     <a
       :href="brandRedirectURL"
       rel="noreferrer noopener nofollow"
@@ -64,11 +58,11 @@ export default {
     >
       <img
         class="ltr:mr-1 rtl:ml-1 max-w-3 max-h-3"
-        :alt="globalConfig.brandName"
+        :alt="displayBrandName"
         :src="globalConfig.logoThumbnail"
       />
       <span>
-        {{ replaceInstallationName($t('POWERED_BY')) }}
+        {{ $t('POWERED_BY', { brand_name: displayBrandName }) }}
       </span>
     </a>
   </div>

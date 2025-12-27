@@ -21,7 +21,7 @@ class WidgetsController < ActionController::Base
       'DIRECT_UPLOADS_ENABLED',
       'MAXIMUM_FILE_UPLOAD_SIZE',
       'INSTALLATION_NAME'
-    )
+    ).merge(BrandingConfig.to_h)
   end
 
   def set_web_widget

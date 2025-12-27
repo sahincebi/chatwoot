@@ -6,5 +6,6 @@ class Survey::ResponsesController < ActionController::Base
 
   def set_global_config
     @global_config = GlobalConfig.get('LOGO_THUMBNAIL', 'BRAND_NAME', 'WIDGET_BRAND_URL', 'INSTALLATION_NAME')
+                                .merge(BrandingConfig.to_h)
   end
 end

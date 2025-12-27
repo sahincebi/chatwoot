@@ -146,7 +146,7 @@ class Account < ApplicationRecord
   end
 
   def support_email
-    super.presence || ENV.fetch('MAILER_SENDER_EMAIL') { GlobalConfig.get('MAILER_SUPPORT_EMAIL')['MAILER_SUPPORT_EMAIL'] }
+    super.presence || BrandingConfig.mailer_support_email || BrandingConfig.mailer_sender_email
   end
 
   def usage_limits

@@ -10,6 +10,11 @@ class DashboardController < ActionController::Base
     TERMS_URL
     BRAND_URL
     BRAND_NAME
+    APP_TITLE
+    MANIFEST_NAME
+    MANIFEST_SHORT_NAME
+    FAVICON_URL
+    MAILER_SUPPORT_EMAIL
     PRIVACY_URL
     DISPLAY_MANIFEST
     CREATE_NEW_ACCOUNT_FROM_DASHBOARD
@@ -44,7 +49,9 @@ class DashboardController < ActionController::Base
   end
 
   def set_global_config
-    @global_config = GlobalConfig.get(*GLOBAL_CONFIG_KEYS).merge(app_config)
+    @global_config = GlobalConfig.get(*GLOBAL_CONFIG_KEYS)
+                                .merge(BrandingConfig.to_h)
+                                .merge(app_config)
   end
 
   def set_dashboard_scripts

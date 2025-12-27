@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   else
     root to: 'dashboard#index'
 
+    get '/manifest.json', to: 'manifest#show'
     get '/app', to: 'dashboard#index'
     get '/app/*params', to: 'dashboard#index'
     get '/app/accounts/:account_id/settings/inboxes/new/twitter', to: 'dashboard#index', as: 'app_new_twitter_inbox'

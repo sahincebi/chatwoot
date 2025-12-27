@@ -1,0 +1,124 @@
+# Worklog
+
+## 2025-12-27 05:42
+- Tarih/Saat (TR): 2025-12-27 05:42
+- Amac: Install-level white-label core (env-backed branding) ve Chatwoot referanslarini ana yuzeylerden kaldirma.
+- Sorun / Belirti: Login basligi, manifest, mailer sender ve widget/survey "Powered by" metinleri Chatwoot hardcode idi.
+- Kok Neden (Varsa): Branding config DB varsayimlarina bagliydi; manifest statikti; bazi mailer ve UI metinleri dogrudan Chatwoot kullaniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+  - docs/ADR/0003-white-label-core.md
+  - lib/branding_config.rb
+  - app/controllers/dashboard_controller.rb
+  - app/controllers/api/v1/widget/configs_controller.rb
+  - app/controllers/widgets_controller.rb
+  - app/controllers/survey/responses_controller.rb
+  - app/controllers/public/api/v1/portals/base_controller.rb
+  - app/controllers/manifest_controller.rb
+  - config/routes.rb
+  - config/installation_config.yml
+  - enterprise/config/premium_installation_config.yml
+  - enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+  - app/views/layouts/vueapp.html.erb
+  - app/views/widgets/show.html.erb
+  - app/views/survey/responses/show.html.erb
+  - app/views/installation/onboarding/index.html.erb
+  - app/views/super_admin/devise/sessions/new.html.erb
+  - app/views/super_admin/application/_navigation.html.erb
+  - app/views/super_admin/settings/show.html.erb
+  - app/views/devise/mailer/confirmation_instructions.html.erb
+  - app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid
+  - app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid
+  - app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_user_initiated.liquid
+  - app/mailers/application_mailer.rb
+  - config/initializers/devise.rb
+  - app/models/account.rb
+  - app/javascript/shared/store/globalConfig.js
+  - app/javascript/shared/components/Branding.vue
+  - app/javascript/v3/views/login/Index.vue
+  - app/javascript/survey/views/Response.vue
+  - app/javascript/dashboard/i18n/locale/en/login.json
+  - app/javascript/dashboard/i18n/locale/tr/login.json
+  - app/javascript/widget/i18n/locale/en.json
+  - app/javascript/widget/i18n/locale/tr.json
+  - app/javascript/survey/i18n/locale/en.json
+  - app/javascript/survey/i18n/locale/tr.json
+  - .env.example
+  - public/manifest.json (kaldirildi)
+- Calistirilan Komutlar:
+  - git status --short
+  - git branch --show-current
+  - git grep -n "Chatwoot" app/views
+  - git grep -n "manifest.json"
+  - git grep -n "Manifest" app
+  - git grep -n "INSTALLATION_NAME"
+  - git grep -n "MAILER_SUPPORT_EMAIL"
+  - git grep -n "Chatwoot" app/javascript
+  - git grep -n "POWERED_BY" -- app/javascript/widget app/javascript/survey
+  - git grep -n "Brand" -- app/javascript/widget app/javascript/survey
+  - git grep -n "useBranding" -- app/javascript
+  - git grep -n "chatwoot.com"
+  - git grep -n "Chatwoot" -- app/views/mailers
+  - git grep -n "Chatwoot" -- app/javascript/v3/views/login app/javascript/widget app/javascript/survey app/views/layouts/vueapp.html.erb app/views/installation app/views/super_admin
+  - git diff --stat
+  - git grep -n "MAILER_SENDER_EMAIL" -- spec
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - Get-Content config/installation_config.yml
+  - Get-Content lib/global_config.rb
+  - Get-Content lib/config_loader.rb
+  - Get-Content app/controllers/dashboard_controller.rb
+  - Get-Content app/controllers/api/v1/widget/configs_controller.rb
+  - Get-Content app/controllers/widgets_controller.rb
+  - Get-Content app/controllers/survey/responses_controller.rb
+  - Get-Content app/controllers/installation/onboarding_controller.rb
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-Content app/views/installation/onboarding/index.html.erb
+  - Get-Content app/views/widgets/show.html.erb
+  - Get-Content app/views/survey/responses/show.html.erb
+  - Get-Content app/views/devise/mailer/confirmation_instructions.html.erb
+  - Get-Content app/views/super_admin/devise/sessions/new.html.erb
+  - Get-Content app/views/super_admin/application/_navigation.html.erb
+  - Get-Content app/views/super_admin/settings/show.html.erb
+  - Get-Content app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid
+  - Get-Content app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid
+  - Get-Content app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_user_initiated.liquid
+  - Get-Content app/mailers/application_mailer.rb
+  - Get-Content app/models/account.rb
+  - Get-Content app/javascript/entrypoints/dashboard.js
+  - Get-Content app/javascript/entrypoints/survey.js
+  - Get-Content app/javascript/entrypoints/v3app.js
+  - Get-Content app/javascript/v3/views/login/Index.vue
+  - Get-Content app/javascript/shared/components/Branding.vue
+  - Get-Content app/javascript/survey/views/Response.vue
+  - Get-Content app/javascript/dashboard/i18n/locale/en/login.json
+  - Get-Content app/javascript/dashboard/i18n/locale/tr/login.json
+  - Get-Content app/javascript/widget/i18n/locale/en.json
+  - Get-Content app/javascript/survey/i18n/locale/en.json
+  - Get-Content .env.example
+  - Get-Content config/routes.rb
+  - Get-Content enterprise/config/premium_installation_config.yml
+  - Get-Content enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+  - Get-ChildItem app/javascript/dashboard/i18n
+  - Get-ChildItem app/javascript/dashboard/i18n/locale
+  - Get-ChildItem app/javascript/dashboard/i18n/locale/en
+  - Get-ChildItem app/javascript/v3/views/auth
+  - Select-String app/javascript/dashboard/i18n/locale/tr/login.json -Pattern "\"TITLE\""
+  - Select-String app/javascript/widget/i18n/locale/tr.json -Pattern "POWERED_BY"
+  - Select-String app/javascript/survey/i18n/locale/tr.json -Pattern "POWERED_BY"
+  - Select-String app/javascript/survey/views/Response.vue -Pattern "Chatwoot"
+  - Select-String config/initializers/devise.rb -Pattern "mailer_sender"
+  - Select-String app/controllers/public/api/v1/portals/base_controller.rb -Pattern "global_config"
+  - Select-String app/views/super_admin/settings/show.html.erb -Pattern "Chatwoot"
+  - Select-String app/models/account.rb -Pattern "support_email"
+  - python - (login TR title guncelleme)
+  - python - (widget/survey TR POWERED_BY guncelleme)
+  - python - (super_admin login branding guncelleme)
+  - python - (account_deletion_for_inactivity mailer branding guncelleme)
+  - python - (account_deletion_user_initiated mailer branding guncelleme)
+- Dogrulama: Calistirilmedi (yalnizca kod degisikligi).
+- Notlar / Riskler:
+  - Manifest artik Rails uzerinden servis ediliyor; public/manifest.json kaldirildi.
+  - Branding env degerleri bos ise InstallationConfig fallback kullanilir.
+- Sonraki Adimlar:
+  - Branding env degiskenlerini (.env) ayarla.
+  - /app/login, /manifest.json ve mailer gonderimleri ile brand adini dogrula.

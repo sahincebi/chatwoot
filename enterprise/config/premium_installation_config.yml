@@ -13,6 +13,14 @@
   value: 'https://www.chatwoot.com'
 - name: BRAND_NAME
   value: 'Chatwoot'
+- name: APP_TITLE
+  value:
+- name: MANIFEST_NAME
+  value:
+- name: MANIFEST_SHORT_NAME
+  value:
+- name: FAVICON_URL
+  value: '/brand-assets/logo_thumbnail.svg'
 - name: TERMS_URL
   value: 'https://www.chatwoot.com/terms-of-service'
 - name: PRIVACY_URL

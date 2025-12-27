@@ -9,6 +9,12 @@ RSpec.describe 'Devise::Mailer' do
     let(:inviter_val) { nil }
     let(:mail) { Devise::Mailer.confirmation_instructions(confirmable_user.reload, nil, {}) }
 
+    around do |example|
+      with_modified_env 'MAILER_SENDER_EMAIL' => 'support@example.com' do
+        example.run
+      end
+    end
+
     before do
       # to verify the token in email
       confirmable_user.update!(confirmed_at: nil)
@@ -16,7 +22,7 @@ RSpec.describe 'Devise::Mailer' do
     end
 
     it 'has the correct header data' do
-      expect(mail.reply_to).to contain_exactly('accounts@chatwoot.com')
+      expect(mail.reply_to).to contain_exactly('support@example.com')
       expect(mail.to).to contain_exactly(confirmable_user.email)
       expect(mail.subject).to eq('Confirmation Instructions')
     end
