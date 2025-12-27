@@ -141,15 +141,22 @@ export const actions = {
     }
   },
 
-  limits: async ({ commit, rootGetters }) => {
+  limits: async ({ commit, getters, rootGetters }) => {
     commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: true });
-    const isEnterprise =
-      window?.chatwootConfig?.isEnterprise === 'true' ||
-      window?.chatwootConfig?.isEnterprise === true;
-    const accountId = rootGetters.getCurrentAccountId;
+    const raw =
+      window?.chatwootConfig?.isEnterprise ?? window?.globalConfig?.IS_ENTERPRISE;
+    const isEnterprise = raw === true || raw === 'true';
+    const accountId =
+      rootGetters?.getCurrentAccountId ||
+      rootGetters?.getCurrentAccount?.id ||
+      getters?.getCurrentAccountId ||
+      getters?.getCurrentAccount?.id;
     if (!isEnterprise) {
       if (accountId) {
-        commit(types.default.SET_ACCOUNT_LIMITS, { id: accountId, limits: null });
+        commit(types.default.SET_ACCOUNT_LIMITS, {
+          id: accountId,
+          limits: null,
+        });
       }
       commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
       return;
@@ -161,7 +168,10 @@ export const actions = {
     } catch (error) {
       if (error?.response?.status === 404) {
         if (accountId) {
-          commit(types.default.SET_ACCOUNT_LIMITS, { id: accountId, limits: null });
+          commit(types.default.SET_ACCOUNT_LIMITS, {
+            id: accountId,
+            limits: null,
+          });
         }
         return;
       }

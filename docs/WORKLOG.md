@@ -1,5 +1,23 @@
 # Worklog
 
+## 2025-12-28 01:34
+- Tarih/Saat (TR): 2025-12-28 01:34
+- Amac: CE kurulumda enterprise limits istegini engellemek ve onClose deprecated gürültüsünü kesmek.
+- Sorun / Belirti: /enterprise/api/.../limits 404 ve "onClose prop deprecated" uyarisi.
+- Kok Neden (Varsa): CE'de limits action enterprise guard zayif; Modal warn her dev acilisinda basiliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/store/modules/accounts.js
+  - app/javascript/dashboard/components/Modal.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "enterprise/api/accounts|/enterprise/api|accounts/.*/limits|/limits" app/javascript
+  - rg -n "<woot-modal[^>]*(:on-close|:onClose|\\son-close=)" app/javascript -g "*.vue"
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (UI'da /app/accounts/1/... gezisinde 404 görünmemeli, onClose warning olmamali).
+- Notlar / Riskler:
+  - Rollback: accounts limits guard ve Modal warn degisikligini geri al.
+
 ## 2025-12-28 01:06
 - Tarih/Saat (TR): 2025-12-28 01:06
 - Amac: Community build'de enterprise limits 404 ve modal onClose uyarilarini sessizlestirmek.

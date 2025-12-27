@@ -35,7 +35,7 @@ const handleMouseDown = () => {
 const close = () => {
   show.value = false;
   emit('close');
-  if (onClose) {
+  if (onClose && typeof onClose === 'function') {
     onClose();
   }
 };
@@ -60,7 +60,12 @@ useEventListener(document.body, 'mouseup', onMouseUp);
 useEventListener(document, 'keydown', onKeydown);
 
 onMounted(() => {
-  if (import.meta.env.DEV && onClose && typeof onClose === 'function') {
+  if (
+    import.meta.env.DEV &&
+    window?.__CHATWOOT_DEBUG__ === true &&
+    onClose &&
+    typeof onClose === 'function'
+  ) {
     // eslint-disable-next-line no-console
     console.warn(
       "[DEPRECATED] The 'onClose' prop is deprecated. Please use the 'close' event instead."
