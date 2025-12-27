@@ -1,5 +1,21 @@
 # Worklog
 
+## 2025-12-27 15:40
+- Tarih/Saat (TR): 2025-12-27 15:40
+- Amac: Vite start suresini kisaltmak ve ENOMEM riskini azaltmak icin pnpm adimlarini idempotent yapmak.
+- Sorun / Belirti: Her restart'ta pnpm store prune + pnpm install --force calisiyor; yavas ve ENOMEM riski yuksek.
+- Kok Neden (Varsa): Vite entrypoint'te pnpm adimlari kosulsuz calistiriliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker/entrypoints/vite.sh
+  - docker-compose.yaml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content docker/entrypoints/vite.sh
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede.
+- Notlar / Riskler:
+  - Rollback: pnpm prune/install kosullarini kaldirip eski davranisa don.
+
 ## 2025-12-27 15:08
 - Tarih/Saat (TR): 2025-12-27 15:08
 - Amac: Rails/Vite/Sidekiq icin native gem derleme bagimliliklarini eklemek ve /gems bundle install'in tamamlanmasini saglamak.

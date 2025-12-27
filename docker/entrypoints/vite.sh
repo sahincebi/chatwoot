@@ -4,8 +4,24 @@ set -x
 rm -rf /app/tmp/pids/server.pid
 rm -rf /app/tmp/cache/*
 
-pnpm store prune
-pnpm install --force
+if [ "${PNPM_PRUNE:-0}" = "1" ]; then
+  pnpm store prune
+fi
+
+LOCKFILE="/app/pnpm-lock.yaml"
+NODE_MODULES="/app/node_modules"
+
+if [ ! -d "$NODE_MODULES" ]; then
+  NEEDS_INSTALL=1
+elif [ -f "$LOCKFILE" ] && { [ ! -f "$NODE_MODULES/.pnpm-lock.yaml" ] || [ "$LOCKFILE" -nt "$NODE_MODULES/.pnpm-lock.yaml" ]; }; then
+  NEEDS_INSTALL=1
+else
+  NEEDS_INSTALL=0
+fi
+
+if [ "$NEEDS_INSTALL" = "1" ]; then
+  pnpm install --frozen-lockfile || pnpm install
+fi
 
 export GEM_HOME="${GEM_HOME:-/gems}"
 export BUNDLE_PATH="${BUNDLE_PATH:-/gems}"
