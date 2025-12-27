@@ -1,5 +1,25 @@
 # Worklog
 
+## 2025-12-27 08:19
+- Tarih/Saat (TR): 2025-12-27 08:19
+- Amac: Postgres container ilk init sirasinda sifre enjekte edilsin ve Windows Docker'da restart loop olmasin.
+- Sorun / Belirti: "Database is uninitialized and superuser password is not specified" hatasi ile postgres restart loop.
+- Kok Neden (Varsa): docker-compose.yaml icinde POSTGRES_PASSWORD bos birakildigi icin .env degeri env'e gecmiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker-compose.yaml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git restore Gemfile.lock
+  - git restore bin/bundle bin/rake bin/setup bin/spring bin/sync_i18n_file_change bin/update bin/validate_push bin/vite bin/yarn
+  - git status --short
+  - Get-Content docker-compose.yaml
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (kullanici asagidaki docker komutlarini calistiracak).
+- Notlar / Riskler:
+  - Rollback: docker-compose.yaml icindeki postgres environment blogunu eski haline cevir.
+- Sonraki Adimlar:
+  - docker compose down -v ve yeniden baslatma adimlari ile postgres init dogrulama.
+
 ## 2025-12-27 07:18
 - Tarih/Saat (TR): 2025-12-27 07:18
 - Amac: Devise initializer icin BrandingConfig yuklemesini garanti etmek ve login/reset dogrulamasini denemek.
