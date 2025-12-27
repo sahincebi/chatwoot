@@ -1,5 +1,49 @@
 # Worklog
 
+## 2025-12-27 15:08
+- Tarih/Saat (TR): 2025-12-27 15:08
+- Amac: Rails/Vite/Sidekiq icin native gem derleme bagimliliklarini eklemek ve /gems bundle install'in tamamlanmasini saglamak.
+- Sorun / Belirti: bundle install sirasinda ffi/openssl/pg native derleme hatalari (linux headers, pkg-config, libpq eksik).
+- Kok Neden (Varsa): Rails image'inda gerekli Alpine build paketleri yoktu; Vite bundle install'a girince native gemler derlenemiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker/dockerfiles/rails.Dockerfile
+  - docker-compose.yaml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content docker/dockerfiles/rails.Dockerfile
+  - docker compose build rails sidekiq vite
+  - docker compose build rails sidekiq vite
+  - docker compose run --rm rails sh -lc "bundle _2.5.11_ install --jobs 4 --retry 3"
+  - docker compose run --rm --entrypoint sh rails -lc "bundle _2.5.11_ check"
+  - docker compose run --rm rails sh -lc "bundle _2.5.11_ install --jobs 4 --retry 3"
+  - docker compose up -d --force-recreate vite
+  - docker compose logs -f --tail=200 vite
+  - Start-Sleep -Seconds 20
+  - docker compose logs --tail=200 vite
+- Dogrulama:
+  - bundle _2.5.11_ install /gems altinda tamamlandi.
+  - Vite loglarinda bundler/ffi/openssl/pg derleme hatalari gorulmedi.
+  - Not: pnpm store prune sirasinda ENOMEM goruldu; Vite dev server satiri henuz dogrulanamadi.
+- Notlar / Riskler:
+  - Rollback: rails.Dockerfile ve docker-compose.yaml degisikliklerini geri al; native gemler tekrar derleme hatasi verebilir.
+- Sonraki Adimlar:
+  - Vite loglarinda dev server satirini dogrula; gerekirse daha fazla bellek ile tekrar dene.
+
+## 2025-12-27 09:34
+- Tarih/Saat (TR): 2025-12-27 09:34
+- Amac: Vite servisinin ortak /gems volume'u icin bundler 2.5.11 gemlerini rails container'da bir kez kurmak.
+- Sorun / Belirti: Vite bundle check fail oldugu icin exit ediyor; /gems bos.
+- Kok Neden (Varsa): Vite container artik bundle install yapmiyor; /gems sadece rails tarafindan doldurulmali.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (Beklemede) docker compose run --rm rails sh -lc "bundle _2.5.11_ install --jobs 4 --retry 3"
+  - (Beklemede) docker compose up -d --force-recreate vite
+  - (Beklemede) docker compose logs --tail=200 vite
+- Dogrulama: Beklemede (vite logs'ta dev server satiri gorulmeli).
+- Notlar / Riskler:
+  - Rollback: Vite entrypoint tekrar bundle install calistirir hale getirilirse bu adim gerekmez.
+
 ## 2025-12-27 09:29
 - Tarih/Saat (TR): 2025-12-27 09:29
 - Amac: Vite container bundler/native gem derleme hatalarini kalici olarak durdurmak.

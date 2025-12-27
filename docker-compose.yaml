@@ -51,6 +51,9 @@ services:
 
   sidekiq:
     <<: *base
+    build:
+      context: .
+      dockerfile: ./docker/dockerfiles/rails.Dockerfile
     image: chatwoot-rails:development
     volumes:
       - ./:/app:delegated
