@@ -1,5 +1,34 @@
 # Worklog
 
+## 2025-12-27 09:29
+- Tarih/Saat (TR): 2025-12-27 09:29
+- Amac: Vite container bundler/native gem derleme hatalarini kalici olarak durdurmak.
+- Sorun / Belirti: Vite loglarinda bundler 2.5.11 bulunamadi ve ffi/openssl/pg native derleme hatalari.
+- Kok Neden (Varsa): Vite servisinde bundle install tekrar calisip native derleme deniyor; GEM_HOME/GEM_PATH tutarsiz ve /gems kalici kullanilmiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker-compose.yaml
+  - docker/entrypoints/vite.sh
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content docker/dockerfiles/vite.Dockerfile
+  - Get-Content docker/dockerfiles/rails.Dockerfile
+  - Get-Content docker/entrypoints/rails.sh
+  - docker compose build vite
+  - docker compose up -d --force-recreate vite
+  - docker compose logs --tail=200 vite
+  - Start-Sleep -Seconds 20
+  - Start-Sleep -Seconds 10
+  - docker compose logs --since 10m vite | Select-String -Pattern "bundler|ffi|openssl|pg_config|libpq"
+  - docker compose exec -T vite sh -lc "ruby -v; cat /etc/os-release | head; echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v"
+  - docker compose exec -T vite sh -lc 'ruby -v; cat /etc/os-release | head; echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v'
+- Dogrulama:
+  - Vite loglarinda bundler/ffi/openssl/pg derleme hatalari gorulmedi.
+  - Vite container icinde bundler 2.5.11 gorunuyor ve GEM_HOME/GEM_PATH /gems ile basliyor.
+- Notlar / Riskler:
+  - Rollback: docker-compose.yaml ve docker/entrypoints/vite.sh degisikliklerini geri al; Vite bundler check tekrar bundle install deneyecektir.
+- Sonraki Adimlar:
+  - docker compose logs --tail=200 vite ile "Ready to run Vite development server" ve dev server satirini dogrula.
+
 ## 2025-12-27 09:01
 - Tarih/Saat (TR): 2025-12-27 09:01
 - Amac: Vite container restart'larinda bundler 2.5.11 ve bundler-audit eksikligini kalici olarak gidermek.

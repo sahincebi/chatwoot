@@ -9,12 +9,14 @@ pnpm install --force
 
 export GEM_HOME="${GEM_HOME:-/gems}"
 export BUNDLE_PATH="${BUNDLE_PATH:-/gems}"
-export GEM_PATH="$GEM_HOME:/usr/local/lib/ruby/gems/3.4.0:/usr/local/bundle:/root/.local/share/gem/ruby/3.4.0"
+export GEM_PATH="${GEM_PATH:-$GEM_HOME:/usr/local/lib/ruby/gems/3.4.0:/usr/local/bundle:/root/.local/share/gem/ruby/3.4.0}"
 export BUNDLE_WITHOUT="${BUNDLE_WITHOUT:-}"
 
-gem list -i bundler -v 2.5.11 || gem install bundler -v 2.5.11 --no-document
-bundle _2.5.11_ check || bundle _2.5.11_ install --jobs 4 --retry 3
+if ! bundle _2.5.11_ check; then
+  echo "Bundle check failed. Run bundle _2.5.11_ install in the rails container to compile native gems."
+  exit 1
+fi
 
 echo "Ready to run Vite development server."
 
-exec "$@"
+exec bundle _2.5.11_ exec bin/vite dev
