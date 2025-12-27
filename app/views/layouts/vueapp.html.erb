@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <% app_title = @global_config['APP_TITLE'].presence || @global_config['INSTALLATION_NAME'] %>
+    <% favicon_url = @global_config['FAVICON_URL'].presence || '/brand-assets/cebi-favicon.svg' %>
+    <% favicon_type = favicon_url.end_with?('.svg') ? 'image/svg+xml' : 'image/png' %>
     <title>
-      <%= @global_config['APP_TITLE'] || @global_config['INSTALLATION_NAME'] %>
+      <%= app_title %>
     </title>
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=0"/>
-    <meta name="application-name" content="<%= @global_config['APP_TITLE'] || @global_config['INSTALLATION_NAME'] %>">
-    <meta name="apple-mobile-web-app-title" content="<%= @global_config['APP_TITLE'] || @global_config['INSTALLATION_NAME'] %>">
+    <meta name="application-name" content="<%= app_title %>">
+    <meta name="apple-mobile-web-app-title" content="<%= app_title %>">
     <% if @global_config['DISPLAY_MANIFEST'] %>
-      <% favicon_url = @global_config['FAVICON_URL'] || @global_config['LOGO_THUMBNAIL'] %>
       <meta name="msapplication-TileColor" content="#1f93ff">
       <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
       <meta name="theme-color" content="#1f93ff">
@@ -26,12 +28,12 @@
       <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
       <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
       <link rel="icon" type="image/png" sizes="192x192"  href="/android-icon-192x192.png">
-      <link class="favicon" rel="icon" type="image/png" sizes="32x32" href="<%= favicon_url %>">
-      <link class="favicon" rel="icon" type="image/png" sizes="96x96" href="<%= favicon_url %>">
-      <link class="favicon" rel="icon" type="image/png" sizes="16x16" href="<%= favicon_url %>">
+      <link class="favicon" rel="icon" type="<%= favicon_type %>" sizes="32x32" href="<%= favicon_url %>">
+      <link class="favicon" rel="icon" type="<%= favicon_type %>" sizes="96x96" href="<%= favicon_url %>">
+      <link class="favicon" rel="icon" type="<%= favicon_type %>" sizes="16x16" href="<%= favicon_url %>">
       <link rel="manifest" href="/manifest.json">
     <% end %>
-    <link rel="icon" type="image/png" sizes="512x512" href="<%= @global_config['FAVICON_URL'] || @global_config['LOGO_THUMBNAIL'] %>">
+    <link rel="icon" type="<%= favicon_type %>" sizes="512x512" href="<%= favicon_url %>">
     <%= csrf_meta_tags %>
     <script>
       window.chatwootConfig = {
@@ -50,6 +52,13 @@
         signupEnabled: '<%= @global_config['ENABLE_ACCOUNT_SIGNUP'] %>',
         isEnterprise: '<%= @global_config['IS_ENTERPRISE'] %>',
         isMfaEnabled: '<%= Chatwoot.mfa_enabled? %>',
+        APP_TITLE: '<%= @global_config['APP_TITLE'] %>',
+        BRAND_NAME: '<%= @global_config['BRAND_NAME'] %>',
+        FAVICON_URL: '<%= @global_config['FAVICON_URL'] %>',
+        LOGO: '<%= @global_config['LOGO'] %>',
+        LOGO_DARK: '<%= @global_config['LOGO_DARK'] %>',
+        BRAND_LOGO_URL: '<%= @global_config['BRAND_LOGO_URL'] %>',
+        BRAND_LOGO_DARK_URL: '<%= @global_config['BRAND_LOGO_DARK_URL'] %>',
         <% if @global_config['IS_ENTERPRISE'] %>
         enterprisePlanName: '<%= @global_config['INSTALLATION_PRICING_PLAN'] %>',
         <% end %>

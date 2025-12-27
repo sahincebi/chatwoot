@@ -1,11 +1,11 @@
 class BrandingConfig
   class << self
     def installation_name
-      value('INSTALLATION_NAME')
+      value('INSTALLATION_NAME', "\u00c7ebi Medya AI Panel")
     end
 
     def brand_name
-      value('BRAND_NAME', installation_name)
+      value('BRAND_NAME', "\u00c7ebi Medya")
     end
 
     def brand_url
@@ -17,19 +17,27 @@ class BrandingConfig
     end
 
     def logo
-      value('LOGO')
+      value('LOGO', '/brand-assets/cebi-logo.svg')
     end
 
     def logo_dark
-      value('LOGO_DARK')
+      value('LOGO_DARK', '/brand-assets/cebi-logo-dark.svg')
     end
 
     def logo_thumbnail
-      value('LOGO_THUMBNAIL')
+      value('LOGO_THUMBNAIL', '/brand-assets/cebi-favicon.svg')
+    end
+
+    def brand_logo_url
+      value('BRAND_LOGO_URL', logo)
+    end
+
+    def brand_logo_dark_url
+      value('BRAND_LOGO_DARK_URL', logo_dark)
     end
 
     def app_title
-      value('APP_TITLE', installation_name)
+      value('APP_TITLE', "\u00c7ebi Medya AI Panel")
     end
 
     def manifest_name
@@ -41,7 +49,7 @@ class BrandingConfig
     end
 
     def favicon_url
-      value('FAVICON_URL', logo_thumbnail)
+      value('FAVICON_URL', '/brand-assets/cebi-favicon.svg')
     end
 
     def mailer_support_email
@@ -65,6 +73,8 @@ class BrandingConfig
         'LOGO' => logo,
         'LOGO_DARK' => logo_dark,
         'LOGO_THUMBNAIL' => logo_thumbnail,
+        'BRAND_LOGO_URL' => brand_logo_url,
+        'BRAND_LOGO_DARK_URL' => brand_logo_dark_url,
         'APP_TITLE' => app_title,
         'MANIFEST_NAME' => manifest_name,
         'MANIFEST_SHORT_NAME' => manifest_short_name,

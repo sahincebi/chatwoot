@@ -1,5 +1,42 @@
 # Worklog
 
+## 2025-12-27 07:18
+- Tarih/Saat (TR): 2025-12-27 07:18
+- Amac: Devise initializer icin BrandingConfig yuklemesini garanti etmek ve login/reset dogrulamasini denemek.
+- Sorun / Belirti: Rails boot ederken BrandingConfig NameError; /app/login HEAD istegi time-out; Vite dev server "env: can't execute 'ruby\r'" ile fail.
+- Kok Neden (Varsa): BrandingConfig dosyasi Devise initializer oncesi yuklenmiyordu; bin/vite CRLF nedeniyle Vite entrypoint calisamiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/initializers/devise.rb
+- Calistirilan Komutlar:
+  - git status --short
+  - Get-Content config/initializers/devise.rb
+  - Get-Content lib/branding_config.rb
+  - Get-Content config/application.rb
+  - docker compose restart rails vite
+  - docker compose logs --tail 200 rails
+  - docker compose ps
+  - docker compose exec rails ruby -e "require '/app/lib/branding_config'; puts BrandingConfig.brand_name"
+  - docker compose exec rails ruby -e "require '/app/lib/branding_config'; puts Object.const_defined?(:BrandingConfig)"
+  - docker compose restart rails
+  - docker compose logs --tail 120 rails
+  - docker compose logs --tail 40 rails
+  - Start-Sleep -Seconds 5
+  - docker compose logs --tail 30 rails
+  - curl.exe -I http://localhost:3000/app/login
+  - Invoke-WebRequest -Method Head -Uri http://localhost:3000/app/login -TimeoutSec 15
+  - Start-Sleep -Seconds 10
+  - curl.exe -I --max-time 20 http://localhost:3000/app/login
+  - docker compose logs --tail 100 vite
+  - curl.exe -I --max-time 20 http://localhost:3000/brand-assets/cebi-logo.svg
+- Dogrulama:
+  - Rails loglari Puma'nin 3000'de dinledigini gosteriyor.
+  - /brand-assets/cebi-logo.svg icin 200 OK alindi.
+  - /app/login HEAD istegi time-out oldu; Vite container CRLF hatasi nedeniyle calismiyor.
+- Notlar / Riskler:
+  - Vite dev server CRLF hatasi giderilmeden login/reset sayfasi tam dogrulanamiyor.
+- Sonraki Adimlar:
+  - bin/vite satir sonlarini LF'e cevirip Vite'yi yeniden baslat.
+
 ## 2025-12-27 05:42
 - Tarih/Saat (TR): 2025-12-27 05:42
 - Amac: Install-level white-label core (env-backed branding) ve Chatwoot referanslarini ana yuzeylerden kaldirma.
@@ -122,3 +159,37 @@
 - Sonraki Adimlar:
   - Branding env degiskenlerini (.env) ayarla.
   - /app/login, /manifest.json ve mailer gonderimleri ile brand adini dogrula.
+
+## 2025-12-27 06:42
+- Tarih/Saat (TR): 2025-12-27 06:42
+- Amac: Login/reset password UI metinleri, tab title, favicon ve login logolarini Cebi Medya AI Panel markasina tasimak.
+- Sorun / Belirti: Login basligi ve reset password aciklamasi eski marka metnini kullaniyordu; login logosu ve favicon Chatwoot varliklariydi.
+- Kok Neden (Varsa): BrandingConfig/globalConfig yeni alanlari eksikti; TR metinler guncellenmemisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+  - lib/branding_config.rb
+  - app/javascript/shared/store/globalConfig.js
+  - app/javascript/v3/views/login/Index.vue
+  - app/views/layouts/vueapp.html.erb
+  - app/javascript/dashboard/i18n/locale/tr/login.json
+  - app/javascript/dashboard/i18n/locale/tr/resetPassword.json
+  - .env.example
+  - config/installation_config.yml
+  - enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+  - enterprise/config/premium_installation_config.yml
+  - enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+- Calistirilan Komutlar:
+  - git grep -n "Sifrenizi" -- app/javascript/dashboard/i18n/locale/tr
+  - Get-Content app/javascript/dashboard/i18n/locale/tr/resetPassword.json
+  - Get-Content app/javascript/v3/views/auth/reset/password/Index.vue
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - python - (login title TR guncelleme)
+  - python - (reset password description TR guncelleme)
+  - Select-String app/javascript/dashboard/i18n/locale/tr/login.json -Pattern "\"TITLE\""
+  - Select-String app/javascript/dashboard/i18n/locale/tr/resetPassword.json -Pattern "DESCRIPTION"
+- Dogrulama: Calistirilmedi (kullanici docker restart ile dogrulayacak).
+- Notlar / Riskler:
+  - .env.example icine marka degerleri eklendi; gercek ortam icin .env guncellenmeli.
+- Sonraki Adimlar:
+  - docker compose restart rails vite
+  - /app/login ve /app/auth/reset/password ekranlarini kontrol et.

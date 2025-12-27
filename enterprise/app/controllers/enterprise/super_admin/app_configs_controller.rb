@@ -23,6 +23,8 @@ module Enterprise::SuperAdmin::AppConfigsController
       LOGO_THUMBNAIL
       LOGO
       LOGO_DARK
+      BRAND_LOGO_URL
+      BRAND_LOGO_DARK_URL
       BRAND_NAME
       APP_TITLE
       MANIFEST_NAME
