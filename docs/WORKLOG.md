@@ -1,5 +1,20 @@
 # Worklog
 
+## 2025-12-28 02:06
+- Tarih/Saat (TR): 2025-12-28 02:06
+- Amac: CE kurulumda enterprise limits istegini tamamen engellemek.
+- Sorun / Belirti: /enterprise/api/.../limits istegi CE'de 404 veriyor.
+- Kok Neden (Varsa): limits action enterprise guard'i yetersiz; CE'de de istek atiliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/store/modules/accounts.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (Network'te /enterprise/api/.../limits istegi gorunmemeli).
+- Notlar / Riskler:
+  - Rollback: accounts limits guard degisikligini geri al.
+
 ## 2025-12-28 01:34
 - Tarih/Saat (TR): 2025-12-28 01:34
 - Amac: CE kurulumda enterprise limits istegini engellemek ve onClose deprecated gürültüsünü kesmek.

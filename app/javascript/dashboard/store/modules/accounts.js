@@ -141,20 +141,24 @@ export const actions = {
     }
   },
 
-  limits: async ({ commit, getters, rootGetters }) => {
+  limits: async ({ commit }) => {
     commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: true });
     const raw =
-      window?.chatwootConfig?.isEnterprise ?? window?.globalConfig?.IS_ENTERPRISE;
-    const isEnterprise = raw === true || raw === 'true';
-    const accountId =
-      rootGetters?.getCurrentAccountId ||
-      rootGetters?.getCurrentAccount?.id ||
-      getters?.getCurrentAccountId ||
-      getters?.getCurrentAccount?.id;
+      window?.chatwootConfig?.isEnterprise ??
+      window?.globalConfig?.isEnterprise ??
+      window?.globalConfig?.IS_ENTERPRISE;
+    const isEnterprise =
+      raw === true || raw === 'true' || raw === 1 || raw === '1';
+    const getAccountIdFromRoute = () => {
+      const parts = window.location.pathname.split('/');
+      const idx = parts.indexOf('accounts');
+      return idx >= 0 ? parts[idx + 1] : null;
+    };
     if (!isEnterprise) {
+      const accountId = getAccountIdFromRoute();
       if (accountId) {
         commit(types.default.SET_ACCOUNT_LIMITS, {
-          id: accountId,
+          id: Number(accountId) || accountId,
           limits: null,
         });
       }
@@ -167,9 +171,10 @@ export const actions = {
       commit(types.default.SET_ACCOUNT_LIMITS, response.data);
     } catch (error) {
       if (error?.response?.status === 404) {
+        const accountId = getAccountIdFromRoute();
         if (accountId) {
           commit(types.default.SET_ACCOUNT_LIMITS, {
-            id: accountId,
+            id: Number(accountId) || accountId,
             limits: null,
           });
         }
