@@ -148,7 +148,7 @@ export default {
         />
       </div>
 
-      <woot-modal v-model:show="showAddPopup" :on-close="hideAddPopup">
+      <woot-modal v-model:show="showAddPopup" @close="hideAddPopup">
         <AddSLA @close="hideAddPopup" />
       </woot-modal>
 

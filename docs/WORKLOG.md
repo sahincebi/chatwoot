@@ -1,5 +1,51 @@
 # Worklog
 
+## 2025-12-28 00:43
+- Tarih/Saat (TR): 2025-12-28 00:43
+- Amac: Community build'de limits 404, YearInReview year ve WootModal onClose uyarilarini kaldirmak.
+- Sorun / Belirti: /enterprise/api/.../limits 404 console error; YearInReview year undefined warning; WootModal onClose deprecated warning.
+- Kok Neden (Varsa): Enterprise guard yok; year prop parent'ta fallback olmadan geciliyor; WootModal event API degisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/store/modules/accounts.js
+  - app/javascript/dashboard/components-next/year-in-review/YearInReviewModal.vue
+  - app/javascript/shared/components/ui/label/LabelDropdown.vue
+  - app/javascript/dashboard/components/app/AddAccountModal.vue
+  - app/javascript/dashboard/components/widgets/AIAssistanceButton.vue
+  - app/javascript/dashboard/components/widgets/conversation/ContentTemplates/ContentTemplatesModal.vue
+  - app/javascript/dashboard/components/widgets/conversation/EmailTranscriptModal.vue
+  - app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/Modal.vue
+  - app/javascript/dashboard/components/widgets/conversation/components/GalleryView.vue
+  - app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/Index.vue
+  - app/javascript/dashboard/components/widgets/conversation/linear/IssuesList.vue
+  - app/javascript/dashboard/components/widgets/modal/WootKeyShortcutModal.vue
+  - app/javascript/dashboard/modules/contact/ContactMergeModal.vue
+  - app/javascript/dashboard/modules/conversations/components/MessageContextMenu.vue
+  - app/javascript/dashboard/routes/dashboard/commands/CmdBarConversationSnooze.vue
+  - app/javascript/dashboard/routes/dashboard/conversation/contact/ContactNotes.vue
+  - app/javascript/dashboard/routes/dashboard/conversation/contact/EditContact.vue
+  - app/javascript/dashboard/routes/dashboard/inbox/components/InboxItemHeader.vue
+  - app/javascript/dashboard/routes/dashboard/settings/agents/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/AddAttribute.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/CustomAttribute.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/automation/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/canned/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/customRoles/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/DashboardAppModal.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/IntegrationHooks.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/labels/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/sla/Index.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "enterprise/api/accounts|/enterprise/api|accounts/.*/limits|/limits" app/javascript
+  - rg -n "YearInReview|year:" app/javascript/dashboard/components-next/year-in-review
+  - rg -n ":on-close" app/javascript
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (UI'da /app/accounts/1/... gezisinde console warnings yok; enterprise limits istegi atilmamali ya da 404 sessiz kalmali).
+- Notlar / Riskler:
+  - Rollback: limits guard ve WootModal @close degisikliklerini geri al; year fallback satirlarini eski haline cevir.
+
 ## 2025-12-27 23:19
 - Tarih/Saat (TR): 2025-12-27 23:19
 - Amac: SPA route degisimlerinde favicon'un /favicon-*.png'e geri donmesini engellemek ve root fallback'leri branded yapmak.

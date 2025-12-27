@@ -143,11 +143,25 @@ export const actions = {
 
   limits: async ({ commit }) => {
     commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: true });
+    const isEnterprise =
+      window?.chatwootConfig?.isEnterprise === 'true' ||
+      window?.globalConfig?.IS_ENTERPRISE === true;
+    if (!isEnterprise) {
+      commit(types.default.SET_ACCOUNT_LIMITS, null);
+      commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
+      return;
+    }
+
     try {
       const response = await EnterpriseAccountAPI.getLimits();
       commit(types.default.SET_ACCOUNT_LIMITS, response.data);
     } catch (error) {
-      // silent error
+      if (error?.response?.status === 404) {
+        commit(types.default.SET_ACCOUNT_LIMITS, null);
+        return;
+      }
+      // eslint-disable-next-line no-console
+      console.error(error);
     } finally {
       commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
     }

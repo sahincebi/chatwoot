@@ -141,7 +141,7 @@ export default {
       />
       <woot-modal
         v-model:show="showAIAssistanceModal"
-        :on-close="hideAIAssistanceModal"
+        @close="hideAIAssistanceModal"
       >
         <AIAssistanceModal
           :ai-option="aiOption"
@@ -152,7 +152,7 @@ export default {
     </div>
     <div v-else-if="shouldShowAIAssistCTAButtonForAdmin" class="relative">
       <AIAssistanceCTAButton @click="openAICta" />
-      <woot-modal v-model:show="showAICtaModal" :on-close="hideAICtaModal">
+      <woot-modal v-model:show="showAICtaModal" @close="hideAICtaModal">
         <AICTAModal @close="hideAICtaModal" />
       </woot-modal>
     </div>

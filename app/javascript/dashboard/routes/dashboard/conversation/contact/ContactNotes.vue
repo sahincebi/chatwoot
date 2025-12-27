@@ -136,7 +136,7 @@ watch(
 
     <woot-modal
       v-model:show="shouldShowCreateModal"
-      :on-close="closeCreateModal"
+      @close="closeCreateModal"
       :close-on-backdrop-click="false"
       class="!items-start [&>div]:!top-12 [&>div]:sticky"
     >

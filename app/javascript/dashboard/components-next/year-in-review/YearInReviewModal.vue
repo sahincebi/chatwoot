@@ -244,7 +244,7 @@ watch(
               v-if="currentSlide === 0"
               :key="0"
               :ref="el => (slideRefs[0] = el)"
-              :year="yearData.year"
+              :year="yearData?.year ?? new Date().getFullYear()"
             />
           </Transition>
 
@@ -306,7 +306,7 @@ watch(
               v-if="currentSlide === 4"
               :key="4"
               :ref="el => (slideRefs[4] = el)"
-              :year="yearData.year"
+              :year="yearData?.year ?? new Date().getFullYear()"
             />
           </Transition>
 
@@ -382,7 +382,7 @@ watch(
       :show="showShareModal"
       :slide-element="slideRefs[currentSlide]"
       :slide-background="currentSlideBackground"
-      :year="yearData?.year"
+      :year="yearData?.year ?? new Date().getFullYear()"
       @close="closeShareModal"
     />
   </Teleport>

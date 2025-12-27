@@ -199,7 +199,7 @@ const derivedAttributes = computed(() =>
       :on-close="hideAddPopup"
       :selected-attribute-model-tab="selectedTabIndex"
     />
-    <woot-modal v-model:show="showEditPopup" :on-close="hideEditPopup">
+    <woot-modal v-model:show="showEditPopup" @close="hideEditPopup">
       <EditAttribute
         :selected-attribute="selectedAttribute"
         :is-updating="uiFlags.isUpdating"
