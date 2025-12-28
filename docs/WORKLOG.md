@@ -733,3 +733,86 @@
 - Sonraki Adimlar:
   - docker compose restart rails vite
   - /app/login ve /app/auth/reset/password ekranlarini kontrol et.
+
+## 2025-12-28 06:13
+- Tarih/Saat (TR): 2025-12-28 06:13
+- Amac: Kullanici menusu etiketlerini Turkce i18n ile goster.
+- Sorun / Belirti: Profil menusundeki etiketler Turkce hesap dilinde bile Ingilizce gorunuyordu.
+- Kok Neden (Varsa): TR `settings.json` icinde `SIDEBAR_ITEMS` etiketleri Ingilizce kalmisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+- Calistirilan Komutlar:
+  - git status --short
+  - git diff --stat
+  - git grep -n -E "Keyboard shortcuts|Profile settings|Change appearance|SuperAdmin console|Log out" -- app/javascript
+  - python - (tr/settings.json menu etiketleri TR guncelleme)
+- Dogrulama: Calistirilmedi (kullanici UI uzerinden dogrulayacak).
+- Notlar / Riskler:
+  - TR metinler Unicode escape ile yazildi; Windows ANSI bozulmasina karsi guvenli.
+- Sonraki Adimlar:
+  - Turkce dil ile sol alttaki kullanici menusunu acip etiketleri dogrula.
+
+## 2025-12-28 15:55
+- Tarih/Saat (TR): 2025-12-28 15:55
+- Amac: Dashboard sol menude gereksiz sayfalari kalici kaldir, yeni Destek rotasini ekle ve TR menu cevirilerini duzelt.
+- Sorun / Belirti: Sol menude kullanilmayan sayfalar gorunuyordu; Destek bildirimi icin tek bir sayfa yoktu; profil menusu TR metinleri eksikti.
+- Kok Neden (Varsa): Sidebar ve router modulleri kullanilmayan route'lari hala expose ediyordu; TR i18n anahtarlari guncel degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+  - app/javascript/dashboard/routes/dashboard/settings/settings.routes.js
+  - app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/i18n/locale/en/settings.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - Get-Content app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/settings/settings.routes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+  - Select-String -Path app/javascript/dashboard/i18n/locale/en/settings.json -Pattern '"SIDEBAR"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/en/settings.json -Pattern '"SIDEBAR_ITEMS"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/tr/settings.json -Pattern '"SIDEBAR"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/tr/settings.json -Pattern "SIDEBAR_ITEMS"
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Kampanyalar ve Yardim Merkezi route'lari devre disi; artik URL ile de erisilemez.
+- Sonraki Adimlar:
+  - docker compose restart rails sidekiq vite
+  - /app/accounts/:id/support/new sayfasini acip widget butonunu kontrol et.
+
+## 2025-12-28 17:13
+- Tarih/Saat (TR): 2025-12-28 17:13
+- Amac: Destek bildirimi sayfasini form tabanli, gercek conversation olusturan akisa donustur.
+- Sorun / Belirti: Destek sayfasi sadece widget var/yok placeholder gosteriyordu; destek inbox/konusma olusmuyordu.
+- Kok Neden (Varsa): Sayfada inbox secimi, contact arama/olusturma ve conversation create akisi yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - app/javascript/dashboard/i18n/locale/en/index.js
+  - app/javascript/dashboard/i18n/locale/tr/index.js
+  - app/javascript/dashboard/i18n/locale/en/settings.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-ChildItem -Recurse -Filter "SupportTicketNew.vue" -File
+  - git grep -n "ContactAPI" -- app/javascript/dashboard
+  - Get-Content app/javascript/dashboard/store/modules/contactConversations.js
+  - Get-Content app/javascript/dashboard/api/contacts.js
+  - Get-Content app/javascript/dashboard/store/modules/contacts/actions.js
+  - Get-Content app/javascript/dashboard/store/modules/inboxes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+  - Get-Content app/javascript/dashboard/i18n/locale/en/index.js
+  - Get-Content app/javascript/dashboard/i18n/locale/tr/index.js
+  - Select-String -Path app/javascript/dashboard/i18n/locale/en/settings.json -Pattern '"SUPPORT"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/tr/settings.json -Pattern '"SUPPORT"'
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Destek inbox adi "destek" icermiyorsa form gonderimi devre disi kalir.
+- Sonraki Adimlar:
+  - /app/accounts/:id/support/new formunu doldurup gonder.
+  - Yeni conversation acildigini ve inbox_conversation route'una yonlendigini dogrula.

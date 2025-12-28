@@ -1,0 +1,42 @@
+{
+  "SUPPORT": {
+    "NEW": {
+      "TITLE": "Create Support Ticket",
+      "DESCRIPTION": "Fill out the form below to reach our support team.",
+      "NO_INBOX": "Support inbox not found. An admin must create an inbox named 'Destek'.",
+      "SUBJECT": {
+        "LABEL": "Subject",
+        "PLACEHOLDER": "Summarize briefly"
+      },
+      "CATEGORY": {
+        "LABEL": "Category",
+        "OPTIONS": {
+          "TECHNICAL": "Technical",
+          "BILLING": "Billing",
+          "INTEGRATION": "Integration",
+          "FEATURE_REQUEST": "Feature Request",
+          "OTHER": "Other"
+        }
+      },
+      "PRIORITY": {
+        "LABEL": "Priority",
+        "OPTIONS": {
+          "NORMAL": "Normal",
+          "HIGH": "High",
+          "URGENT": "Urgent"
+        }
+      },
+      "MESSAGE": {
+        "LABEL": "Description",
+        "PLACEHOLDER": "Describe the issue in detail"
+      },
+      "MESSAGE_TEMPLATE": "[SUPPORT TICKET]\nSubject: {subject}\nCategory: {category}\nPriority: {priority}\n\nAccount: {accountName} (AccountId: {accountId})\nUser: {userName} <{userEmail}>\n\nDescription:\n{description}",
+      "ATTACHMENTS": {
+        "LABEL": "Attachments"
+      },
+      "SUBMIT": "Submit Ticket",
+      "SUCCESS": "Support ticket created. Redirecting to the conversation.",
+      "ERROR": "Could not create the support ticket. Please try again."
+    }
+  }
+}

@@ -229,18 +229,18 @@
   },
   "SIDEBAR_ITEMS": {
     "CHANGE_AVAILABILITY_STATUS": "Durumu Değiştir",
-    "CHANGE_ACCOUNTS": "Switch account",
-    "SWITCH_ACCOUNT": "Switch account",
-    "CONTACT_SUPPORT": "Contact support",
+    "CHANGE_ACCOUNTS": "Hesap De\u011Fi\u015Ftir",
+    "SWITCH_ACCOUNT": "Hesap De\u011Fi\u015Ftir",
+    "CONTACT_SUPPORT": "Destek ile \u0130leti\u015Fime Ge\u00E7",
     "SELECTOR_SUBTITLE": "Listeden bir hesap seçin",
-    "PROFILE_SETTINGS": "Profile settings",
-    "YEAR_IN_REVIEW": "Year in Review",
-    "KEYBOARD_SHORTCUTS": "Keyboard shortcuts",
-    "APPEARANCE": "Change appearance",
-    "SUPER_ADMIN_CONSOLE": "SuperAdmin console",
-    "DOCS": "Read documentation",
+    "PROFILE_SETTINGS": "Profil Ayarlar\u0131",
+    "YEAR_IN_REVIEW": "Y\u0131l \u00D6zeti",
+    "KEYBOARD_SHORTCUTS": "Klavye K\u0131sayollar\u0131",
+    "APPEARANCE": "G\u00F6r\u00FCn\u00FCm\u00FC De\u011Fi\u015Ftir",
+    "SUPER_ADMIN_CONSOLE": "S\u00FCper Admin Konsolu",
+    "DOCS": "Dok\u00FCmantasyonu Oku",
     "CHANGELOG": "Değişiklik Günlüğü",
-    "LOGOUT": "Log out"
+    "LOGOUT": "\u00C7\u0131k\u0131\u015F Yap"
   },
   "APP_GLOBAL": {
     "TRIAL_MESSAGE": "gün deneme kaldı.",
@@ -257,7 +257,7 @@
       "TITLE": "Hesap bulunamadı",
       "MESSAGE_CLOUD": "Şu anda herhangi bir hesabın parçası değilsiniz. Bunun bir hata olduğunu düşünüyorsanız, lütfen destek ekibimizle iletişime geçin.",
       "MESSAGE_SELF_HOSTED": "Şu anda herhangi bir hesabın parçası değilsiniz. Lütfen yöneticinizle iletişime geçin.",
-      "LOGOUT": "Log out"
+      "LOGOUT": "\u00C7\u0131k\u0131\u015F Yap"
     }
   },
   "COMPONENTS": {
@@ -304,6 +304,8 @@
     "PARTICIPATING_CONVERSATIONS": "Katılımcılar",
     "UNATTENDED_CONVERSATIONS": "İlgisiz",
     "REPORTS": "Raporlar",
+    "SUPPORT": "Destek",
+    "SUPPORT_TICKET": "Destek Bildirimi Olu\u015Ftur",
     "SETTINGS": "Ayarlar",
     "CONTACTS": "Kişiler",
     "ACTIVE": "Aktif",

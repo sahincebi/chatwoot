@@ -1,0 +1,42 @@
+{
+  "SUPPORT": {
+    "NEW": {
+      "TITLE": "Destek Bildirimi Olu\u015Ftur",
+      "DESCRIPTION": "Destek ekibimizle g\u00F6r\u00FC\u015Fmek i\u00E7in a\u015Fa\u011F\u0131daki formu doldurun.",
+      "NO_INBOX": "Destek gelen kutusu bulunamad\u0131. Y\u00F6netici 'Destek' isimli bir gelen kutusu olu\u015Fturmal\u0131d\u0131r.",
+      "SUBJECT": {
+        "LABEL": "Konu",
+        "PLACEHOLDER": "K\u0131saca \u00F6zetleyin"
+      },
+      "CATEGORY": {
+        "LABEL": "Kategori",
+        "OPTIONS": {
+          "TECHNICAL": "Teknik",
+          "BILLING": "Faturaland\u0131rma",
+          "INTEGRATION": "Entegrasyon",
+          "FEATURE_REQUEST": "\u00D6zellik Talebi",
+          "OTHER": "Di\u011Fer"
+        }
+      },
+      "PRIORITY": {
+        "LABEL": "\u00D6ncelik",
+        "OPTIONS": {
+          "NORMAL": "Normal",
+          "HIGH": "Y\u00FCksek",
+          "URGENT": "Acil"
+        }
+      },
+      "MESSAGE": {
+        "LABEL": "A\u00E7\u0131klama",
+        "PLACEHOLDER": "Sorunu detayl\u0131 anlat\u0131n"
+      },
+      "MESSAGE_TEMPLATE": "[DESTEK B\u0130LD\u0130R\u0130M\u0130]\nKonu: {subject}\nKategori: {category}\n\u00D6ncelik: {priority}\n\nHesap: {accountName} (AccountId: {accountId})\nKullan\u0131c\u0131: {userName} <{userEmail}>\n\nA\u00E7\u0131klama:\n{description}",
+      "ATTACHMENTS": {
+        "LABEL": "Dosyalar"
+      },
+      "SUBMIT": "Bildirimi G\u00F6nder",
+      "SUCCESS": "Destek bildirimi olu\u015Fturuldu. Konu\u015Fmaya y\u00F6nlendiriliyorsunuz.",
+      "ERROR": "Destek bildirimi olu\u015Fturulamad\u0131. L\u00FCtfen tekrar deneyin."
+    }
+  }
+}
