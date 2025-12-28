@@ -1,5 +1,23 @@
 # Worklog
 
+## 2025-12-28 04:49
+- Tarih/Saat (TR): 2025-12-28 04:49
+- Amac: Captain menusu CE'de yalnizca config ile acilsin; basarisiz denemeler geri alinsin.
+- Sorun / Belirti: Captain gorunmuyor veya herkes icin acik kalma riski vardi.
+- Kok Neden (Varsa): captain_index route adi yoktu ve COMMUNITY install type kontrolsuz eklenmisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "captainEnabled|CAPTAIN|installationTypes" app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - rg -n "captain_index" app/javascript/dashboard/components-next/sidebar/Sidebar.vue app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - docker compose restart rails sidekiq vite
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (Captain yalnizca chatwootConfig.captainEnabled true ise gorunmeli; route resolve olmali).
+- Notlar / Riskler:
+  - Revert: d24fca36f ile "fix(dashboard): restore Captain nav for CE" geri alindi.
+  - Rollback: captainEnabled guard ve installationTypes degisikligini geri al.
+
 ## 2025-12-28 04:28
 - Tarih/Saat (TR): 2025-12-28 04:28
 - Amac: Captain sidebar gorunurlugunu CE'de geri getirmek ve route resolve sorununu engellemek.

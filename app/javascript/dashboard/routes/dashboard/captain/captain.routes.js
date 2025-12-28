@@ -17,16 +17,30 @@ import ResponsesIndex from './responses/Index.vue';
 import ResponsesPendingIndex from './responses/Pending.vue';
 import CustomToolsIndex from './tools/Index.vue';
 
+const isCaptainEnabled = () => {
+  if (typeof window === 'undefined') return false;
+  const raw = window?.chatwootConfig?.captainEnabled;
+  return raw === true || raw === 'true' || raw === 1 || raw === '1';
+};
+
+const captainInstallationTypes = isCaptainEnabled()
+  ? [
+      INSTALLATION_TYPES.CLOUD,
+      INSTALLATION_TYPES.ENTERPRISE,
+      INSTALLATION_TYPES.COMMUNITY,
+    ]
+  : [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE];
+
 const meta = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: captainInstallationTypes,
 };
 
 const metaV2 = {
   permissions: ['administrator', 'agent'],
   featureFlag: FEATURE_FLAGS.CAPTAIN_V2,
-  installationTypes: [INSTALLATION_TYPES.CLOUD, INSTALLATION_TYPES.ENTERPRISE],
+  installationTypes: captainInstallationTypes,
 };
 
 const assistantRoutes = [
@@ -101,10 +115,7 @@ const assistantRoutes = [
     name: 'captain_assistants_create_index',
     meta: {
       permissions: ['administrator', 'agent'],
-      installationTypes: [
-        INSTALLATION_TYPES.CLOUD,
-        INSTALLATION_TYPES.ENTERPRISE,
-      ],
+      installationTypes: captainInstallationTypes,
     },
   },
   {
@@ -120,6 +131,10 @@ export const routes = [
     path: frontendURL('accounts/:accountId/captain'),
     name: 'captain_index',
     component: CaptainPageRouteView,
+    beforeEnter: (to, _from, next) => {
+      if (isCaptainEnabled()) return next();
+      return next(frontendURL(`accounts/${to.params.accountId}/dashboard`));
+    },
     redirect: to => {
       return {
         name: 'captain_assistants_index',
