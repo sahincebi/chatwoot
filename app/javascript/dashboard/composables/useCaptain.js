@@ -12,10 +12,7 @@ export function useCaptain() {
   const uiFlags = useMapGetter('accounts/getUIFlags');
 
   const captainEnabled = computed(() => {
-    const raw = window?.chatwootConfig?.captainEnabled;
-    const isCaptainEnabled =
-      raw === true || raw === 'true' || raw === 1 || raw === '1';
-    return isCloudFeatureEnabled(FEATURE_FLAGS.CAPTAIN) || isCaptainEnabled;
+    return isCloudFeatureEnabled(FEATURE_FLAGS.CAPTAIN);
   });
 
   const captainLimits = computed(() => {
