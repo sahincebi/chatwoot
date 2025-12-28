@@ -1,5 +1,29 @@
 # Worklog
 
+## 2025-12-28 05:29
+- Tarih/Saat (TR): 2025-12-28 05:29
+- Amac: Captain deneylerini geri alip dosyalari onceki stabil hallerine dondurmek.
+- Sorun / Belirti: CE'de Captain'i gorunur yapma denemeleri calismadi ve gereksiz degisiklikler birikti.
+- Kok Neden (Varsa): Route/sidebar/enable denemeleri birbirini override etti; net bir gating saglanamadi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - app/javascript/dashboard/composables/useCaptain.js
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git log --oneline -- app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - git log --oneline -- app/javascript/dashboard/composables/useCaptain.js
+  - git log --oneline -- app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - git log --oneline -- app/javascript/v3
+  - rg -n "INSTALLATION_TYPES.*COMMUNITY|captain_index|captainEnabled is strictly true|chatwootConfig.captainEnabled" app/javascript/dashboard
+  - rg -n "enterprise/api/v1/accounts/.*/limits|getLimits\\(" app/javascript/dashboard
+  - docker compose restart rails sidekiq vite
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (Captain davranisi eski haline donmeli; enterprise limits guard degismemeli).
+- Notlar / Riskler:
+  - Revert: 3496441a9, 14f8fa158, 1072ac4bc ve bunlara bagli denemeler geri alindi (dosyalar onceki commitlerden geri yuklendi).
+  - Rollback: dosyalari deney commitlerinden tekrar uygulamak gerekir.
+
 ## 2025-12-28 04:49
 - Tarih/Saat (TR): 2025-12-28 04:49
 - Amac: Captain menusu CE'de yalnizca config ile acilsin; basarisiz denemeler geri alinsin.
