@@ -17,6 +17,8 @@
 class InstallationConfig < ApplicationRecord
   class SerializedValueCoder
     def self.dump(value)
+      return {} if value.nil?
+      return value if value.is_a?(Hash)
       return value if value.is_a?(String)
 
       value.to_yaml
@@ -53,6 +55,7 @@ class InstallationConfig < ApplicationRecord
   scope :editable, -> { where(locked: false) }
 
   after_commit :clear_cache
+  SUPPORT_KEYS = %w[SUPPORT_HQ_ACCOUNT_ID SUPPORT_HQ_INBOX_NAME SUPPORT_TICKET_SOURCE].freeze
 
   class << self
     def get_value(key)
@@ -60,7 +63,9 @@ class InstallationConfig < ApplicationRecord
     end
 
     def set_value(key, raw_value, locked: nil)
-      config = find_or_initialize_by(name: key)
+      config = unscoped.find_or_initialize_by(name: key)
+      config.locked = false if SUPPORT_KEYS.include?(key) && config.locked?
+      config.serialized_value = {}.with_indifferent_access if config[:serialized_value].nil?
       config.locked = locked unless locked.nil?
       config.serialized_value = { 'value' => raw_value }.with_indifferent_access
       config.save!
@@ -89,9 +94,7 @@ class InstallationConfig < ApplicationRecord
   end
 
   def ensure_serialized_value
-    return unless self[:serialized_value].nil?
-
-    self.serialized_value = {}.with_indifferent_access
+    self.serialized_value = {}.with_indifferent_access if self[:serialized_value].nil?
   end
 
   def clear_cache

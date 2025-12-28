@@ -16,7 +16,6 @@
 /tmp/*
 !/log/.keep
 !/tmp/.keep
-!/tmp/support_smoke.rb
 *.mmdb
 
 # Ignore Byebug command history file.

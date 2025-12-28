@@ -17,6 +17,23 @@
 - Notlar / Riskler:
   - Backfill migration NULL serialized_value kayitlarini '{}'::jsonb ile duzeltir.
 
+## 2025-12-28 22:49
+- Tarih/Saat (TR): 2025-12-28 22:49
+- Amac: InstallationConfig set_value icin NULL serialized_value hatasini kalici engellemek.
+- Sorun / Belirti: set_value sırasında PG::NotNullViolation (serialized_value NULL).
+- Kok Neden (Varsa): NULL kayitlar ve locked kayitlarin set_value ile guncellenememesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/installation_config.rb
+  - db/migrate/20251228221234_backfill_installation_config_serialized_value.rb
+  - .gitignore
+  - support_smoke.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: support_smoke.rb ile manuel dogrulama bekliyor.
+- Notlar / Riskler:
+  - SUPPORT_* key'lerinde locked false'a cekilir.
+
 ## 2025-12-28 22:05
 - Tarih/Saat (TR): 2025-12-28 22:05
 - Amac: db:migrate sirasinda InstallationConfig YAML parse hatasini ve annotate abortunu engellemek.
