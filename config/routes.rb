@@ -616,6 +616,7 @@ Rails.application.routes.draw do
 
       resource :settings, only: [:show] do
         get :refresh, on: :collection
+        post :provision_support_inboxes, on: :collection
       end
 
       # resources that doesn't appear in primary navigation in super admin

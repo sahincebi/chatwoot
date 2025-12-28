@@ -48,6 +48,11 @@
         </button>
       </div>
     </div>
+    <div class="flex items-center mb-6">
+      <h4 class="text-sm font-medium leading-5 h-5 text-n-slate-12 mr-4">Support Inboxes</h4>
+      <%= button_to 'Provision Support Inboxes', provision_support_inboxes_super_admin_settings_path, method: :post,
+                    class: 'ml-auto inline-flex items-center justify-center h-9 px-3 rounded text-sm font-medium text-n-slate-12 bg-transparent outline outline-1 outline-n-container hover:bg-slate-50' %>
+    </div>
     <% if ChatwootApp.enterprise? %>
       <div class="flex p-4 outline outline-1 outline-n-container rounded-lg items-start md:items-center shadow-sm flex-col md:flex-row">
         <div class="flex flex-col flex-grow gap-1">

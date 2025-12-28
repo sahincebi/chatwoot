@@ -118,6 +118,17 @@
   display_title: 'Attachment size limit (MB)'
   description: 'Maximum attachment size in MB allowed for uploads'
   locked: false
+- name: SUPPORT_INBOX_AUTO_PROVISION
+  value: true
+  display_title: 'Auto provision support inbox'
+  description: 'Automatically create a support inbox for new accounts'
+  locked: false
+  type: boolean
+- name: SUPPORT_INBOX_NAME
+  value: 'Destek'
+  display_title: 'Support inbox name'
+  description: 'Inbox name used for support ticket routing'
+  locked: false
 # ------- End of Account Related Config ------- #
 
 # ------- Email Related Config ------- #

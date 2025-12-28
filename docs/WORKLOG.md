@@ -816,3 +816,34 @@
 - Sonraki Adimlar:
   - /app/accounts/:id/support/new formunu doldurup gonder.
   - Yeni conversation acildigini ve inbox_conversation route'una yonlendigini dogrula.
+
+## 2025-12-28 18:06
+- Tarih/Saat (TR): 2025-12-28 18:06
+- Amac: Destek inbox'ini otomatik ve idempotent olarak olusturmak, mevcut account'lar icin backfill saglamak.
+- Sorun / Belirti: Destek inbox yoksa destek formu gonderimi kilitleniyordu.
+- Kok Neden (Varsa): Account seviyesinde otomatik provisioning ve admin uyelik baglama akisi yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/installation_config.yml
+  - app/services/account/provision_support_inbox_service.rb
+  - app/jobs/account/provision_support_inbox_job.rb
+  - app/jobs/internal/provision_support_inboxes_job.rb
+  - app/models/account.rb
+  - app/models/account_user.rb
+  - config/routes.rb
+  - app/controllers/super_admin/settings_controller.rb
+  - app/views/super_admin/settings/show.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content lib/global_config.rb
+  - Get-Content config/installation_config.yml
+  - Get-Content app/models/account.rb
+  - Get-Content app/models/account_user.rb
+  - Get-Content app/controllers/super_admin/settings_controller.rb
+  - Get-Content app/views/super_admin/settings/show.html.erb
+  - Get-Content config/routes.rb
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Auto provision devre disi ise support inbox olusmaz; admin butonu manuel backfill icin mevcut.
+- Sonraki Adimlar:
+  - Super Admin > Settings > Provision Support Inboxes butonunu calistir.
+  - /app/accounts/:id/support/new sayfasinda uyarinin kalktigini dogrula.
