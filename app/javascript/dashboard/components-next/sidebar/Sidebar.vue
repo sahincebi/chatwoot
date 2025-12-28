@@ -233,7 +233,8 @@ const menuItems = computed(() => {
       name: 'Captain',
       icon: 'i-woot-captain',
       label: t('SIDEBAR.CAPTAIN'),
-      activeOn: ['captain_assistants_create_index'],
+      to: accountScopedRoute('captain_index'),
+      activeOn: ['captain_index', 'captain_assistants_create_index'],
       children: [
         {
           name: 'FAQs',

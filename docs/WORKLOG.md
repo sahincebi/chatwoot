@@ -1,5 +1,22 @@
 # Worklog
 
+## 2025-12-28 04:28
+- Tarih/Saat (TR): 2025-12-28 04:28
+- Amac: Captain sidebar gorunurlugunu CE'de geri getirmek ve route resolve sorununu engellemek.
+- Sorun / Belirti: Captain menusu gorunmuyor; base route name eksikligi supheliydi.
+- Kok Neden (Varsa): captain_index route name tanimli degildi; sidebar base route referansi yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "captain_index" app/javascript/dashboard/components-next/sidebar/Sidebar.vue app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (sidebar'da Captain gorunur, captain_index resolve olur).
+- Notlar / Riskler:
+  - Rollback: captain_index name ve sidebar to/activeOn degisikligini geri al.
+
 ## 2025-12-28 04:02
 - Tarih/Saat (TR): 2025-12-28 04:02
 - Amac: CE'de Captain menusu gorunsun; enterprise limits istegi tetiklenmesin.

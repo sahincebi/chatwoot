@@ -127,6 +127,7 @@ const assistantRoutes = [
 export const routes = [
   {
     path: frontendURL('accounts/:accountId/captain'),
+    name: 'captain_index',
     component: CaptainPageRouteView,
     redirect: to => {
       return {
