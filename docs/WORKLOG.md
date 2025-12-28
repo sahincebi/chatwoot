@@ -1,5 +1,21 @@
 # Worklog
 
+## 2025-12-28 04:02
+- Tarih/Saat (TR): 2025-12-28 04:02
+- Amac: CE'de Captain menusu gorunsun; enterprise limits istegi tetiklenmesin.
+- Sorun / Belirti: Captain sidebar gizli; CE'de /enterprise/api/.../limits 404 riski.
+- Kok Neden (Varsa): Captain route installationTypes COMMUNITY icermiyordu; cloud-only flag kontrolu vardı.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - app/javascript/dashboard/composables/useCaptain.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (sidebar'da Captain görünür; CE'de /enterprise/api/.../limits istegi yok).
+- Notlar / Riskler:
+  - Rollback: Captain route installationTypes ve useCaptain flag degisikliklerini geri al.
+
 ## 2025-12-28 02:35
 - Tarih/Saat (TR): 2025-12-28 02:35
 - Amac: CE kurulumda enterprise limits istegini tamamen engellemek.
