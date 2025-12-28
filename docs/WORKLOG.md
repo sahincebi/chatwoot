@@ -34,6 +34,40 @@
 - Notlar / Riskler:
   - SUPPORT_* key'lerinde locked false'a cekilir.
 
+## 2025-12-29 00:17
+- Tarih/Saat (TR): 2025-12-29 00:17
+- Amac: ActiveRecord pool ayarlari ve .env'lerin container'a yansidigini dogrulamak.
+- Sorun / Belirti: /app/login'de ConnectionTimeoutError riski.
+- Kok Neden (Varsa): Pool/concurrency/env uyumsuzlugu supheleri.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose up -d --force-recreate rails sidekiq
+  - docker compose exec -T rails sh -lc "env | grep -E '^(RAILS_MAX_THREADS|DATABASE_POOL|SIDEKIQ_CONCURRENCY|WEB_CONCURRENCY)='"
+  - docker compose exec -T sidekiq sh -lc "env | grep -E '^(RAILS_MAX_THREADS|DATABASE_POOL|SIDEKIQ_CONCURRENCY|WEB_CONCURRENCY)='"
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection_pool.size"
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection_pool.stat.inspect"
+- Dogrulama:
+  - env (rails): SIDEKIQ_CONCURRENCY=10, RAILS_MAX_THREADS=5, DATABASE_POOL=10
+  - env (sidekiq): SIDEKIQ_CONCURRENCY=10, RAILS_MAX_THREADS=5, DATABASE_POOL=10
+  - pool size: 10
+  - pool stat: {:size=>10, :connections=>1, :busy=>1, :dead=>0, :idle=>0, :waiting=>0, :checkout_timeout=>5.0}
+- Notlar / Riskler:
+  - Waiting=0; uzun sorgu/connection leak bulgusu yok. Login refresh dogrulamasi bekliyor.
+
+## 2025-12-28 23:57
+- Tarih/Saat (TR): 2025-12-28 23:57
+- Amac: DB pool ayarlarini Puma/Sidekiq concurrency ile uyumlu hale getirmek.
+- Sorun / Belirti: ActiveRecord::ConnectionTimeoutError riski.
+- Kok Neden (Varsa): pool degeri thread/concurrency ile uyumsuz kalabiliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/database.yml
+  - .env
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: runner ve refresh adimlari bekliyor.
+
 ## 2025-12-28 22:05
 - Tarih/Saat (TR): 2025-12-28 22:05
 - Amac: db:migrate sirasinda InstallationConfig YAML parse hatasini ve annotate abortunu engellemek.
