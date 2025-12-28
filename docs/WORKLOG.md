@@ -1,5 +1,22 @@
 # Worklog
 
+## 2025-12-28 22:05
+- Tarih/Saat (TR): 2025-12-28 22:05
+- Amac: db:migrate sirasinda InstallationConfig YAML parse hatasini ve annotate abortunu engellemek.
+- Sorun / Belirti: TypeError no implicit conversion of Hash into String (Psych _native_parse) ve migrate sonrasi annotate dosya yagmuru.
+- Kok Neden (Varsa): serialized_value Hash iken YAML parse ve annotate'un db:migrate sirasinda calismasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/installation_config.rb
+  - lib/config_loader.rb
+  - lib/tasks/auto_annotate_models.rake
+  - db/schema.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails sh -lc "bundle exec rails db:migrate"
+- Dogrulama: db:migrate 0 exit code; annotate tetiklenmedi.
+- Notlar / Riskler:
+  - SKIP_ANNOTATE=1 veya db:migrate guard ile annotate devre disi.
+
 ## 2025-12-28 19:05
 - Tarih/Saat (TR): 2025-12-28 19:05
 - Amac: Destek bildirimlerini merkezi Support HQ account'a tasiyip normal konusma/kanal listelerinden izole etmek.
