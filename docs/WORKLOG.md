@@ -847,3 +847,60 @@
 - Sonraki Adimlar:
   - Super Admin > Settings > Provision Support Inboxes butonunu calistir.
   - /app/accounts/:id/support/new sayfasinda uyarinin kalktigini dogrula.
+
+## 2025-12-28 18:25
+- Tarih/Saat (TR): 2025-12-28 18:25
+- Amac: Support smoke test akisini dogru builder'larla belgelemek ve TR record_invalid hatasini duzeltmek.
+- Sorun / Belirti: Smoke test Conversation.create! ile contact_inbox_id olmadan fail oluyordu; record_invalid hatasi "Translation missing" gorunuyordu.
+- Kok Neden (Varsa): Chatwoot conversation create icin ContactInbox zinciri zorunlu; TR locale'da record_invalid eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/locales/tr.yml
+  - app/services/account/provision_support_inbox_service.rb
+  - app/jobs/internal/provision_support_inboxes_job.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content config/locales/tr.yml
+- Dogrulama:
+  - Smoke test (Rails runner):
+    ```sh
+    docker compose exec -T rails bundle exec rails runner "
+    a=Account.find(1)
+    name=(GlobalConfig.get_value('SUPPORT_INBOX_NAME') || 'Destek')
+    inbox=a.inboxes.where('lower(name)=?', name.downcase).first
+    raise 'support inbox missing' unless inbox
+
+    admin_id=a.account_users.where(role: :administrator).first&.user_id
+    raise 'admin missing' unless admin_id
+    u=User.find(admin_id)
+
+    # contact + contact_inbox (Chatwoot’un bekledigi sekilde)
+    ci=ContactInboxWithContactBuilder.new(
+      inbox: inbox,
+      contact_attributes: { name: 'Debug Support', email: 'debug-support@example.com' },
+      source_id: "support_smoke_#{Time.now.to_i}",
+      hmac_verified: false
+    ).perform
+
+    # conversation (contact_inbox_id zorunlu zincir)
+    conv=ConversationBuilder.new(
+      params: ActionController::Parameters.new(status: 'open'),
+      contact_inbox: ci
+    ).perform
+
+    # outgoing message (Chatwoot builder)
+    msg=Messages::MessageBuilder.new(
+      u,
+      conv,
+      ActionController::Parameters.new(
+        content: '[SMOKE TEST] support ticket created via runner',
+        message_type: 'outgoing'
+      )
+    ).perform
+
+    puts "conversation_id=#{conv.id} inbox_id=#{inbox.id} message_id=#{msg.id}"
+    "
+    ```
+- Notlar / Riskler:
+  - Provisioning loglari sadece account_id/inbox_id bazlidir; PII yoktur.
+- Sonraki Adimlar:
+  - Yukaridaki runner ile smoke test'i tekrar calistir.

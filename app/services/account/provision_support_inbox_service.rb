@@ -7,7 +7,11 @@ class Account::ProvisionSupportInboxService
     return unless auto_provision_enabled?
 
     inbox_name = support_inbox_name
-    return if support_inbox(inbox_name)
+    existing_inbox = support_inbox(inbox_name)
+    if existing_inbox
+      Rails.logger.info("[SupportInboxProvision] account_id=#{@account.id} inbox_id=#{existing_inbox.id} status=exists")
+      return
+    end
 
     ActiveRecord::Base.transaction do
       channel = @account.api_channels.create!(additional_attributes: { internal_support: true })
@@ -22,6 +26,8 @@ class Account::ProvisionSupportInboxService
       @account.account_users.administrator.pluck(:user_id).each do |user_id|
         InboxMember.find_or_create_by!(inbox: inbox, user_id: user_id)
       end
+
+      Rails.logger.info("[SupportInboxProvision] account_id=#{@account.id} inbox_id=#{inbox.id} status=created")
     end
   end
 
