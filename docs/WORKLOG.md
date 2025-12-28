@@ -1,5 +1,22 @@
 # Worklog
 
+## 2025-12-28 22:37
+- Tarih/Saat (TR): 2025-12-28 22:37
+- Amac: InstallationConfig serialized_value NULL yazimini engellemek ve HQ config set/get akisini stabil yapmak.
+- Sorun / Belirti: set_value ile NULL serialized_value yuzunden PG::NotNullViolation.
+- Kok Neden (Varsa): serialized_value nil kaldigi icin save! NULL yazmaya calisiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/installation_config.rb
+  - db/migrate/20251228221234_backfill_installation_config_serialized_value.rb
+  - .gitignore
+  - tmp/support_smoke.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: smoke runner ve db:migrate ile manuel dogrulama bekliyor.
+- Notlar / Riskler:
+  - Backfill migration NULL serialized_value kayitlarini '{}'::jsonb ile duzeltir.
+
 ## 2025-12-28 22:05
 - Tarih/Saat (TR): 2025-12-28 22:05
 - Amac: db:migrate sirasinda InstallationConfig YAML parse hatasini ve annotate abortunu engellemek.

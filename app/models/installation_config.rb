@@ -42,6 +42,7 @@ class InstallationConfig < ApplicationRecord
   # Fix configuration in application.rb
   serialize :serialized_value, coder: SerializedValueCoder, type: ActiveSupport::HashWithIndifferentAccess
 
+  after_initialize :ensure_serialized_value
   before_validation :set_lock, :ensure_serialized_value
   validates :name, presence: true
   validate :saml_sso_users_check, if: -> { name == 'ENABLE_SAML_SSO_LOGIN' }
@@ -61,7 +62,7 @@ class InstallationConfig < ApplicationRecord
     def set_value(key, raw_value, locked: nil)
       config = find_or_initialize_by(name: key)
       config.locked = locked unless locked.nil?
-      config.value = raw_value
+      config.serialized_value = { 'value' => raw_value }.with_indifferent_access
       config.save!
       config.value
     end
@@ -88,7 +89,9 @@ class InstallationConfig < ApplicationRecord
   end
 
   def ensure_serialized_value
-    self.serialized_value = {}.with_indifferent_access if serialized_value.nil?
+    return unless self[:serialized_value].nil?
+
+    self.serialized_value = {}.with_indifferent_access
   end
 
   def clear_cache
