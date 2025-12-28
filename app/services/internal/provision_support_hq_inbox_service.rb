@@ -1,21 +1,18 @@
-class Account::ProvisionSupportInboxService
-  def initialize(account:)
-    @account = account
-  end
-
+class Internal::ProvisionSupportHqInboxService
   def call
-    return unless auto_provision_enabled?
+    account = support_hq_account
+    return unless account
 
-    inbox_name = support_inbox_name
-    existing_inbox = support_inbox(inbox_name)
+    inbox_name = support_hq_inbox_name
+    existing_inbox = account.inboxes.where('lower(name) = ?', inbox_name.downcase).first
     if existing_inbox
       ensure_support_flag(existing_inbox)
-      Rails.logger.info("[SupportInboxProvision] account_id=#{@account.id} inbox_id=#{existing_inbox.id} status=exists")
-      return
+      Rails.logger.info("[SupportHqProvision] account_id=#{account.id} inbox_id=#{existing_inbox.id} status=exists")
+      return existing_inbox
     end
 
     ActiveRecord::Base.transaction do
-      channel = @account.api_channels.create!(additional_attributes: { internal_support: true })
+      channel = account.api_channels.create!(additional_attributes: { internal_support_hq: true })
       inbox_attrs = {
         name: inbox_name,
         channel: channel,
@@ -25,29 +22,32 @@ class Account::ProvisionSupportInboxService
       }
       inbox_attrs[:additional_attributes] = { 'is_support' => true }
       inbox_attrs[:is_support] = true if support_column_available?
-      inbox = @account.inboxes.create!(inbox_attrs)
+      inbox = account.inboxes.create!(inbox_attrs)
 
-      @account.account_users.administrator.pluck(:user_id).each do |user_id|
+      account.account_users.administrator.pluck(:user_id).each do |user_id|
         InboxMember.find_or_create_by!(inbox: inbox, user_id: user_id)
       end
 
-      Rails.logger.info("[SupportInboxProvision] account_id=#{@account.id} inbox_id=#{inbox.id} status=created")
+      Rails.logger.info("[SupportHqProvision] account_id=#{account.id} inbox_id=#{inbox.id} status=created")
+      inbox
     end
   end
 
   private
 
-  def auto_provision_enabled?
-    value = GlobalConfig.get('SUPPORT_INBOX_AUTO_PROVISION')['SUPPORT_INBOX_AUTO_PROVISION']
-    value.nil? ? true : value
+  def support_hq_account
+    raw_id = InstallationConfig.get_value('SUPPORT_HQ_ACCOUNT_ID')
+    hq_id = raw_id.to_i
+    raise ArgumentError, 'SUPPORT_HQ_ACCOUNT_ID must be a positive integer' if hq_id <= 0
+
+    account = Account.find_by(id: hq_id)
+    raise ActiveRecord::RecordNotFound, 'Support HQ account not found' unless account
+
+    account
   end
 
-  def support_inbox_name
-    GlobalConfig.get('SUPPORT_INBOX_NAME')['SUPPORT_INBOX_NAME'].presence || 'Destek'
-  end
-
-  def support_inbox(name)
-    @account.inboxes.where('lower(name) = ?', name.downcase).first
+  def support_hq_inbox_name
+    InstallationConfig.get_value('SUPPORT_HQ_INBOX_NAME').presence || 'Support'
   end
 
   def ensure_support_flag(inbox)

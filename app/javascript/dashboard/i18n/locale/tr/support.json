@@ -3,7 +3,7 @@
     "NEW": {
       "TITLE": "Destek Bildirimi Olu\u015Ftur",
       "DESCRIPTION": "Destek ekibimizle g\u00F6r\u00FC\u015Fmek i\u00E7in a\u015Fa\u011F\u0131daki formu doldurun.",
-      "NO_INBOX": "Destek gelen kutusu bulunamad\u0131. Y\u00F6netici 'Destek' isimli bir gelen kutusu olu\u015Fturmal\u0131d\u0131r.",
+      "NO_INBOX": "Destek HQ gelen kutusu bulunamad\u0131. Y\u00F6netici Support HQ inbox'u olu\u015Fturmal\u0131d\u0131r.",
       "SUBJECT": {
         "LABEL": "Konu",
         "PLACEHOLDER": "K\u0131saca \u00F6zetleyin"
@@ -35,7 +35,8 @@
         "LABEL": "Dosyalar"
       },
       "SUBMIT": "Bildirimi G\u00F6nder",
-      "SUCCESS": "Destek bildirimi olu\u015Fturuldu. Konu\u015Fmaya y\u00F6nlendiriliyorsunuz.",
+      "SUCCESS": "Destek bildiriminiz al\u0131nd\u0131.",
+      "TICKET_ID": "Bilet No: {id}",
       "ERROR": "Destek bildirimi olu\u015Fturulamad\u0131. L\u00FCtfen tekrar deneyin."
     }
   }

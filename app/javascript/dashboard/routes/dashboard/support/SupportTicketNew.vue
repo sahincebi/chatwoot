@@ -1,19 +1,16 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { ref, computed } from 'vue';
+import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
-import { useStore, useMapGetter } from 'dashboard/composables/store';
-import ContactAPI from 'dashboard/api/contacts';
-import { DuplicateContactException } from 'shared/helpers/CustomErrors';
+import { useMapGetter } from 'dashboard/composables/store';
+import SupportRequestsAPI from 'dashboard/api/supportRequests';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'dashboard/components-next/input/Input.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const { t } = useI18n();
-const store = useStore();
 const route = useRoute();
-const router = useRouter();
 
 const subject = ref('');
 const category = ref('technical');
@@ -21,11 +18,11 @@ const priority = ref('normal');
 const description = ref('');
 const files = ref([]);
 const isSubmitting = ref(false);
-const supportInboxId = ref(null);
+const isSubmitted = ref(false);
+const submittedTicketId = ref(null);
 
 const currentUser = useMapGetter('getCurrentUser');
 const currentAccount = useMapGetter('getCurrentAccount');
-const inboxes = useMapGetter('inboxes/getInboxes');
 
 const categoryOptions = computed(() => [
   { value: 'technical', label: t('SUPPORT.NEW.CATEGORY.OPTIONS.TECHNICAL') },
@@ -61,21 +58,12 @@ const selectedPriorityLabel = computed(() => {
   );
 });
 
-const isInboxMissing = computed(() => !supportInboxId.value);
 const isFormInvalid = computed(
   () =>
     isSubmitting.value ||
-    isInboxMissing.value ||
     !subject.value.trim() ||
     !description.value.trim()
 );
-
-const updateSupportInbox = () => {
-  const inbox = inboxes.value.find(item =>
-    (item.name || '').toLowerCase().includes('destek')
-  );
-  supportInboxId.value = inbox?.id ?? null;
-};
 
 const onFilesChange = event => {
   files.value = Array.from(event.target.files || []);
@@ -99,91 +87,27 @@ const buildSupportMessage = () => {
   });
 };
 
-const findOrCreateContact = async () => {
-  const userEmail = currentUser.value?.email?.trim();
-  if (!userEmail) {
-    throw new Error('missing_email');
-  }
-  const {
-    data: { payload = [] },
-  } = await ContactAPI.search(userEmail);
-  const normalizedEmail = userEmail.toLowerCase();
-  const existing =
-    payload.find(
-      contact => (contact.email || '').toLowerCase() === normalizedEmail
-    ) || payload[0];
-
-  if (existing?.id) {
-    return existing.id;
-  }
-
-  try {
-    const contact = await store.dispatch('contacts/create', {
-      name: currentUser.value?.name || userEmail,
-      email: userEmail,
-      additionalAttributes: {
-        source: 'dashboard_support',
-        userId: currentUser.value?.id,
-      },
-    });
-    return contact?.id;
-  } catch (error) {
-    if (error instanceof DuplicateContactException) {
-      const {
-        data: { payload: retryPayload = [] },
-      } = await ContactAPI.search(userEmail);
-      const retryContact =
-        retryPayload.find(
-          contact => (contact.email || '').toLowerCase() === normalizedEmail
-        ) || retryPayload[0];
-      if (retryContact?.id) {
-        return retryContact.id;
-      }
-    }
-    throw error;
-  }
-};
-
 const submitTicket = async () => {
   if (isFormInvalid.value) return;
   isSubmitting.value = true;
   try {
-    const contactId = await findOrCreateContact();
-    const payload = {
-      inboxId: supportInboxId.value,
-      contactId,
-      sourceId: `support_ticket_${Date.now()}`,
-      mailSubject: subject.value.trim(),
-      message: { content: buildSupportMessage() },
-      files: files.value,
-    };
+    const payload = new FormData();
+    payload.append('subject', subject.value.trim());
+    payload.append('category', category.value);
+    payload.append('priority', priority.value);
+    payload.append('message[content]', buildSupportMessage());
+    files.value.forEach(file => payload.append('message[attachments][]', file));
 
-    const conversation = await store.dispatch('contactConversations/create', {
-      params: payload,
-      isFromWhatsApp: false,
-    });
-
+    const { data } = await SupportRequestsAPI.create(payload);
+    submittedTicketId.value = data?.ticket_id || null;
+    isSubmitted.value = true;
     useAlert(t('SUPPORT.NEW.SUCCESS'));
-    await router.push({
-      name: 'inbox_conversation',
-      params: {
-        accountId: route.params.accountId,
-        conversation_id: conversation?.id,
-      },
-    });
   } catch (error) {
     useAlert(t('SUPPORT.NEW.ERROR'));
   } finally {
     isSubmitting.value = false;
   }
 };
-
-onMounted(async () => {
-  if (!inboxes.value.length) {
-    await store.dispatch('inboxes/get');
-  }
-  updateSupportInbox();
-});
 </script>
 
 <template>
@@ -198,13 +122,16 @@ onMounted(async () => {
     </div>
 
     <div
-      v-if="isInboxMissing"
+      v-if="isSubmitted"
       class="rounded-lg border border-n-weak bg-n-solid-3 px-4 py-3 text-sm text-n-slate-11"
     >
-      {{ t('SUPPORT.NEW.NO_INBOX') }}
+      <div>{{ t('SUPPORT.NEW.SUCCESS') }}</div>
+      <div v-if="submittedTicketId" class="mt-2">
+        {{ t('SUPPORT.NEW.TICKET_ID', { id: submittedTicketId }) }}
+      </div>
     </div>
 
-    <form class="grid gap-4" @submit.prevent="submitTicket">
+    <form v-if="!isSubmitted" class="grid gap-4" @submit.prevent="submitTicket">
       <WithLabel :label="t('SUPPORT.NEW.SUBJECT.LABEL')">
         <NextInput
           v-model="subject"

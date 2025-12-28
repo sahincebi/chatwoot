@@ -129,6 +129,21 @@
   display_title: 'Support inbox name'
   description: 'Inbox name used for support ticket routing'
   locked: false
+- name: SUPPORT_HQ_ACCOUNT_ID
+  value:
+  display_title: 'Support HQ Account ID'
+  description: 'Account ID where support tickets are centralized'
+  locked: false
+- name: SUPPORT_HQ_INBOX_NAME
+  value: 'Support'
+  display_title: 'Support HQ inbox name'
+  description: 'Inbox name in Support HQ account for centralized tickets'
+  locked: false
+- name: SUPPORT_TICKET_SOURCE
+  value: 'internal_support_form'
+  display_title: 'Support ticket source'
+  description: 'Source prefix for support ticket contact inbox'
+  locked: false
 # ------- End of Account Related Config ------- #
 
 # ------- Email Related Config ------- #

@@ -32,6 +32,20 @@ class InstallationConfig < ApplicationRecord
 
   after_commit :clear_cache
 
+  class << self
+    def get_value(key)
+      find_by(name: key)&.value
+    end
+
+    def set_value(key, raw_value, locked: nil)
+      config = find_or_initialize_by(name: key)
+      config.locked = locked unless locked.nil?
+      config.value = raw_value
+      config.save!
+      config.value
+    end
+  end
+
   def value
     # This is an extra hack again cause of the YAML serialization, in case of new object initialization in super admin
     # It was throwing error as the default value of column '{}' was failing in deserialization.

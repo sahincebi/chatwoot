@@ -1,5 +1,62 @@
 # Worklog
 
+## 2025-12-28 19:05
+- Tarih/Saat (TR): 2025-12-28 19:05
+- Amac: Destek bildirimlerini merkezi Support HQ account'a tasiyip normal konusma/kanal listelerinden izole etmek.
+- Sorun / Belirti: Destek bildirimleri account icindeki Conversations/My Inbox listelerine dusuyordu.
+- Kok Neden (Varsa): Destek formu ayni account'ta conversation aciyor ve support inbox'lari normal listelerde gorunuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/installation_config.yml
+  - app/services/account/provision_support_inbox_service.rb
+  - app/services/internal/provision_support_hq_inbox_service.rb
+  - app/jobs/internal/provision_support_hq_inbox_job.rb
+  - app/controllers/api/v1/accounts/support_requests_controller.rb
+  - app/controllers/api/v1/accounts/inboxes_controller.rb
+  - app/finders/conversation_finder.rb
+  - app/controllers/super_admin/settings_controller.rb
+  - app/controllers/super_admin/support_controller.rb
+  - app/views/super_admin/settings/show.html.erb
+  - app/views/super_admin/application/_navigation.html.erb
+  - app/views/super_admin/support/index.html.erb
+  - app/views/super_admin/support/show.html.erb
+  - app/javascript/dashboard/api/supportRequests.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - config/routes.rb
+  - docs/ADR/0004-central-support-hq.md
+- Calistirilan Komutlar:
+  - InstallationConfig.set_value('SUPPORT_HQ_ACCOUNT_ID', 2)
+  - InstallationConfig.set_value('SUPPORT_HQ_INBOX_NAME', 'Support')
+  - InstallationConfig.set_value('SUPPORT_TICKET_SOURCE', 'internal_support_form')
+  - Internal::ProvisionSupportHqInboxJob.perform_now
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Support HQ icin SUPPORT_HQ_ACCOUNT_ID set edilmeli; inbox yoksa super admin settings'ten provisioning tetiklenmeli.
+  - Super Admin yaniti, HQ account icindeki ilk admin user adina gonderilir.
+  - Rollback: support_requests endpoint'i ve support HQ provisioning eklerini geri al.
+
+## 2025-12-28 20:05
+- Tarih/Saat (TR): 2025-12-28 20:05
+- Amac: is_support kolonunun eksikliginden kaynaklanan hata ve support HQ provisioning guvenligini duzeltmek.
+- Sorun / Belirti: PG::UndefinedColumn (inboxes.is_support yok), provisioning'de super_admin kolonu varsayimi riski.
+- Kok Neden (Varsa): is_support migrasyonu yoktu; is_support sorgulari column varmis gibi calisiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251228194500_add_is_support_to_inboxes.rb
+  - app/controllers/api/v1/accounts/inboxes_controller.rb
+  - app/finders/conversation_finder.rb
+  - app/services/account/provision_support_inbox_service.rb
+  - app/services/internal/provision_support_hq_inbox_service.rb
+  - app/jobs/internal/provision_support_hq_inbox_job.rb
+  - app/controllers/super_admin/settings_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Migration uygulanana kadar isim bazli fallback kullanilir.
+  - Provision job current_super_admin.id ile calisir; HQ account icin admin uyeligi otomatik eklenir.
+
 ## 2025-12-28 05:29
 - Tarih/Saat (TR): 2025-12-28 05:29
 - Amac: Captain deneylerini geri alip dosyalari onceki stabil hallerine dondurmek.

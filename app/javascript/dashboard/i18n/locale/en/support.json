@@ -3,7 +3,7 @@
     "NEW": {
       "TITLE": "Create Support Ticket",
       "DESCRIPTION": "Fill out the form below to reach our support team.",
-      "NO_INBOX": "Support inbox not found. An admin must create an inbox named 'Destek'.",
+      "NO_INBOX": "Support inbox not found. An admin must provision the Support HQ inbox.",
       "SUBJECT": {
         "LABEL": "Subject",
         "PLACEHOLDER": "Summarize briefly"
@@ -35,7 +35,8 @@
         "LABEL": "Attachments"
       },
       "SUBMIT": "Submit Ticket",
-      "SUCCESS": "Support ticket created. Redirecting to the conversation.",
+      "SUCCESS": "Support request received.",
+      "TICKET_ID": "Ticket ID: {id}",
       "ERROR": "Could not create the support ticket. Please try again."
     }
   }

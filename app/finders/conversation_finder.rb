@@ -71,15 +71,42 @@ class ConversationFinder
   end
 
   def set_inboxes
+    inboxes_scope = @current_user.assigned_inboxes
+    inboxes_scope = filter_support_inboxes(inboxes_scope) unless include_support?
+
     @inbox_ids = if params[:inbox_id]
-                   @current_user.assigned_inboxes.where(id: params[:inbox_id])
+                   inboxes_scope.where(id: params[:inbox_id])
                  else
-                   @current_user.assigned_inboxes.pluck(:id)
+                   inboxes_scope.pluck(:id)
                  end
   end
 
   def set_assignee_type
     @assignee_type = params[:assignee_type]
+  end
+
+  def include_support?
+    params[:include_support].to_s == 'true'
+  end
+
+  def filter_support_inboxes(inboxes_scope)
+    return inboxes_scope.where(is_support: false) if support_column_available?
+
+    names = support_inbox_names
+    return inboxes_scope if names.empty?
+
+    inboxes_scope.where.not('lower(inboxes.name) IN (?)', names.map(&:downcase))
+  end
+
+  def support_column_available?
+    Inbox.column_names.include?('is_support')
+  end
+
+  def support_inbox_names
+    [
+      InstallationConfig.get_value('SUPPORT_INBOX_NAME'),
+      InstallationConfig.get_value('SUPPORT_HQ_INBOX_NAME')
+    ].compact
   end
 
   def set_team
