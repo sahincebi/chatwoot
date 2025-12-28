@@ -55,6 +55,39 @@
 - Notlar / Riskler:
   - Waiting=0; uzun sorgu/connection leak bulgusu yok. Login refresh dogrulamasi bekliyor.
 
+## 2025-12-29 01:06
+- Tarih/Saat (TR): 2025-12-29 01:06
+- Amac: Login/LCP yavasligini tespit etmek ve minimal Vite dev server iyilestirmesi uygulamak.
+- Sorun / Belirti: /app/login TTFB 60s+ ve LCP ~100s; view render sureleri cok uzundu.
+- Kok Neden (Varsa): Vite dev server container içinden erisilemiyor ve autoBuild ile Rails isteginde build tetikleniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/vite.json
+  - vite.config.ts
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - curl.exe -s -o NUL -w "time_namelookup=%{time_namelookup} time_connect=%{time_connect} time_starttransfer=%{time_starttransfer} time_total=%{time_total}\n" http://localhost:3000/app/login
+  - curl.exe -s -o NUL -w "ttfb=%{time_starttransfer} total=%{time_total}\n" http://localhost:3000/
+  - docker compose exec -T rails sh -lc "apk add --no-cache curl >/dev/null 2>&1 || true; curl -s -o /dev/null -w 'ttfb=%{time_starttransfer} total=%{time_total}\n' http://localhost:3000/app/login"
+  - docker compose exec -T rails bundle exec rails runner "p ActiveRecord::Base.connection_pool.stat"
+  - docker compose exec -T rails sh -lc "bundle exec rails runner 'puts ActiveRecord::Base.connection.select_value(%q(select count(*) from pg_stat_activity where datname=current_database()))'"
+  - docker compose exec -T postgres psql -U postgres -d chatwoot_dev -c "select pid, state, wait_event_type, wait_event, now()-query_start as age, left(query,120) from pg_stat_activity where state<>'idle' order by age desc limit 20;"
+  - docker compose exec -T rails bundle exec rails runner "puts Rails.cache.class; puts Rails.cache.read('global_config_test').inspect rescue puts $!.message"
+  - docker compose exec -T rails sh -lc "ls -la public/packs public/vite 2>/dev/null || true"
+  - docker compose exec -T rails bundle exec rails runner "puts Rails.env; puts ENV['RAILS_SERVE_STATIC_FILES'].inspect"
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'status=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://vite:3036/vite-dev/@vite/client"
+  - docker compose stop sidekiq
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'code=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://localhost:3000/app/login"
+  - docker compose start sidekiq
+- Dogrulama:
+  - Host TTFB (login) ~0.316s; / TTFB ~0.281s
+  - Rails pool stat: {:size=>10, :connections=>1, :busy=>1, :dead=>0, :idle=>0, :waiting=>0}
+  - pg_stat_activity: 1 idle in transaction goruldu (schema introspection)
+  - Rails cache: ActiveSupport::Cache::NullStore
+  - Vite dev server icin /vite-dev/@vite/client 200 dondu
+  - Sidekiq kapaliyken login TTFB ~0.23s (dev test)
+- Notlar / Riskler:
+  - config/vite.json: autoBuild=false; dev server ayakta degilse asset bulunmayabilir.
+
 ## 2025-12-28 23:57
 - Tarih/Saat (TR): 2025-12-28 23:57
 - Amac: DB pool ayarlarini Puma/Sidekiq concurrency ile uyumlu hale getirmek.
