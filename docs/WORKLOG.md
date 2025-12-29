@@ -1401,6 +1401,26 @@
 
 ---
 
+- Tarih/Saat (TR): 29.12.2025 20:46
+- Amac: Inbox additional_attributes kolonunu eklemek ve Destek menusunu listeye varsayilan yapmak.
+- Sorun / Belirti: AccountUser create/Provision akisi inbox additional_attributes ihtiyaci; Destek menusu dogrudan yeni ticket formuna gidiyordu.
+- Kok Neden (Varsa): Inboxes tablosunda ek alan eksikligi; menude varsayilan rota yalnizca /support/new idi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229191500_add_additional_attributes_to_inboxes.rb: inboxes.additional_attributes eklendi (jsonb).
+  - db/schema.rb: ek kolon ve schema versiyon guncellendi.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu varsayilani ticket listesine alindi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue: "Yeni Destek Talebi" butonu eklendi.
+  - app/javascript/dashboard/i18n/locale/en/settings.json ve app/javascript/dashboard/i18n/locale/tr/settings.json: SUPPORT_TICKETS etiketi eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails runner "account=Account.find(1); user=User.find_by(email:%q(john@acme.inc)); au=AccountUser.find_or_create_by!(account:account,user:user){|r| r.role=:administrator rescue nil}; puts %q(AccountUser id=)+au.id.to_s"
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.columns(:inboxes).any?{|c| c.name==%q(additional_attributes) && c.sql_type==%q(jsonb)}"
+- Notlar / Riskler:
+  - Support UI degisiklikleri sadece frontend navigation ve buton seviyesinde.
+- Sonraki Adimlar:
+  - /app/accounts/:id/support/tickets acilisini ve "Yeni Destek Talebi" butonunu kontrol et.
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).
