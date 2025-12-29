@@ -1,5 +1,16 @@
 {
   "SUPPORT": {
+    "LIST": {
+      "TITLE": "Destek Bildirimleri",
+      "NEW_TICKET": "Yeni Bildirim",
+      "SUBJECT": "Konu",
+      "STATUS": "Durum",
+      "PRIORITY": "\u00D6ncelik",
+      "LAST_ACTIVITY": "Son aktivite",
+      "LOADING": "Y\u00FCkleniyor...",
+      "EMPTY": "Hen\u00FCz destek bildirimi yok.",
+      "LOAD_ERROR": "Destek bildirimleri y\u00FCklenemedi."
+    },
     "NEW": {
       "TITLE": "Destek Bildirimi Olu\u015Ftur",
       "DESCRIPTION": "Destek ekibimizle g\u00F6r\u00FC\u015Fmek i\u00E7in a\u015Fa\u011F\u0131daki formu doldurun.",
@@ -44,12 +55,15 @@
       "CATEGORY": "Kategori",
       "PRIORITY": "\u00D6ncelik",
       "REQUESTER": "Talep Sahibi",
+      "CREATED_AT": "Olu\u015Fturulma",
       "LAST_ACTIVITY": "Son aktivite",
       "MESSAGES": "Mesajlar",
       "REPLY": "Yan\u0131tla",
       "REPLY_PLACEHOLDER": "Yan\u0131t yaz\u0131n",
       "SEND_REPLY": "Yan\u0131t\u0131 G\u00F6nder",
       "ATTACHMENTS": "Ekler",
+      "YOU": "Siz",
+      "SUPPORT_TEAM": "Destek Ekibi",
       "LOADING": "Y\u00FCkleniyor...",
       "LOAD_ERROR": "Destek bildirimi y\u00FCklenemedi.",
       "REPLY_SUCCESS": "Yan\u0131t g\u00F6nderildi.",

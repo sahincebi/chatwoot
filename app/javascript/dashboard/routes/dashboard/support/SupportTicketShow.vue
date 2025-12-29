@@ -28,6 +28,11 @@ const formatTimestamp = value => {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
 };
 
+const messageSenderLabel = message => {
+  if (message.sender_type === 'SuperAdmin') return t('SUPPORT.SHOW.SUPPORT_TEAM');
+  return t('SUPPORT.SHOW.YOU');
+};
+
 const onFilesChange = event => {
   files.value = Array.from(event.target.files || []);
 };
@@ -79,7 +84,7 @@ onMounted(loadTicket);
         {{ t('SUPPORT.SHOW.TITLE') }}
       </h1>
       <router-link
-        :to="{ name: 'support_ticket_new', params: { accountId: route.params.accountId } }"
+        :to="{ name: 'support_ticket_index', params: { accountId: route.params.accountId } }"
         class="text-sm text-woot-500 hover:text-woot-700"
       >
         {{ t('SUPPORT.SHOW.BACK') }}
@@ -115,7 +120,7 @@ onMounted(loadTicket);
               <div class="text-n-slate-12">{{ ticket.priority }}</div>
             </div>
           </div>
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <div class="text-n-slate-11">{{ t('SUPPORT.SHOW.REQUESTER') }}</div>
               <div class="text-n-slate-12">
@@ -123,6 +128,10 @@ onMounted(loadTicket);
                   (ticket.requester && (ticket.requester.email || ticket.requester.name)) || '-'
                 }}
               </div>
+            </div>
+            <div>
+              <div class="text-n-slate-11">{{ t('SUPPORT.SHOW.CREATED_AT') }}</div>
+              <div class="text-n-slate-12">{{ formatTimestamp(ticket.created_at) }}</div>
             </div>
             <div>
               <div class="text-n-slate-11">{{ t('SUPPORT.SHOW.LAST_ACTIVITY') }}</div>
@@ -142,8 +151,8 @@ onMounted(loadTicket);
               class="rounded-lg border border-n-weak bg-white p-3"
             >
               <div class="text-xs text-n-slate-11 mb-2">
-                {{ message.sender_name || message.sender_type }}
-                <span v-if="message.created_at">? {{ formatTimestamp(message.created_at) }}</span>
+                {{ messageSenderLabel(message) }}
+                <span v-if="message.created_at">· {{ formatTimestamp(message.created_at) }}</span>
               </div>
               <div class="text-sm text-n-slate-12 whitespace-pre-wrap">
                 {{ message.body }}

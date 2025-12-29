@@ -20,13 +20,15 @@ class SupportTicketBuilder
         status: 'open'
       )
 
-      message = ticket.messages.create!(
+      ticket.support_ticket_messages.create!(
         sender: @requester,
         body: @description,
         files: @attachments
       )
 
-      [ticket, message]
+      ticket.update!(last_activity_at: Time.zone.now)
+
+      ticket
     end
   end
 end

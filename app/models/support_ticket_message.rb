@@ -1,8 +1,9 @@
 class SupportTicketMessage < ApplicationRecord
-  belongs_to :support_ticket
+  belongs_to :support_ticket, inverse_of: :support_ticket_messages
   belongs_to :sender, polymorphic: true
   has_many_attached :files
 
+  validates :sender_type, :sender_id, presence: true
   validate :body_or_files
 
   after_create_commit :touch_ticket_activity

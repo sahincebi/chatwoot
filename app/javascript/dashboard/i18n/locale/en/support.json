@@ -1,5 +1,16 @@
 {
   "SUPPORT": {
+    "LIST": {
+      "TITLE": "Support Tickets",
+      "NEW_TICKET": "New Ticket",
+      "SUBJECT": "Subject",
+      "STATUS": "Status",
+      "PRIORITY": "Priority",
+      "LAST_ACTIVITY": "Last activity",
+      "LOADING": "Loading...",
+      "EMPTY": "No support tickets found.",
+      "LOAD_ERROR": "Could not load support tickets."
+    },
     "NEW": {
       "TITLE": "Create Support Ticket",
       "DESCRIPTION": "Fill out the form below to reach our support team.",
@@ -44,12 +55,15 @@
       "CATEGORY": "Category",
       "PRIORITY": "Priority",
       "REQUESTER": "Requester",
+      "CREATED_AT": "Created at",
       "LAST_ACTIVITY": "Last activity",
       "MESSAGES": "Messages",
       "REPLY": "Reply",
       "REPLY_PLACEHOLDER": "Write a reply",
       "SEND_REPLY": "Send Reply",
       "ATTACHMENTS": "Attachments",
+      "YOU": "You",
+      "SUPPORT_TEAM": "Support Team",
       "LOADING": "Loading...",
       "LOAD_ERROR": "Could not load the support ticket.",
       "REPLY_SUCCESS": "Reply sent.",

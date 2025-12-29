@@ -15,6 +15,71 @@
 - Notlar / Riskler:
   - time/date short formatlari eklendi: %d.%m.%Y %H:%M ve %d.%m.%Y.
 
+## 2025-12-29 16:44
+- Tarih/Saat (TR): 2025-12-29 16:44
+- Amac: Global scope guvenligini iki account uzerinden kanitlamak (A/B izolasyonu).
+- Sorun / Belirti: Cross-account ticket gorunurlugu riski.
+- Kok Neden (Varsa): Scope kontrolu dogru uygulanmazsa data leak olur.
+- Yapilan Degisiklikler (dosya bazli):
+  - (degisiklik yok)
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "a = Account.find_by(name: 'Support Test A'); b = Account.find_by(name: 'Support Test B'); u1 = User.find_by(email: 'support_a@example.com'); u2 = User.find_by(email: 'support_b@example.com'); t1, = SupportTicketBuilder.new(account: a, requester: u1, subject: 'A Ticket', category: 'technical', priority: 'normal', description: 'A desc').perform; t2, = SupportTicketBuilder.new(account: b, requester: u2, subject: 'B Ticket', category: 'technical', priority: 'normal', description: 'B desc').perform; puts 'A_account_id=' + a.id.to_s + ' B_account_id=' + b.id.to_s; puts 'A_ticket_id=' + t1.id.to_s + ' B_ticket_id=' + t2.id.to_s; puts 'A_tickets=' + SupportTicket.where(account_id: a.id).pluck(:id).last(5).inspect; puts 'B_tickets=' + SupportTicket.where(account_id: b.id).pluck(:id).last(5).inspect; puts 'A_scope_find_B=' + SupportTicket.where(account_id: a.id).find_by(id: t2.id).inspect"
+- Dogrulama:
+  - A_scope_find_B=nil (A account'i, B ticket'ini scope icinde bulamadi).
+- Notlar / Riskler:
+  - AccountUser olusturma denemesi "unknown attribute 'additional_attributes' for Inbox" hatasi verdi; testte AccountUser eklemeden ilerledik.
+
+## 2025-12-29 16:45
+- Tarih/Saat (TR): 2025-12-29 16:45
+- Amac: Support ticket akisini global (super admin) ve account scope guvenli hale getirmek; account icin liste/detay/yanit UI tamamlamak.
+- Sorun / Belirti: Ticket mesajlasma akisi eksikti, back link ve liste yoktu; global scope guvenligi dogrulanmaliydi.
+- Kok Neden (Varsa): SupportTickets API/route/UI yalnizca create/show uzerinden ilerliyordu; liste ve mesajlasma ekrani yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/models/support_ticket.rb
+  - app/services/support_ticket_builder.rb
+  - app/dashboards/support_ticket_dashboard.rb
+  - app/javascript/dashboard/api/supportTickets.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) UI ve API testleri bekliyor.
+- Notlar / Riskler:
+  - Account API scope Current.account ile sinirli; super admin global listeler.
+
+## 2025-12-29 17:05
+- Tarih/Saat (TR): 2025-12-29 17:05
+- Amac: Support ticket create 500 ve super admin show link/yanit akisini duzeltmek.
+- Sorun / Belirti: support_ticket_messages association hatasi ve super admin detay sayfasi acilmamasi.
+- Kok Neden (Varsa): Association adi uyumsuz, show/reply param ve link yapisi eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/api/v1/accounts/support_requests_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/index.html.erb
+  - app/views/super_admin/support_tickets/show.html.erb
+  - app/dashboards/support_ticket_dashboard.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) UI ve API testleri bekliyor.
+- Notlar / Riskler:
+  - Super admin reply sender olarak current_super_admin kullanilir.
+
 ## 2025-12-29 16:05
 - Tarih/Saat (TR): 2025-12-29 16:05
 - Amac: support_tickets migration'inda duplicate index hatasini kalici duzeltmek.

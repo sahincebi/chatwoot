@@ -2,7 +2,7 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
   before_action :set_support_ticket, only: [:show, :create_message]
 
   def create
-    ticket, message = SupportTicketBuilder.new(
+    ticket = SupportTicketBuilder.new(
       account: Current.account,
       requester: Current.user,
       subject: params[:subject].to_s.strip,
@@ -12,7 +12,7 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
       attachments: params[:attachments]
     ).perform
 
-    render json: { ticket_id: ticket.id, message_id: message.id }, status: :created
+    render json: { ticket_id: ticket.id }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity
   end
@@ -27,7 +27,8 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
           category: ticket.category,
           priority: ticket.priority,
           status: ticket.status,
-          last_activity_at: ticket.last_activity_at
+          last_activity_at: ticket.last_activity_at,
+          created_at: ticket.created_at
         }
       end
     }
@@ -38,11 +39,12 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
   end
 
   def create_message
-    message = @support_ticket.messages.create!(
+    message = @support_ticket.support_ticket_messages.create!(
       sender: Current.user,
       body: params[:body].to_s.strip,
       files: Array(params[:attachments]).compact
     )
+    @support_ticket.update!(last_activity_at: Time.zone.now)
 
     render json: { message_id: message.id }, status: :created
   rescue ActiveRecord::RecordInvalid => e
@@ -70,12 +72,13 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
       priority: ticket.priority,
       status: ticket.status,
       last_activity_at: ticket.last_activity_at,
+      created_at: ticket.created_at,
       requester: {
         id: ticket.requester_id,
         name: ticket.requester.name,
         email: ticket.requester.email
       },
-      messages: ticket.messages.order(created_at: :asc).map { |message| message_payload(message) }
+      messages: ticket.support_ticket_messages.order(created_at: :asc).map { |message| message_payload(message) }
     }
   end
 

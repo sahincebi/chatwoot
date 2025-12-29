@@ -1,6 +1,6 @@
 class Api::V1::Accounts::SupportRequestsController < Api::V1::Accounts::BaseController
   def create
-    ticket, message = SupportTicketBuilder.new(
+    ticket = SupportTicketBuilder.new(
       account: Current.account,
       requester: Current.user,
       subject: params[:subject].to_s.strip,
@@ -10,7 +10,7 @@ class Api::V1::Accounts::SupportRequestsController < Api::V1::Accounts::BaseCont
       attachments: support_attachments
     ).perform
 
-    render json: { ok: true, ticket_id: ticket.id, message_id: message.id }, status: :created
+    render json: { ok: true, ticket_id: ticket.id }, status: :created
   rescue ActiveRecord::RecordInvalid => e
     render json: { error: e.message }, status: :unprocessable_entity
   end

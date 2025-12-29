@@ -6,34 +6,37 @@ class SuperAdmin::SupportTicketsController < SuperAdmin::ApplicationController
   end
 
   def show
-    @messages = @support_ticket.messages
-                               .includes(:sender, files_attachments: [:blob])
-                               .order(created_at: :asc)
+    @messages = @ticket.support_ticket_messages
+                       .includes(:sender, files_attachments: [:blob])
+                       .order(created_at: :asc)
   end
 
   def reply
-    body = params[:body].to_s.strip
+    body = params.require(:message).permit(:body)[:body].to_s.strip
     if body.blank?
       # rubocop:disable Rails/I18nLocaleTexts
-      redirect_to super_admin_support_ticket_path(@support_ticket), alert: 'Message content is required'
+      redirect_to super_admin_support_ticket_path(@ticket), alert: 'Message content is required'
       # rubocop:enable Rails/I18nLocaleTexts
       return
     end
 
     SupportTicketMessage.create!(
-      support_ticket: @support_ticket,
+      support_ticket: @ticket,
       sender: current_super_admin,
       body: body
     )
+    @ticket.update!(last_activity_at: Time.zone.now)
 
     # rubocop:disable Rails/I18nLocaleTexts
-    redirect_to super_admin_support_ticket_path(@support_ticket), notice: 'Reply sent'
+    redirect_to super_admin_support_ticket_path(@ticket), notice: 'Reply sent'
     # rubocop:enable Rails/I18nLocaleTexts
   end
 
   private
 
   def set_support_ticket
-    @support_ticket = SupportTicket.find(params[:id])
+    @ticket = SupportTicket
+              .includes(:account, :requester, support_ticket_messages: :sender)
+              .find(params[:id])
   end
 end

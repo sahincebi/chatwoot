@@ -4,7 +4,7 @@ class SupportTicketDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
     account: Field::BelongsTo,
     requester: Field::BelongsTo.with_options(class_name: 'User'),
-    messages: Field::HasMany.with_options(class_name: 'SupportTicketMessage'),
+    support_ticket_messages: Field::HasMany.with_options(class_name: 'SupportTicketMessage'),
     id: Field::Number,
     subject: Field::String,
     category: Field::String,
@@ -35,7 +35,7 @@ class SupportTicketDashboard < Administrate::BaseDashboard
     last_activity_at
     created_at
     updated_at
-    messages
+    support_ticket_messages
   ].freeze
 
   FORM_ATTRIBUTES = %i[
