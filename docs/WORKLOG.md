@@ -1,5 +1,24 @@
 # Worklog
 
+## 2025-12-29 16:05
+- Tarih/Saat (TR): 2025-12-29 16:05
+- Amac: support_tickets migration'inda duplicate index hatasini kalici duzeltmek.
+- Sorun / Belirti: PG::DuplicateTable (index_support_tickets_on_account_id / index_support_ticket_messages_on_support_ticket_id).
+- Kok Neden (Varsa): t.references otomatik index uretirken ek add_index ile tekrar index olusuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229060000_create_support_tickets.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP INDEX IF EXISTS index_support_tickets_on_account_id')"
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP INDEX IF EXISTS index_support_ticket_messages_on_support_ticket_id')"
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP TABLE IF EXISTS support_ticket_messages CASCADE')"
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP TABLE IF EXISTS support_tickets CASCADE')"
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.indexes(:support_tickets).map(&:name)"
+- Dogrulama:
+  - db:migrate tamamlandi; support_tickets index listesinde account_id yalnizca 1 kez gorunuyor.
+- Notlar / Riskler:
+  - Warning: docker-compose.yaml version attribute uyarisi devam ediyor (degisiklik yok).
+
 ## 2025-12-29 15:10
 - Tarih/Saat (TR): 2025-12-29 15:10
 - Amac: ChatwootHub destek mekanizmasini kaldirip internal support ticket akisini kurmak (API + super admin + UI).
