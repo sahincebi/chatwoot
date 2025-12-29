@@ -1,5 +1,20 @@
 # Worklog
 
+## 2025-12-29 16:19
+- Tarih/Saat (TR): 2025-12-29 16:19
+- Amac: tr.time.formats.short eksikligi kaynakli i18n hatasini gidermek.
+- Sorun / Belirti: Translation missing: tr.time.formats.short.
+- Kok Neden (Varsa): TR locale formatlari tanimli degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/locales/time_formats.tr.yml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose restart rails
+- Dogrulama:
+  - /super_admin/support_tickets kontrolu bekliyor (login gerekli).
+- Notlar / Riskler:
+  - time/date short formatlari eklendi: %d.%m.%Y %H:%M ve %d.%m.%Y.
+
 ## 2025-12-29 16:05
 - Tarih/Saat (TR): 2025-12-29 16:05
 - Amac: support_tickets migration'inda duplicate index hatasini kalici duzeltmek.
