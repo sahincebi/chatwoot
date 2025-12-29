@@ -1,9 +1,10 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import SupportTicketsAPI from 'dashboard/api/supportTickets';
+import { frontendURL } from 'dashboard/helper/URLHelper';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'dashboard/components-next/input/Input.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
@@ -46,6 +47,34 @@ const isFormInvalid = computed(
     !description.value.trim()
 );
 
+const buildShowUrl = ticketId =>
+  frontendURL(`accounts/${route.params.accountId}/support/tickets/${ticketId}`);
+
+const ensureShowNavigation = async ticketId => {
+  const target = {
+    name: 'support_ticket_show',
+    params: { accountId: route.params.accountId, ticketId },
+  };
+  const failure = await router.replace(target);
+  if (failure) {
+    // eslint-disable-next-line no-console
+    console.warn('[support] navigation failed', failure);
+  }
+
+  await nextTick();
+  const current = router.currentRoute.value;
+  const currentId = current?.params?.ticketId;
+  if (current?.name !== 'support_ticket_show' || `${currentId}` !== `${ticketId}`) {
+    // eslint-disable-next-line no-console
+    console.warn('[support] navigation fallback to location.assign', {
+      currentName: current?.name,
+      currentId,
+      ticketId,
+    });
+    window.location.assign(buildShowUrl(ticketId));
+  }
+};
+
 const onFilesChange = event => {
   files.value = Array.from(event.target.files || []);
 };
@@ -68,10 +97,7 @@ const submitTicket = async () => {
       return;
     }
     useAlert(t('SUPPORT.NEW.SUCCESS_WITH_ID', { id: ticketId }));
-    await router.replace({
-      name: 'support_ticket_show',
-      params: { accountId: route.params.accountId, ticketId },
-    });
+    await ensureShowNavigation(ticketId);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);

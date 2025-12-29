@@ -1482,6 +1482,28 @@
 - Sonraki Adimlar:
   - UI manual adimlarini tarayicida dogrula.
 
+---
+
+- Tarih/Saat (TR): 29.12.2025 22:32
+- Amac: Destek bildirimi olusunca /support/new'de kalmadan show'a gitmek ve guard kaynakli nav sorunlarina fallback eklemek.
+- Sorun / Belirti: Basarili create sonrasi URL /support/new'de kaliyor; /support/tickets bazen dashboard'a dusuyor.
+- Kok Neden (Varsa): Router replace guard/permission nedeniyle iptal olabiliyor; lint-staged eksikligi commit'i kiriyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: router.replace sonucu izlenip nav fail olursa window.location.assign fallback eklendi.
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index meta.permissions ile redirect olarak kaldi.
+  - .husky/pre-commit: lint-staged yoksa hook skip edecek sekilde duzenlendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - Tarayicida hard refresh (Ctrl+F5) sonrası:
+    - /app/accounts/:id/support/new -> create -> /app/accounts/:id/support/tickets/:id
+    - /app/accounts/:id/support/tickets/:id refresh -> sayfada kalir
+    - /app/accounts/:id/support/tickets -> dashboard'a dusmez (new'e redirect olur)
+- Notlar / Riskler:
+  - Fallback window.location.assign tam sayfa reload yapar; route guard bloklasa da show acilir.
+- Sonraki Adimlar:
+  - Enterprise limits 404 logu devam ediyorsa isEnterprise flag degerini kontrol et.
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).

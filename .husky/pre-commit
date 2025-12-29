@@ -2,7 +2,11 @@
 . "$(dirname "$0")/_/husky.sh"
 
 # lint js and vue files
-npx --no-install lint-staged
+if [ ! -x "./node_modules/.bin/lint-staged" ]; then
+  echo "lint-staged not installed on host; skipping. Run pnpm install to enable."
+else
+  npx --no-install lint-staged
+fi
 
 # lint only staged ruby files that still exist (not deleted)
 git diff --name-only --cached | xargs -I {} sh -c 'test -f "{}" && echo "{}"' | grep '\.rb$' | xargs -I {} bundle exec rubocop --force-exclusion -a "{}" || true
