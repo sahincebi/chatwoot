@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_28_194500) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_29_060000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -1151,6 +1151,34 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_28_194500) do
     t.index ["account_id"], name: "index_sla_policies_on_account_id"
   end
 
+  create_table "support_ticket_messages", force: :cascade do |t|
+    t.bigint "support_ticket_id", null: false
+    t.string "sender_type", null: false
+    t.bigint "sender_id", null: false
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["sender_type", "sender_id"], name: "index_support_ticket_messages_on_sender_type_and_sender_id"
+    t.index ["support_ticket_id", "created_at"], name: "index_support_ticket_messages_on_ticket_and_created"
+    t.index ["support_ticket_id"], name: "index_support_ticket_messages_on_support_ticket_id"
+  end
+
+  create_table "support_tickets", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "requester_id", null: false
+    t.string "subject", null: false
+    t.string "category"
+    t.integer "status", default: 0, null: false
+    t.integer "priority", default: 1, null: false
+    t.datetime "last_activity_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_support_tickets_on_account_id"
+    t.index ["last_activity_at"], name: "index_support_tickets_on_last_activity_at"
+    t.index ["requester_id"], name: "index_support_tickets_on_requester_id"
+    t.index ["status"], name: "index_support_tickets_on_status"
+  end
+
   create_table "taggings", id: :serial, force: :cascade do |t|
     t.integer "tag_id"
     t.string "taggable_type"
@@ -1269,6 +1297,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_28_194500) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "inboxes", "portals"
+  add_foreign_key "support_ticket_messages", "support_tickets"
+  add_foreign_key "support_tickets", "accounts"
+  add_foreign_key "support_tickets", "users", column: "requester_id"
   create_trigger("accounts_after_insert_row_tr", :generated => true, :compatibility => 1).
       on("accounts").
       after(:insert).
