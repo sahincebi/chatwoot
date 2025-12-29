@@ -55,10 +55,15 @@ const ensureShowNavigation = async ticketId => {
     name: 'support_ticket_show',
     params: { accountId: route.params.accountId, ticketId },
   };
-  const failure = await router.replace(target);
-  if (failure) {
+  try {
+    const failure = await router.replace(target);
+    if (failure) {
+      // eslint-disable-next-line no-console
+      console.warn('[support] navigation failed', failure);
+    }
+  } catch (error) {
     // eslint-disable-next-line no-console
-    console.warn('[support] navigation failed', failure);
+    console.error('[support] replace failed', error);
   }
 
   await nextTick();
@@ -96,6 +101,18 @@ const submitTicket = async () => {
       useAlert(t('SUPPORT.NEW.ERROR'));
       return;
     }
+    // eslint-disable-next-line no-console
+    console.warn('[support] created ticketId=', ticketId);
+    // eslint-disable-next-line no-console
+    console.warn('[support] current route=', route.fullPath);
+    // eslint-disable-next-line no-console
+    console.warn(
+      '[support] support routes=',
+      router
+        .getRoutes()
+        .map(routeItem => routeItem.name)
+        .filter(name => String(name).includes('support'))
+    );
     useAlert(t('SUPPORT.NEW.SUCCESS_WITH_ID', { id: ticketId }));
     await ensureShowNavigation(ticketId);
   } catch (error) {

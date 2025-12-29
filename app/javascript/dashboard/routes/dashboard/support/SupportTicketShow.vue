@@ -168,7 +168,7 @@ onMounted(loadTicket);
             >
               <div class="text-xs text-n-slate-11 mb-2">
                 {{ messageSenderLabel(message) }}
-                <span v-if="message.created_at">Â· {{ formatTimestamp(message.created_at) }}</span>
+                <span v-if="message.created_at">- {{ formatTimestamp(message.created_at) }}</span>
               </div>
               <div class="text-sm text-n-slate-12 whitespace-pre-wrap">
                 {{ message.body }}
@@ -235,6 +235,7 @@ onMounted(loadTicket);
     </template>
   </div>
 </template>
+
 
 
 

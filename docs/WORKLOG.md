@@ -1504,6 +1504,33 @@
 - Sonraki Adimlar:
   - Enterprise limits 404 logu devam ediyorsa isEnterprise flag degerini kontrol et.
 
+---
+
+- Tarih/Saat (TR): 30.12.2025 01:21
+- Amac: Create sonrasi /support/new'de kalma sorununu kesin tespit ve fallback ile kapatmak.
+- Sorun / Belirti: UI bilet no gosteriyor ama URL /support/new'de kalıyor.
+- Kok Neden (Varsa): Router replace guard/permission ya da nav failure; cache/HMR etkisi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: console.warn debug loglari + router.replace failure loglama + window.location.assign fallback.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: message timestamp ayiracinda non-ASCII temizlendi.
+- Calistirilan Komutlar:
+  - docker compose exec -T vite sh -lc "rm -rf node_modules/.vite tmp/cache 2>/dev/null || true"
+  - docker compose restart vite
+  - git grep -n "name: 'support_ticket_show'" app/javascript
+  - git grep -n "support_ticket_show" app/javascript
+  - git grep -n "support_ticket_new" app/javascript
+  - git grep -n "support_ticket_index" app/javascript
+  - git ls-files | findstr /I "SupportTicketNew.vue"
+  - git ls-files | findstr /I "support.routes.js"
+- Dogrulama:
+  - DevTools > Sources: "SUCCESS_WITH_ID" ve "window.location.assign(" arat (bundle dogrulama).
+  - Hard refresh (Ctrl+F5) + Disable cache acik.
+  - /support/new create -> console.warn loglari + /support/tickets/:id.
+- Notlar / Riskler:
+  - Fallback window.location.assign tam sayfa reload yapar ama route garantisi saglar.
+- Sonraki Adimlar:
+  - DevTools console loglarini paylas (created ticketId, current route, support routes list).
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).
