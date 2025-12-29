@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import SupportTicketsAPI from 'dashboard/api/supportTickets';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -40,11 +41,10 @@ onMounted(loadTickets);
       <h1 class="text-xl font-semibold text-n-slate-12">
         {{ t('SUPPORT.LIST.TITLE') }}
       </h1>
-      <router-link
-        :to="{ name: 'support_ticket_new', params: { accountId: route.params.accountId } }"
-        class="text-sm text-woot-500 hover:text-woot-700"
-      >
-        {{ t('SUPPORT.LIST.NEW_TICKET') }}
+      <router-link :to="{ name: 'support_ticket_new', params: { accountId: route.params.accountId } }">
+        <NextButton blue>
+          {{ t('SUPPORT.LIST.NEW_TICKET') }}
+        </NextButton>
       </router-link>
     </div>
 
