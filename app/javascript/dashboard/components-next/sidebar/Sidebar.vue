@@ -405,9 +405,9 @@ const menuItems = computed(() => {
       children: [
         {
           name: 'Support Tickets',
-          label: t('SIDEBAR.SUPPORT_TICKETS'),
-          activeOn: ['support_ticket_index', 'support_ticket_show'],
-          to: accountScopedRoute('support_ticket_index'),
+          label: t('SIDEBAR.SUPPORT_TICKET'),
+          activeOn: ['support_ticket_new', 'support_ticket_show'],
+          to: accountScopedRoute('support_ticket_new'),
         },
       ],
     },

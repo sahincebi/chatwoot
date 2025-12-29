@@ -44,16 +44,18 @@
         "LABEL": "Dosyalar"
       },
       "SUBMIT": "Bildirimi G\u00F6nder",
-      "SUCCESS": "Destek bildirimi olu\u015Fturuldu.",
+      "SUCCESS": "Destek bildiriminiz al\u0131nd\u0131.",
+      "SUCCESS_WITH_ID": "Destek bildiriminiz al\u0131nd\u0131. Bilet No: {id}",
       "ERROR": "Destek bildirimi olu\u015Fturulamad\u0131. L\u00FCtfen tekrar deneyin."
     },
     "SHOW": {
       "TITLE": "Destek Bildirimi",
-      "BACK": "Destek sayfas\u0131na d\u00F6n",
+      "NEW_TICKET": "Yeni Destek Bildirimi",
       "SUBJECT": "Konu",
       "STATUS": "Durum",
       "CATEGORY": "Kategori",
       "PRIORITY": "\u00D6ncelik",
+      "DESCRIPTION": "A\u00E7\u0131klama",
       "REQUESTER": "Talep Sahibi",
       "CREATED_AT": "Olu\u015Fturulma",
       "LAST_ACTIVITY": "Son aktivite",
@@ -65,6 +67,7 @@
       "YOU": "Siz",
       "SUPPORT_TEAM": "Destek Ekibi",
       "LOADING": "Y\u00FCkleniyor...",
+      "NOT_FOUND": "Destek bildirimi bulunamad\u0131.",
       "LOAD_ERROR": "Destek bildirimi y\u00FCklenemedi.",
       "REPLY_SUCCESS": "Yan\u0131t g\u00F6nderildi.",
       "REPLY_ERROR": "Yan\u0131t g\u00F6nderilemedi. L\u00FCtfen tekrar deneyin."

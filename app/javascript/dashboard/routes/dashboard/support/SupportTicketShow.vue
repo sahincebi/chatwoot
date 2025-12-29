@@ -1,6 +1,6 @@
-<script setup>
+﻿<script setup>
 import { ref, onMounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import SupportTicketsAPI from 'dashboard/api/supportTickets';
@@ -9,9 +9,11 @@ import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 
 const ticket = ref(null);
 const isLoading = ref(true);
+const isNotFound = ref(false);
 const isSubmitting = ref(false);
 const replyBody = ref('');
 const files = ref([]);
@@ -39,10 +41,14 @@ const onFilesChange = event => {
 
 const loadTicket = async () => {
   isLoading.value = true;
+  isNotFound.value = false;
   try {
     const { data } = await SupportTicketsAPI.show(ticketId.value);
     ticket.value = data;
   } catch (error) {
+    if (error?.response?.status === 404) {
+      isNotFound.value = true;
+    }
     // eslint-disable-next-line no-console
     console.error(error);
     useAlert(t('SUPPORT.SHOW.LOAD_ERROR'));
@@ -83,12 +89,12 @@ onMounted(loadTicket);
       <h1 class="text-xl font-semibold text-n-slate-12">
         {{ t('SUPPORT.SHOW.TITLE') }}
       </h1>
-      <router-link
-        :to="{ name: 'support_ticket_index', params: { accountId: route.params.accountId } }"
-        class="text-sm text-woot-500 hover:text-woot-700"
+      <NextButton
+        outline
+        @click="router.push({ name: 'support_ticket_new', params: { accountId: route.params.accountId } })"
       >
-        {{ t('SUPPORT.SHOW.BACK') }}
-      </router-link>
+        {{ t('SUPPORT.SHOW.NEW_TICKET') }}
+      </NextButton>
     </div>
 
     <div v-if="isLoading" class="text-sm text-n-slate-11">
@@ -96,15 +102,25 @@ onMounted(loadTicket);
     </div>
 
     <template v-else>
+      <div v-if="isNotFound" class="text-sm text-n-slate-11">
+        {{ t('SUPPORT.SHOW.NOT_FOUND') }}
+      </div>
+
       <div v-if="!ticket" class="text-sm text-n-slate-11">
         {{ t('SUPPORT.SHOW.LOAD_ERROR') }}
       </div>
 
-      <template v-else>
+      <template v-else-if="!isNotFound">
         <div class="grid grid-cols-1 gap-4 rounded-lg border border-n-weak bg-n-solid-1 p-4 text-sm">
           <div>
             <div class="text-n-slate-11">{{ t('SUPPORT.SHOW.SUBJECT') }}</div>
             <div class="text-n-slate-12 font-medium">{{ ticket.subject }}</div>
+          </div>
+          <div>
+            <div class="text-n-slate-11">{{ t('SUPPORT.SHOW.DESCRIPTION') }}</div>
+            <div class="text-n-slate-12 whitespace-pre-wrap">
+              {{ ticket.description || ticket.messages?.[0]?.body || '-' }}
+            </div>
           </div>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
@@ -152,7 +168,7 @@ onMounted(loadTicket);
             >
               <div class="text-xs text-n-slate-11 mb-2">
                 {{ messageSenderLabel(message) }}
-                <span v-if="message.created_at">· {{ formatTimestamp(message.created_at) }}</span>
+                <span v-if="message.created_at">Â· {{ formatTimestamp(message.created_at) }}</span>
               </div>
               <div class="text-sm text-n-slate-12 whitespace-pre-wrap">
                 {{ message.body }}
@@ -219,3 +235,6 @@ onMounted(loadTicket);
     </template>
   </div>
 </template>
+
+
+

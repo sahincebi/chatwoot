@@ -63,13 +63,15 @@ const submitTicket = async () => {
 
     const { data } = await SupportTicketsAPI.create(payload);
     const ticketId = data?.ticket_id || data?.id;
-    useAlert(t('SUPPORT.NEW.SUCCESS'));
-    if (ticketId) {
-      await router.push({
-        name: 'support_ticket_show',
-        params: { accountId: route.params.accountId, ticketId },
-      });
+    if (!ticketId) {
+      useAlert(t('SUPPORT.NEW.ERROR'));
+      return;
     }
+    useAlert(t('SUPPORT.NEW.SUCCESS_WITH_ID', { id: ticketId }));
+    await router.replace({
+      name: 'support_ticket_show',
+      params: { accountId: route.params.accountId, ticketId },
+    });
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error(error);

@@ -44,16 +44,18 @@
         "LABEL": "Attachments"
       },
       "SUBMIT": "Submit Ticket",
-      "SUCCESS": "Support ticket created.",
+      "SUCCESS": "Support request received.",
+      "SUCCESS_WITH_ID": "Support request received. Ticket ID: {id}",
       "ERROR": "Could not create the support ticket. Please try again."
     },
     "SHOW": {
       "TITLE": "Support Ticket",
-      "BACK": "Back to Support",
+      "NEW_TICKET": "New Support Request",
       "SUBJECT": "Subject",
       "STATUS": "Status",
       "CATEGORY": "Category",
       "PRIORITY": "Priority",
+      "DESCRIPTION": "Description",
       "REQUESTER": "Requester",
       "CREATED_AT": "Created at",
       "LAST_ACTIVITY": "Last activity",
@@ -65,6 +67,7 @@
       "YOU": "You",
       "SUPPORT_TEAM": "Support Team",
       "LOADING": "Loading...",
+      "NOT_FOUND": "Support ticket not found.",
       "LOAD_ERROR": "Could not load the support ticket.",
       "REPLY_SUCCESS": "Reply sent.",
       "REPLY_ERROR": "Could not send reply. Please try again."

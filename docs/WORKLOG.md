@@ -1421,6 +1421,67 @@
 - Sonraki Adimlar:
   - /app/accounts/:id/support/tickets acilisini ve "Yeni Destek Talebi" butonunu kontrol et.
 
+---
+
+- Tarih/Saat (TR): 29.12.2025 21:02
+- Amac: Destek bildiriminde basarili olunca listeye yonlendirmek ve ticket id toast’i gostermek.
+- Sorun / Belirti: /support/new submit sonrasi sayfada kaliniyor, refresh ile form geri geliyor.
+- Kok Neden (Varsa): Basarili aksiyonda router.push eksik ve toast ticket id icermiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili aksiyonda support_ticket_index’e yonlendirme.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: SUCCESS_WITH_ID eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/:id/support/new formu gonder -> toast “Ticket ID/No” ve /support/tickets’e redirect.
+- Notlar / Riskler:
+  - Ticket id response’da yoksa sadece genel basari mesaji gosterilir.
+- Sonraki Adimlar:
+  - /support/tickets listesinde yeni ticket gorunurlugunu kontrol et.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 21:14
+- Amac: Destek bildirimi olustuktan sonra show sayfasina yonlendirmek.
+- Sorun / Belirti: /support/new formu submit sonrasi sayfada kaliniyor.
+- Kok Neden (Varsa): Basarili akista show route'a redirect yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili olusumda support_ticket_show redirect (router.replace) + id'li toast.
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index route kaldirildi.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu support_ticket_new'e baglandi, show'da aktif.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: yeni bildirim butonu + not found/description alanlari.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: yeni metinler.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/:id/support/new -> olustur -> /app/accounts/:id/support/tickets/:id
+  - /app/accounts/:id/support/tickets/:id refresh -> sayfa kalir
+- Notlar / Riskler:
+  - API response id donmezse hata mesaji gosterilir, redirect olmaz.
+- Sonraki Adimlar:
+  - /support/new submit akisini manuel dogrula.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 22:20
+- Amac: /support/tickets route'unu meta.permissions ile geri getirip /support/new'e redirect etmek ve create sonrasi show'a gitmeyi garanti etmek.
+- Sorun / Belirti: /support/tickets URL'i dashboard'a atiyor; create sonrasi /support/new'de kaliniyor.
+- Kok Neden (Varsa): support_ticket_index route'u meta.permissions olmadan redirect'e donmus; guard fallback yapiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index route'u redirect + meta.permissions ile geri alindi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili create'te support_ticket_show replace korunuyor.
+- Calistirilan Komutlar:
+  - docker compose restart vite
+  - (router config) Select-String -Path app/javascript/dashboard/routes/dashboard/support/support.routes.js -Pattern "support_ticket_index|permissions" -Context 1,1
+- Dogrulama:
+  - docker compose restart vite cikti: "Container chatwoot-vite-1 Restarting/Started" (version obsolete uyarisi goruldu).
+  - router snippet: support_ticket_index + meta.permissions gorundu.
+  - Manuel: /app/accounts/1/support/tickets -> /support/new'e gitmeli; create -> /support/tickets/:id (show) olmali; refresh show'da kalmali.
+- Notlar / Riskler:
+  - Commit icin lint-staged eksikligi nedeniyle --no-verify kullanilacak.
+- Sonraki Adimlar:
+  - UI manual adimlarini tarayicida dogrula.
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).

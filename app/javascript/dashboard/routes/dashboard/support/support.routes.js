@@ -1,5 +1,4 @@
 import { frontendURL } from '../../../helper/URLHelper';
-import SupportTicketIndex from './SupportTicketIndex.vue';
 import SupportTicketNew from './SupportTicketNew.vue';
 import SupportTicketShow from './SupportTicketShow.vue';
 
@@ -8,7 +7,10 @@ export default {
     {
       path: frontendURL('accounts/:accountId/support/tickets'),
       name: 'support_ticket_index',
-      component: SupportTicketIndex,
+      redirect: to => ({
+        name: 'support_ticket_new',
+        params: { accountId: to.params.accountId },
+      }),
       meta: {
         permissions: ['administrator', 'agent', 'custom_role'],
       },
