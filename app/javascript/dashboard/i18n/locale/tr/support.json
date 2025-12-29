@@ -3,7 +3,6 @@
     "NEW": {
       "TITLE": "Destek Bildirimi Olu\u015Ftur",
       "DESCRIPTION": "Destek ekibimizle g\u00F6r\u00FC\u015Fmek i\u00E7in a\u015Fa\u011F\u0131daki formu doldurun.",
-      "NO_INBOX": "Destek HQ gelen kutusu bulunamad\u0131. Y\u00F6netici Support HQ inbox'u olu\u015Fturmal\u0131d\u0131r.",
       "SUBJECT": {
         "LABEL": "Konu",
         "PLACEHOLDER": "K\u0131saca \u00F6zetleyin"
@@ -30,14 +29,31 @@
         "LABEL": "A\u00E7\u0131klama",
         "PLACEHOLDER": "Sorunu detayl\u0131 anlat\u0131n"
       },
-      "MESSAGE_TEMPLATE": "[DESTEK B\u0130LD\u0130R\u0130M\u0130]\nKonu: {subject}\nKategori: {category}\n\u00D6ncelik: {priority}\n\nHesap: {accountName} (AccountId: {accountId})\nKullan\u0131c\u0131: {userName} <{userEmail}>\n\nA\u00E7\u0131klama:\n{description}",
       "ATTACHMENTS": {
         "LABEL": "Dosyalar"
       },
       "SUBMIT": "Bildirimi G\u00F6nder",
-      "SUCCESS": "Destek bildiriminiz al\u0131nd\u0131.",
-      "TICKET_ID": "Bilet No: {id}",
+      "SUCCESS": "Destek bildirimi olu\u015Fturuldu.",
       "ERROR": "Destek bildirimi olu\u015Fturulamad\u0131. L\u00FCtfen tekrar deneyin."
+    },
+    "SHOW": {
+      "TITLE": "Destek Bildirimi",
+      "BACK": "Destek sayfas\u0131na d\u00F6n",
+      "SUBJECT": "Konu",
+      "STATUS": "Durum",
+      "CATEGORY": "Kategori",
+      "PRIORITY": "\u00D6ncelik",
+      "REQUESTER": "Talep Sahibi",
+      "LAST_ACTIVITY": "Son aktivite",
+      "MESSAGES": "Mesajlar",
+      "REPLY": "Yan\u0131tla",
+      "REPLY_PLACEHOLDER": "Yan\u0131t yaz\u0131n",
+      "SEND_REPLY": "Yan\u0131t\u0131 G\u00F6nder",
+      "ATTACHMENTS": "Ekler",
+      "LOADING": "Y\u00FCkleniyor...",
+      "LOAD_ERROR": "Destek bildirimi y\u00FCklenemedi.",
+      "REPLY_SUCCESS": "Yan\u0131t g\u00F6nderildi.",
+      "REPLY_ERROR": "Yan\u0131t g\u00F6nderilemedi. L\u00FCtfen tekrar deneyin."
     }
   }
 }

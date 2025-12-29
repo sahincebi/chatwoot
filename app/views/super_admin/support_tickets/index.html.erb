@@ -6,7 +6,7 @@
   <div class="bg-white py-4 px-2">
     <h1 class="text-base font-medium leading-6 text-n-slate-12 mb-4">Support Tickets</h1>
 
-    <% if @conversations.empty? %>
+    <% if @tickets.empty? %>
       <div class="text-sm text-n-slate-11">No support tickets found.</div>
     <% else %>
       <div class="overflow-x-auto">
@@ -22,17 +22,16 @@
             </tr>
           </thead>
           <tbody>
-            <% @conversations.each do |conversation| %>
-              <% attrs = conversation.additional_attributes || {} %>
+            <% @tickets.each do |ticket| %>
               <tr class="border-b border-n-weak">
                 <td class="py-2 pr-4">
-                  <%= link_to conversation.id, super_admin_support_ticket_path(conversation.id), class: 'text-woot-500 hover:text-woot-700' %>
+                  <%= link_to ticket.id, super_admin_support_ticket_path(ticket.id), class: 'text-woot-500 hover:text-woot-700' %>
                 </td>
-                <td class="py-2 pr-4"><%= attrs['support_subject'] || '-' %></td>
-                <td class="py-2 pr-4"><%= conversation.status %></td>
-                <td class="py-2 pr-4"><%= l(conversation.updated_at, format: :short) %></td>
-                <td class="py-2 pr-4"><%= attrs['support_requested_by_user_email'] || conversation.contact&.email || '-' %></td>
-                <td class="py-2 pr-4"><%= attrs['support_requested_by_account_name'] || '-' %></td>
+                <td class="py-2 pr-4"><%= ticket.subject %></td>
+                <td class="py-2 pr-4"><%= ticket.status %></td>
+                <td class="py-2 pr-4"><%= l(ticket.last_activity_at, format: :short) %></td>
+                <td class="py-2 pr-4"><%= ticket.requester&.email || '-' %></td>
+                <td class="py-2 pr-4"><%= ticket.account&.name || '-' %></td>
               </tr>
             <% end %>
           </tbody>

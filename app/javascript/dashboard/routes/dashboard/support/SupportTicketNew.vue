@@ -1,16 +1,16 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
-import { useMapGetter } from 'dashboard/composables/store';
-import SupportRequestsAPI from 'dashboard/api/supportRequests';
+import SupportTicketsAPI from 'dashboard/api/supportTickets';
 import WithLabel from 'v3/components/Form/WithLabel.vue';
 import NextInput from 'dashboard/components-next/input/Input.vue';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 
 const subject = ref('');
 const category = ref('technical');
@@ -18,11 +18,6 @@ const priority = ref('normal');
 const description = ref('');
 const files = ref([]);
 const isSubmitting = ref(false);
-const isSubmitted = ref(false);
-const submittedTicketId = ref(null);
-
-const currentUser = useMapGetter('getCurrentUser');
-const currentAccount = useMapGetter('getCurrentAccount');
 
 const categoryOptions = computed(() => [
   { value: 'technical', label: t('SUPPORT.NEW.CATEGORY.OPTIONS.TECHNICAL') },
@@ -44,20 +39,6 @@ const priorityOptions = computed(() => [
   { value: 'urgent', label: t('SUPPORT.NEW.PRIORITY.OPTIONS.URGENT') },
 ]);
 
-const selectedCategoryLabel = computed(() => {
-  return (
-    categoryOptions.value.find(option => option.value === category.value)
-      ?.label || category.value
-  );
-});
-
-const selectedPriorityLabel = computed(() => {
-  return (
-    priorityOptions.value.find(option => option.value === priority.value)
-      ?.label || priority.value
-  );
-});
-
 const isFormInvalid = computed(
   () =>
     isSubmitting.value ||
@@ -69,24 +50,6 @@ const onFilesChange = event => {
   files.value = Array.from(event.target.files || []);
 };
 
-const buildSupportMessage = () => {
-  const accountId = route.params.accountId;
-  const accountName = currentAccount.value?.name || '';
-  const userName = currentUser.value?.name || currentUser.value?.email || '';
-  const userEmail = currentUser.value?.email || '';
-
-  return t('SUPPORT.NEW.MESSAGE_TEMPLATE', {
-    subject: subject.value.trim(),
-    category: selectedCategoryLabel.value,
-    priority: selectedPriorityLabel.value,
-    accountName,
-    accountId,
-    userName,
-    userEmail,
-    description: description.value.trim(),
-  });
-};
-
 const submitTicket = async () => {
   if (isFormInvalid.value) return;
   isSubmitting.value = true;
@@ -95,15 +58,22 @@ const submitTicket = async () => {
     payload.append('subject', subject.value.trim());
     payload.append('category', category.value);
     payload.append('priority', priority.value);
-    payload.append('message[content]', buildSupportMessage());
-    files.value.forEach(file => payload.append('message[attachments][]', file));
+    payload.append('description', description.value.trim());
+    files.value.forEach(file => payload.append('attachments[]', file));
 
-    const { data } = await SupportRequestsAPI.create(payload);
-    submittedTicketId.value = data?.ticket_id || null;
-    isSubmitted.value = true;
+    const { data } = await SupportTicketsAPI.create(payload);
+    const ticketId = data?.ticket_id || data?.id;
     useAlert(t('SUPPORT.NEW.SUCCESS'));
+    if (ticketId) {
+      await router.push({
+        name: 'support_ticket_show',
+        params: { accountId: route.params.accountId, ticketId },
+      });
+    }
   } catch (error) {
-    useAlert(t('SUPPORT.NEW.ERROR'));
+    // eslint-disable-next-line no-console
+    console.error(error);
+    useAlert(error?.response?.data?.error || t('SUPPORT.NEW.ERROR'));
   } finally {
     isSubmitting.value = false;
   }
@@ -121,17 +91,7 @@ const submitTicket = async () => {
       </p>
     </div>
 
-    <div
-      v-if="isSubmitted"
-      class="rounded-lg border border-n-weak bg-n-solid-3 px-4 py-3 text-sm text-n-slate-11"
-    >
-      <div>{{ t('SUPPORT.NEW.SUCCESS') }}</div>
-      <div v-if="submittedTicketId" class="mt-2">
-        {{ t('SUPPORT.NEW.TICKET_ID', { id: submittedTicketId }) }}
-      </div>
-    </div>
-
-    <form v-if="!isSubmitted" class="grid gap-4" @submit.prevent="submitTicket">
+    <form class="grid gap-4" @submit.prevent="submitTicket">
       <WithLabel :label="t('SUPPORT.NEW.SUBJECT.LABEL')">
         <NextInput
           v-model="subject"

@@ -3,7 +3,6 @@
     "NEW": {
       "TITLE": "Create Support Ticket",
       "DESCRIPTION": "Fill out the form below to reach our support team.",
-      "NO_INBOX": "Support inbox not found. An admin must provision the Support HQ inbox.",
       "SUBJECT": {
         "LABEL": "Subject",
         "PLACEHOLDER": "Summarize briefly"
@@ -30,14 +29,31 @@
         "LABEL": "Description",
         "PLACEHOLDER": "Describe the issue in detail"
       },
-      "MESSAGE_TEMPLATE": "[SUPPORT TICKET]\nSubject: {subject}\nCategory: {category}\nPriority: {priority}\n\nAccount: {accountName} (AccountId: {accountId})\nUser: {userName} <{userEmail}>\n\nDescription:\n{description}",
       "ATTACHMENTS": {
         "LABEL": "Attachments"
       },
       "SUBMIT": "Submit Ticket",
-      "SUCCESS": "Support request received.",
-      "TICKET_ID": "Ticket ID: {id}",
+      "SUCCESS": "Support ticket created.",
       "ERROR": "Could not create the support ticket. Please try again."
+    },
+    "SHOW": {
+      "TITLE": "Support Ticket",
+      "BACK": "Back to Support",
+      "SUBJECT": "Subject",
+      "STATUS": "Status",
+      "CATEGORY": "Category",
+      "PRIORITY": "Priority",
+      "REQUESTER": "Requester",
+      "LAST_ACTIVITY": "Last activity",
+      "MESSAGES": "Messages",
+      "REPLY": "Reply",
+      "REPLY_PLACEHOLDER": "Write a reply",
+      "SEND_REPLY": "Send Reply",
+      "ATTACHMENTS": "Attachments",
+      "LOADING": "Loading...",
+      "LOAD_ERROR": "Could not load the support ticket.",
+      "REPLY_SUCCESS": "Reply sent.",
+      "REPLY_ERROR": "Could not send reply. Please try again."
     }
   }
 }

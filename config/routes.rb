@@ -150,6 +150,9 @@ Rails.application.routes.draw do
           end
 
           resources :support_requests, only: [:create]
+          resources :support_tickets, only: [:index, :create, :show] do
+            post :messages, on: :member
+          end
 
           resources :search, only: [:index] do
             collection do
@@ -622,9 +625,9 @@ Rails.application.routes.draw do
         post :provision_support_hq_inbox, on: :collection
       end
 
-      get :support, to: 'support#index'
-      get 'support/:id', to: 'support#show', as: :support_ticket
-      post 'support/:id/reply', to: 'support#reply', as: :support_ticket_reply
+      resources :support_tickets, only: [:index, :show] do
+        post :reply, on: :member
+      end
 
       # resources that doesn't appear in primary navigation in super admin
       resources :account_users, only: [:new, :create, :show, :destroy]

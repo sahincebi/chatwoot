@@ -1,5 +1,57 @@
 # Worklog
 
+## 2025-12-29 15:10
+- Tarih/Saat (TR): 2025-12-29 15:10
+- Amac: ChatwootHub destek mekanizmasini kaldirip internal support ticket akisini kurmak (API + super admin + UI).
+- Sorun / Belirti: ChatwootHub support/SupportDashboard bagimliligi ve CE'de destek akisinin internal olmamasi.
+- Kok Neden (Varsa): Destek formu ve super admin destek sayfalari ChatwootHub/conversation tabanli tasarlandi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229060000_create_support_tickets.rb
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/index.html.erb
+  - app/views/super_admin/support_tickets/show.html.erb
+  - app/views/super_admin/application/_javascript.html.erb (ChatwootHub script kaldirildi)
+  - app/views/super_admin/application/_navigation.html.erb
+  - app/dashboards/support_ticket_dashboard.rb
+  - app/dashboards/support_ticket_message_dashboard.rb
+  - app/javascript/dashboard/api/supportTickets.js
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - config/routes.rb
+  - app/controllers/super_admin/support_controller.rb (kaldirildi)
+  - app/views/super_admin/support/index.html.erb (kaldirildi)
+  - app/views/super_admin/support/show.html.erb (kaldirildi)
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) db:migrate + UI testleri bekliyor.
+- Notlar / Riskler:
+  - Support ticket API, account tarafinda sadece mevcut kullanici ticket'larini dondurur (admin ise tumu).
+  - Super admin replies ticket messages ve last_activity_at güncellenir.
+
+## 2025-12-29 06:25
+- Tarih/Saat (TR): 2025-12-29 06:25
+- Amac: Super Admin navigation render sirasinda SupportDashboard constant hatasini kaldirmak.
+- Sorun / Belirti: /super_admin girisinde ActionView::Template::Error (uninitialized constant SupportDashboard).
+- Kok Neden (Varsa): Super admin navigation resource listesi "support" icin SupportDashboard ariyor; dashboard sinifi yok.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/super_admin/application/_navigation.html.erb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "puts defined?(SupportDashboard).inspect"
+  - docker compose restart rails sidekiq
+- Dogrulama:
+  - SupportDashboard constant nil (beklenen).
+  - Rails/sidekiq restart tamamlandi.
+- Notlar / Riskler:
+  - Super admin menusu "support" kaynagini artik listelemiyor; navigation render hatasi kalkmali.
+
 ## 2025-12-28 22:37
 - Tarih/Saat (TR): 2025-12-28 22:37
 - Amac: InstallationConfig serialized_value NULL yazimini engellemek ve HQ config set/get akisini stabil yapmak.
@@ -87,6 +139,41 @@
   - Sidekiq kapaliyken login TTFB ~0.23s (dev test)
 - Notlar / Riskler:
   - config/vite.json: autoBuild=false; dev server ayakta degilse asset bulunmayabilir.
+
+## 2025-12-29 01:53
+- Tarih/Saat (TR): 2025-12-29 01:53
+- Amac: Sayfa gecikmesini metriklerle tespit etmek (1. model: yalnizca ölçüm).
+- Sorun / Belirti: /app/login ve dashboard TTFB 60s+.
+- Kok Neden (Varsa): TTFB kaynakli yavaslik; view render suresi ve/veya asset build path'i.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - curl.exe -s -o NUL -w "ttfb=%{time_starttransfer} total=%{time_total}\n" http://localhost:3000/app/login
+  - curl.exe -s -o NUL -w "ttfb=%{time_starttransfer} total=%{time_total}\n" http://localhost:3000/app/accounts/1/dashboard
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'code=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://localhost:3000/app/login"
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'code=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://vite:3036/vite-dev/@vite/client"
+  - docker compose exec -T rails sh -lc "grep -n 'chunks are larger' -m 1 log/development.log"
+  - docker compose exec -T postgres psql -U postgres -d chatwoot_production -c "select now(), state, wait_event_type, wait_event, age(now(), query_start) as age, left(query,120) as q from pg_stat_activity where state <> 'idle' order by query_start asc limit 30;"
+  - docker compose exec -T postgres psql -U postgres -d chatwoot_dev -c "select now(), state, wait_event_type, wait_event, age(now(), query_start) as age, left(query,120) as q from pg_stat_activity where state <> 'idle' order by query_start asc limit 30;"
+  - docker compose exec -T rails bundle exec rails runner "p ActiveRecord::Base.connection_pool.stat"
+  - docker compose exec -T rails sh -lc "tail -n 5000 log/development.log" (Completed satirlarini analiz icin)
+- Dogrulama:
+  - Host TTFB /app/login: ttfb=62.025957 total=62.026166
+  - Host TTFB /app/accounts/1/dashboard: ttfb=66.286336 total=66.286437
+  - Container TTFB /app/login: code=200 ttfb=61.745789 total=61.745894
+  - Vite dev server: code=200 ttfb=0.026739 total=0.026974 (vite-dev/@vite/client)
+  - Rails log: "(!) Some chunks are larger than 500 kB after minification" satiri mevcut (build/asset kaniti)
+  - pg_stat_activity (prod): db yok (chatwoot_production)
+  - pg_stat_activity (dev): sadece aktif sorgu (endi; uzun sorgu yok)
+  - pool stat: {:size=>10, :connections=>1, :busy=>1, :dead=>0, :idle=>0, :waiting=>0}
+  - En yavas Completed (ilk 5):
+    - 9403321ms /favicon.ico (Views 9383497ms | AR 1617.8ms)
+    - 585623ms /api/v1/accounts/1/conversations?status=open&assignee_type=me&page=1&sort_by=last_activity_at_desc
+    - 458508ms /api/v1/accounts/1/contacts/active?include_contact_inboxes=false&page=1&sort=last_activity_at
+    - 114827ms /app/login (Views 114268.2ms | AR 13.4ms)
+    - 59098ms /api/v1/accounts/1/portals (Views 16614.2ms | AR 38825.8ms)
+- Notlar / Riskler:
+  - Chrome DevTools "en yavas 5 istek" listesi bekliyor (kullanici paylasacak).
 
 ## 2025-12-28 23:57
 - Tarih/Saat (TR): 2025-12-28 23:57
@@ -1079,3 +1166,80 @@
   - Provisioning loglari sadece account_id/inbox_id bazlidir; PII yoktur.
 - Sonraki Adimlar:
   - Yukaridaki runner ile smoke test'i tekrar calistir.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 04:50
+- Amac: Super Admin login sonrasi 500 hatasini kaldirmak (INSTALLATION_IDENTIFIER unique conflict).
+- Sorun / Belirti: ActiveRecord::RecordNotUnique (index_installation_configs_on_name) / super_admin 500.
+- Kok Neden (Varsa): InstallationConfig icin create! cagrisi concurrent durumda ayni name ile tekrar kayit olusturmaya calisiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/chatwoot_hub.rb: INSTALLATION_IDENTIFIER icin find_or_create_by! + blank degerde update.
+- Calistirilan Komutlar:
+  - docker compose restart rails sidekiq
+  - docker compose exec -T rails bundle exec rails runner "puts defined?(SupportDashboard).inspect"
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'status=%{http_code} total=%{time_total}\n' http://localhost:3000/super_admin/users"
+  - docker compose exec -T rails bundle exec rails runner "puts ChatwootHub.installation_identifier; p InstallationConfig.where(name: 'INSTALLATION_IDENTIFIER').map { |c| [c.id, c.name, c.value] }"
+- Dogrulama:
+  - InstallationConfig sadece name ile bulunuyor, value bos ise UUID set ediliyor.
+  - runner ile SupportDashboard nil (beklenen), /super_admin/users 302 (login redirect).
+  - INSTALLATION_IDENTIFIER tek satir ve value dolu.
+- Notlar / Riskler:
+  - CLI curl login olmadigi icin 302 normal; UI uzerinden 200 kontrol edilmeli.
+- Sonraki Adimlar:
+  - Super Admin login ile /super_admin/users 200 dogrulamasi yap.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 05:22
+- Amac: INSTALLATION_IDENTIFIER icin RecordNotUnique hatasini engellemek.
+- Sorun / Belirti: /super_admin login sonrasi ActiveRecord::RecordNotUnique (index_installation_configs_on_name).
+- Kok Neden (Varsa): Concurrent create! (name unique) ve locked kayitlarin tekrar olusturulmasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/chatwoot_hub.rb: INSTALLATION_IDENTIFIER icin unscoped find/create + RecordNotUnique rescue + blank value update.
+  - lib/tasks/instance_id.rake: Identifier üretimi ChatwootHub uzerinden.
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "puts ChatwootHub.installation_identifier; p InstallationConfig.unscoped.where(name: 'INSTALLATION_IDENTIFIER').map { |c| [c.id, c.name, c.value, c.locked] }"
+  - docker compose restart rails sidekiq
+- Dogrulama:
+  - INSTALLATION_IDENTIFIER tek satir, value dolu ve locked=true.
+- Notlar / Riskler:
+  - pluck(:value) kullanimi kolon olmadigi icin hata verir; value icin c.value kullanildi.
+- Sonraki Adimlar:
+  - Super Admin login sonrasi 500 hatasi kalmiyor mu kontrol et.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 05:26
+- Amac: Vapid config eksikken Dashboard 500 vermesin.
+- Sorun / Belirti: NoMethodError (vapid_keys nil) / DashboardController#index.
+- Kok Neden (Varsa): VAPID_KEYS okunamiyor veya parse edilemiyor, nil donup [] hatasi veriyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/vapid_service.rb: vapid_keys her kosulda Hash dondurur, JSON parse hatasinda {}; public/private key nil-safe.
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "p VapidService.public_key; p VapidService.private_key"
+  - docker compose restart rails
+- Dogrulama:
+  - VapidService.public_key/private_key runner crash olmadan calisti.
+- Notlar / Riskler:
+  - VAPID_KEYS yoksa runtime’da {} doner; yeni anahtarlar create edilirken hata olursa dashboard 500 vermez.
+- Sonraki Adimlar:
+  - /app/dashboard acilisinda 500 olmadigini kontrol et.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 05:50
+- Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
+- Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).
+- Kok Neden (Varsa): VAPID_KEYS kaynaklari bos veya parse edilemezken nil donmesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/vapid_service.rb: ENV public/private -> ENV JSON -> credentials -> GlobalConfig; her zaman Hash donus; nil-safe public/private.
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "p VapidService.public_key; p VapidService.private_key"
+  - docker compose restart rails
+- Dogrulama:
+  - runner crash olmadi; public/private key nil ya da string dondu.
+- Notlar / Riskler:
+  - VAPID_KEYS JSON parse hatasi production'da error log ile kayda alinir.
+- Sonraki Adimlar:
+  - /app/dashboard acilisinda 500 olmadigini kontrol et.
