@@ -58,11 +58,9 @@ class AccountBuilder
   end
 
   def link_user_to_account(user, account)
-    AccountUser.create!(
-      account_id: account.id,
-      user_id: user.id,
-      role: AccountUser.roles['administrator']
-    )
+    AccountUser.find_or_create_by!(account_id: account.id, user_id: user.id) do |account_user|
+      account_user.role = AccountUser.roles['administrator']
+    end
   end
 
   def create_user

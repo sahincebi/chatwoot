@@ -80,6 +80,61 @@
 - Notlar / Riskler:
   - Super admin reply sender olarak current_super_admin kullanilir.
 
+## 2025-12-29 17:32
+- Tarih/Saat (TR): 2025-12-29 17:32
+- Amac: Account tarafinda destek talepleri listesi + maillesme akisini tamamlamak.
+- Sorun / Belirti: Ticket olusturma sonrasi liste/detay erisimi yok; menu yalnizca yeni ticket'a gidiyordu.
+- Kok Neden (Varsa): Support menu sadece "create" rotasina bagliydi; liste ve show navigasyonu eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/i18n/locale/en/settings.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) /support/tickets ve /support/tickets/:id UI kontrolu bekliyor.
+- Notlar / Riskler:
+  - Menu: "Destek Taleplerim" eklendi; yeni ticket sonrasinda detay sayfaya yonlendirme bekleniyor.
+
+## 2025-12-29 19:00
+- Tarih/Saat (TR): 2025-12-29 19:00
+- Amac: Destek menusu varsayilanini ticket listesine almak ve listeden yeni talep acma butonu eklemek.
+- Sorun / Belirti: Destek menusu /support/new sayfasina gidiyordu; listeye erisim kolay degildi.
+- Kok Neden (Varsa): Sidebar support grubu create rotasina bagliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) /support/tickets varsayilan acilmasi ve "Yeni Destek Talebi" butonu kontrolu bekliyor.
+- Notlar / Riskler:
+  - Support create sayfasina artik listeden buton ile gidiliyor.
+
+## 2025-12-29 20:13
+- Tarih/Saat (TR): 2025-12-29 20:13
+- Amac: AccountUser olustururken support inbox provisioning'in Inbox.additional_attributes ihtiyacini karsilamak.
+- Sorun / Belirti: AccountUser.create! sirasinda "unknown attribute 'additional_attributes' for Inbox".
+- Kok Neden (Varsa): inboxes tablosunda additional_attributes kolonu yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229191500_add_additional_attributes_to_inboxes.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+- Dogrulama:
+  - Rails console icin:
+    - account = Account.find(1)
+    - user = User.find_by(email: "john@acme.inc")
+    - AccountUser.create!(account: account, user: user, role: :administrator)
+- Notlar / Riskler:
+  - Migration column_exists? guard ile idempotent.
+
 ## 2025-12-29 16:05
 - Tarih/Saat (TR): 2025-12-29 16:05
 - Amac: support_tickets migration'inda duplicate index hatasini kalici duzeltmek.
@@ -1324,6 +1379,25 @@
   - VAPID_KEYS yoksa runtime’da {} doner; yeni anahtarlar create edilirken hata olursa dashboard 500 vermez.
 - Sonraki Adimlar:
   - /app/dashboard acilisinda 500 olmadigini kontrol et.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 20:39
+- Amac: AccountUser create tekrarinda user_id.taken hatasini engellemek ve TR "taken" i18n eksigini gidermek.
+- Sorun / Belirti: AccountUser.create! tekrarinda user_id.taken ve "Translation missing ... taken".
+- Kok Neden (Varsa): Idempotent olmayan AccountUser create + TR locale'de taken mesaji eksik.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/builders/account_builder.rb: AccountUser.create! yerine find_or_create_by! kullanildi.
+  - app/builders/agent_builder.rb: AccountUser create idempotent hale getirildi, duplicate hata engellendi.
+  - config/locales/activerecord.tr.yml: tr errors.messages.taken ve tr.activerecord.errors.messages.taken eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails runner "account=Account.find(1); user=User.find_by(email:%q(john@acme.inc)); au=AccountUser.find_or_create_by!(account:account,user:user){|r| r.role=:administrator rescue nil}; puts %q(AccountUser id=)+au.id.to_s" (2 kez)
+- Notlar / Riskler:
+  - Mevcut AccountUser kaydi varsa rol/ayarlar degistirilmez.
+- Sonraki Adimlar:
+  - Komutu iki kez calistirip hata olmadigini dogrula.
 
 ---
 

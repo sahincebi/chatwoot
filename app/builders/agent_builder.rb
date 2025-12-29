@@ -41,15 +41,12 @@ class AgentBuilder
 
   # Creates an account user linking the user to the current account.
   def create_account_user
-    AccountUser.create!({
-      account_id: account.id,
-      user_id: @user.id,
-      inviter_id: inviter.id
-    }.merge({
-      role: role,
-      availability: availability,
-      auto_offline: auto_offline
-    }.compact))
+    AccountUser.find_or_create_by!(account_id: account.id, user_id: @user.id) do |account_user|
+      account_user.inviter_id = inviter&.id
+      account_user.role = role if role
+      account_user.availability = availability if availability
+      account_user.auto_offline = auto_offline unless auto_offline.nil?
+    end
   end
 end
 
