@@ -2,20 +2,14 @@ import { createRouter, createWebHistory } from 'vue-router';
 
 import { frontendURL } from '../helper/URLHelper';
 import dashboard from './dashboard/dashboard.routes';
-import supportRoutes from './dashboard/support/support.routes';
 import store from 'dashboard/store';
 import { validateLoggedInRoutes } from '../helper/routeHelpers';
 import AnalyticsHelper from '../helper/AnalyticsHelper';
 
-const routes = [...dashboard.routes];
-const accountRoute = routes.find(
-  route => route.path === frontendURL('accounts/:accountId')
-);
-if (accountRoute?.children) {
-  accountRoute.children.push(...supportRoutes.routes);
-}
-
-export const router = createRouter({ history: createWebHistory(), routes });
+export const router = createRouter({
+  history: createWebHistory(),
+  routes: [...dashboard.routes],
+});
 
 export const validateAuthenticateRoutePermission = (to, next) => {
   const { isLoggedIn, getCurrentUser: user } = store.getters;

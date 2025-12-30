@@ -1,5 +1,21 @@
 # Worklog
 
+## 2025-12-30 05:37
+- Tarih/Saat (TR): 2025-12-30 05:37
+- Amac: /support/tickets route'unun router'a dogrudan kaydedilmesini garanti etmek.
+- Sorun / Belirti: /support/tickets girisi /support/new'e dusuyor; support routes registry supheli.
+- Kok Neden (Varsa): support routes, dashboard.routes.js children listesine ekli olmadigi icin router import zinciri net degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+  - app/javascript/dashboard/routes/index.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) /app/accounts/:id/support/tickets index acilisi ve XHR kontrolu bekliyor.
+- Notlar / Riskler:
+  - Vite restart + hard refresh (Disable cache + Ctrl+F5) gerekebilir.
+
 ## 2025-12-29 16:19
 - Tarih/Saat (TR): 2025-12-29 16:19
 - Amac: tr.time.formats.short eksikligi kaynakli i18n hatasini gidermek.
