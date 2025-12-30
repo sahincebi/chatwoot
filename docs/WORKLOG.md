@@ -1,5 +1,20 @@
 # Worklog
 
+## 2025-12-30 15:41
+- Tarih/Saat (TR): 2025-12-30 15:41
+- Amac: Destek ticket reply (messages) endpoint hatasini duzeltmek.
+- Sorun / Belirti: Yanit gonderiminde ActionNotFound (messages action yok).
+- Kok Neden (Varsa): routes.rb member :messages route'u controller'da create_message adina bagliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails sh -lc "sed -n '136120,136260p' log/development.log"
+- Dogrulama:
+  - (bekliyor) /support/tickets/:id sayfasinda yanit gonder -> 201 ve mesaj listesine eklenmeli.
+- Notlar / Riskler:
+  - Frontend endpoint /messages ile uyumlu.
+
 ## 2025-12-30 15:34
 - Tarih/Saat (TR): 2025-12-30 15:34
 - Amac: Support tickets API listeleme hatasini gidermek.

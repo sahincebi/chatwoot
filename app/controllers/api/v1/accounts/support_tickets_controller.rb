@@ -1,5 +1,5 @@
 class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseController
-  before_action :set_support_ticket, only: [:show, :create_message]
+  before_action :set_support_ticket, only: [:show, :messages]
 
   def create
     ticket = SupportTicketBuilder.new(
@@ -38,7 +38,7 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
     render json: ticket_payload(@support_ticket)
   end
 
-  def create_message
+  def messages
     message = @support_ticket.support_ticket_messages.create!(
       sender: Current.user,
       body: params[:body].to_s.strip,
