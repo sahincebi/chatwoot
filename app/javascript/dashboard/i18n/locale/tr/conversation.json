@@ -297,9 +297,9 @@
   "ONBOARDING": {
     "TITLE": "Merhaba 👋, {installationName}'a hoş geldiniz!",
     "DESCRIPTION": "Üyeliğiniz için teşekkür ederiz. {installationName}'dan en iyi şekilde faydalanmanızı istiyoruz. Deneyimi daha keyifli hale getirmek için {installationName} içinde yapabileceğiniz birkaç şey var.",
-    "GREETING_MORNING": "👋 Good morning, {name}. Welcome to {installationName}.",
-    "GREETING_AFTERNOON": "👋 Good afternoon, {name}. Welcome to {installationName}.",
-    "GREETING_EVENING": "👋 Good evening, {name}. Welcome to {installationName}.",
+    "GREETING_MORNING": "\uD83D\uDC4B G\u00FCnayd\u0131n, {name}. {installationName}'a ho\u015F geldiniz.",
+    "GREETING_AFTERNOON": "\uD83D\uDC4B T\u00FCnayd\u0131n, {name}. {installationName}'a ho\u015F geldiniz.",
+    "GREETING_EVENING": "\uD83D\uDC4B \u0130yi ak\u015Famlar, {name}. {installationName}'a ho\u015F geldiniz.",
     "READ_LATEST_UPDATES": "En Son Güncellemeleri Okuyun",
     "ALL_CONVERSATION": {
       "TITLE": "Tüm Konuşmalarınız Bir Arada",
@@ -317,9 +317,9 @@
       "NEW_LINK": "Etiket oluşturmak için buraya tıklayın"
     },
     "CANNED_RESPONSES": {
-      "TITLE": "Create canned responses",
-      "DESCRIPTION": "Pre-written quick reply templates help you quickly respond to a conversation. Agents can type the '/' character followed by the shortcode to insert a response.",
-      "NEW_LINK": "Click here to create a canned response"
+      "TITLE": "Haz\u0131r yan\u0131tlar olu\u015Fturun",
+      "DESCRIPTION": "\u00D6nceden haz\u0131rlanm\u0131\u015F h\u0131zl\u0131 yan\u0131t \u015Fablonlar\u0131, bir g\u00F6r\u00FC\u015Fmeye h\u0131zl\u0131ca yan\u0131t vermenize yard\u0131mc\u0131 olur. Temsilciler, '/' karakterini yaz\u0131p k\u0131sayolu girerek bir yan\u0131t ekleyebilir.",
+      "NEW_LINK": "Haz\u0131r yan\u0131t olu\u015Fturmak i\u00E7in buraya t\u0131klay\u0131n"
     }
   },
   "CONVERSATION_SIDEBAR": {

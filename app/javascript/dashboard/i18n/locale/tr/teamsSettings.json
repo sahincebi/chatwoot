@@ -3,7 +3,7 @@
     "NEW_TEAM": "Yeni ekip oluştur",
     "HEADER": "Ekipler",
     "LOADING": "Fetching teams",
-    "DESCRIPTION": "Teams allow you to organize agents into groups based on their responsibilities. An agent can belong to multiple teams. When working collaboratively, you can assign conversations to specific teams.",
+    "DESCRIPTION": "Takımlar, temsilcileri sorumluluklarına göre gruplar hâlinde organize etmenizi sağlar. Bir temsilci birden fazla takıma dahil olabilir. Birlikte çalışırken konuşmaları belirli takımlara atayabilirsiniz.",
     "LEARN_MORE": "Learn more about teams",
     "LIST": {
       "404": "Bu hesap üzerine oluşturulmuş ekip bulunmamaktadır.",

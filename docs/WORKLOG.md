@@ -1655,6 +1655,69 @@
 
 ---
 
+- Tarih/Saat (TR): 30.12.2025 19:30
+- Amac: Onboarding karsilama ve canned responses kartini Turkcelestirmek (inbox metinlerine dokunmadan).
+- Sorun / Belirti: Dashboard onboarding ekraninda Ingilizce metinler gorunuyordu.
+- Kok Neden (Varsa): TR locale anahtarlarinda ceviri eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/conversation.json: GREETING_* ve CANNED_RESPONSES metinleri TR oldu.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/dashboard ekraninda karşilama ve "Create canned responses" karti TR gorunmeli.
+- Notlar / Riskler:
+  - Placeholder yapisi korunmustur ({name}, {installationName}).
+- Sonraki Adimlar:
+  - Gerekirse `docker compose restart vite` ve hard refresh yap.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 20:05
+- Amac: Ayarlar ekranlarindaki Ingilizce aciklama metinlerini Turkcelestirmek (Teams/Inboxes/Labels/Canned Responses/Profil arayuz/Audio Alerts/Notification Preferences).
+- Sorun / Belirti: Ayarlar sayfalarinda aciklama metinleri Ingilizce kalmisti.
+- Kok Neden (Varsa): TR locale anahtarlarinda ceviri eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/teamsSettings.json
+  - app/javascript/dashboard/i18n/locale/tr/inboxMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/labelsMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/cannedMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/settings/teams/list
+  - /app/accounts/1/settings/inboxes/list
+  - /app/accounts/1/settings/labels/list
+  - /app/accounts/1/settings/canned-response/list
+  - /app/accounts/1/profile/settings
+- Notlar / Riskler:
+  - Placeholder yapilari korunmustur.
+- Sonraki Adimlar:
+  - Gerekirse Vite restart + hard refresh ile kontrol et.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 22:02
+- Amac: TR i18n JSON dosyalarindaki Unicode escape karakterleri okunabilir UTF-8 metinlere cevirmek.
+- Sorun / Belirti: TR locale dosyalarinda \uXXXX escape'li metinler diff'te okunabilir degildi.
+- Kok Neden (Varsa): JSON dosyalari ASCII-escape ile kaydedilmisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/teamsSettings.json
+  - app/javascript/dashboard/i18n/locale/tr/inboxMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/labelsMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/cannedMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+- Calistirilan Komutlar:
+  - python - (JSON decode/serialize, ensure_ascii=false)
+- Dogrulama:
+  - git diff ile metinler okunabilir Turkce gorunmeli.
+- Notlar / Riskler:
+  - JSON anahtar yapisi korunmustur.
+- Sonraki Adimlar:
+  - Gerekirse Vite restart + hard refresh ile UI kontrolu yap.
+
+---
+
 - Tarih/Saat (TR): 29.12.2025 20:39
 - Amac: AccountUser create tekrarinda user_id.taken hatasini engellemek ve TR "taken" i18n eksigini gidermek.
 - Sorun / Belirti: AccountUser.create! tekrarinda user_id.taken ve "Translation missing ... taken".
