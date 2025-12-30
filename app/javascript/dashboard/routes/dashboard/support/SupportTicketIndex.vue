@@ -82,6 +82,12 @@ onMounted(loadTickets);
                 >
                   {{ ticket.subject }}
                 </router-link>
+                <span
+                  v-if="ticket.unread"
+                  class="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+                >
+                  {{ t('SUPPORT.LIST.UNREAD') }}
+                </span>
               </td>
               <td class="py-2 px-3">{{ ticket.status }}</td>
               <td class="py-2 px-3">{{ ticket.priority }}</td>

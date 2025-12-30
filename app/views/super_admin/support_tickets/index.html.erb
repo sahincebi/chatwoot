@@ -29,6 +29,11 @@
                 </td>
                 <td class="py-2 pr-4">
                   <%= link_to ticket.subject, super_admin_support_ticket_path(ticket), class: 'text-woot-500 hover:text-woot-700' %>
+                  <% if ticket.unread_for_admin? %>
+                    <span class="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+                      <%= t('support_tickets.unread', default: 'Unread') %>
+                    </span>
+                  <% end %>
                 </td>
                 <td class="py-2 pr-4"><%= ticket.status %></td>
                 <td class="py-2 pr-4"><%= l(ticket.last_activity_at, format: :short) %></td>

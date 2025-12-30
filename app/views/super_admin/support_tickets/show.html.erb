@@ -18,7 +18,16 @@
       </div>
       <div>
         <div class="text-n-slate-11">Status</div>
-        <div><%= @ticket.status %></div>
+        <div class="flex items-center gap-3">
+          <span><%= @ticket.status %></span>
+          <%= form_with model: @ticket, url: super_admin_support_ticket_path(@ticket), method: :patch, local: true do |form| %>
+            <%= form.select :status,
+                            options_for_select(SupportTicket.statuses.keys, @ticket.status),
+                            {},
+                            class: 'rounded border border-n-weak p-1 text-xs' %>
+            <%= form.submit 'Update', class: 'ml-2 text-xs text-woot-500 hover:text-woot-700' %>
+          <% end %>
+        </div>
       </div>
       <div>
         <div class="text-n-slate-11">Category</div>

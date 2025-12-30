@@ -17,11 +17,13 @@ class SupportTicketBuilder
         subject: @subject,
         category: @category,
         priority: @priority.presence || 'normal',
-        status: 'open'
+        status: 'open',
+        requester_last_read_at: Time.zone.now
       )
 
       ticket.support_ticket_messages.create!(
         sender: @requester,
+        sender_role: 'requester',
         body: @description,
         files: @attachments
       )

@@ -28,23 +28,26 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
           priority: ticket.priority,
           status: ticket.status,
           last_activity_at: ticket.last_activity_at,
-          created_at: ticket.created_at
+          created_at: ticket.created_at,
+          unread: ticket.unread_for_requester?(Current.user)
         }
       end
     }
   end
 
   def show
+    mark_requester_read(@support_ticket)
     render json: ticket_payload(@support_ticket)
   end
 
   def messages
     message = @support_ticket.support_ticket_messages.create!(
       sender: Current.user,
+      sender_role: 'requester',
       body: params[:body].to_s.strip,
       files: Array(params[:attachments]).compact
     )
-    @support_ticket.update!(last_activity_at: Time.zone.now)
+    mark_requester_read(@support_ticket)
 
     render json: { message_id: message.id }, status: :created
   rescue ActiveRecord::RecordInvalid => e
@@ -73,22 +76,30 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
       status: ticket.status,
       last_activity_at: ticket.last_activity_at,
       created_at: ticket.created_at,
+      unread: ticket.unread_for_requester?(Current.user),
       requester: {
         id: ticket.requester_id,
         name: ticket.requester.name,
         email: ticket.requester.email
       },
-      messages: ticket.support_ticket_messages.order(created_at: :asc).map { |message| message_payload(message) }
+      messages: ticket.support_ticket_messages.order(created_at: :asc)
+                 .map { |message| message_payload(ticket, message) }
     }
   end
 
-  def message_payload(message)
+  def message_payload(ticket, message)
+    sender_is_support = if message.sender_role.present?
+                          message.sender_role == 'support'
+                        else
+                          message.sender_id != ticket.requester_id
+                        end
     {
       id: message.id,
       body: message.body,
-      sender_type: message.sender_type,
       sender_id: message.sender_id,
       sender_name: message.sender&.name || message.sender&.email,
+      sender_is_support: sender_is_support,
+      sender_role: message.sender_role,
       created_at: message.created_at,
       attachments: message.files.map { |file| attachment_payload(file) }
     }
@@ -104,5 +115,11 @@ class Api::V1::Accounts::SupportTicketsController < Api::V1::Accounts::BaseContr
         only_path: true
       )
     }
+  end
+
+  def mark_requester_read(ticket)
+    return unless ticket.requester_id == Current.user.id
+
+    ticket.update_column(:requester_last_read_at, Time.zone.now)
   end
 end

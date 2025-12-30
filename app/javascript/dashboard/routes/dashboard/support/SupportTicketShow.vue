@@ -30,8 +30,31 @@ const formatTimestamp = value => {
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
 };
 
+const normalizeSenderRole = message => message.sender_role || message.senderRole;
+
+const normalizeSenderIsSupport = message => {
+  const raw = message.sender_is_support ?? message.senderIsSupport;
+  if (raw === true || raw === 'true' || raw === 1 || raw === '1') return true;
+  if (raw === false || raw === 'false' || raw === 0 || raw === '0') return false;
+  return null;
+};
+
 const messageSenderLabel = message => {
-  if (message.sender_type === 'SuperAdmin') return t('SUPPORT.SHOW.SUPPORT_TEAM');
+  const senderRole = normalizeSenderRole(message);
+  if (senderRole) {
+    return senderRole === 'support'
+      ? t('SUPPORT.SHOW.SUPPORT_TEAM')
+      : t('SUPPORT.SHOW.YOU');
+  }
+  const senderIsSupport = normalizeSenderIsSupport(message);
+  if (senderIsSupport === true) return t('SUPPORT.SHOW.SUPPORT_TEAM');
+  if (senderIsSupport === false) return t('SUPPORT.SHOW.YOU');
+  const requesterId = ticket.value?.requester?.id;
+  if (requesterId && message.sender_id) {
+    return message.sender_id === requesterId
+      ? t('SUPPORT.SHOW.YOU')
+      : t('SUPPORT.SHOW.SUPPORT_TEAM');
+  }
   return t('SUPPORT.SHOW.YOU');
 };
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
@@ -19,6 +19,9 @@ const priority = ref('normal');
 const description = ref('');
 const files = ref([]);
 const isSubmitting = ref(false);
+const activeTab = ref('new');
+const tickets = ref([]);
+const isListLoading = ref(false);
 
 const categoryOptions = computed(() => [
   { value: 'technical', label: t('SUPPORT.NEW.CATEGORY.OPTIONS.TECHNICAL') },
@@ -47,8 +50,34 @@ const isFormInvalid = computed(
     !description.value.trim()
 );
 
+const formatTimestamp = value => {
+  if (!value) return '';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleString();
+};
+
 const buildShowUrl = ticketId =>
   frontendURL(`accounts/${route.params.accountId}/support/tickets/${ticketId}`);
+
+const loadTickets = async () => {
+  isListLoading.value = true;
+  try {
+    const { data } = await SupportTicketsAPI.list();
+    tickets.value = data?.tickets || [];
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error(error);
+    useAlert(t('SUPPORT.LIST.LOAD_ERROR'));
+  } finally {
+    isListLoading.value = false;
+  }
+};
+
+watch(activeTab, tab => {
+  if (tab === 'list' && !tickets.value.length) {
+    loadTickets();
+  }
+});
 
 const ensureShowNavigation = async ticketId => {
   const target = {
@@ -113,7 +142,26 @@ const submitTicket = async () => {
       </p>
     </div>
 
-    <form class="grid gap-4" @submit.prevent="submitTicket">
+    <div class="inline-flex rounded-lg bg-n-solid-2 p-1">
+      <button
+        type="button"
+        class="px-3 py-1.5 text-sm font-medium rounded-md"
+        :class="activeTab === 'new' ? 'bg-n-solid-1 text-n-slate-12' : 'text-n-slate-11'"
+        @click="activeTab = 'new'"
+      >
+        {{ t('SUPPORT.NAV.NEW_TICKET') }}
+      </button>
+      <button
+        type="button"
+        class="px-3 py-1.5 text-sm font-medium rounded-md"
+        :class="activeTab === 'list' ? 'bg-n-solid-1 text-n-slate-12' : 'text-n-slate-11'"
+        @click="activeTab = 'list'"
+      >
+        {{ t('SUPPORT.NAV.MY_TICKETS') }}
+      </button>
+    </div>
+
+    <form v-if="activeTab === 'new'" class="grid gap-4" @submit.prevent="submitTicket">
       <WithLabel name="subject" :label="t('SUPPORT.NEW.SUBJECT.LABEL')">
         <NextInput
           v-model="subject"
@@ -187,5 +235,57 @@ const submitTicket = async () => {
         </NextButton>
       </div>
     </form>
+
+    <div v-else class="flex flex-col gap-4">
+      <div v-if="isListLoading" class="text-sm text-n-slate-11">
+        {{ t('SUPPORT.LIST.LOADING') }}
+      </div>
+      <div v-else-if="!tickets.length" class="text-sm text-n-slate-11">
+        {{ t('SUPPORT.LIST.EMPTY') }}
+      </div>
+      <div v-else class="overflow-x-auto rounded-lg border border-n-weak">
+        <table class="min-w-full text-sm">
+          <thead class="bg-n-solid-2 text-n-slate-11">
+            <tr class="text-left">
+              <th class="py-2 px-3">{{ t('SUPPORT.LIST.SUBJECT') }}</th>
+              <th class="py-2 px-3">{{ t('SUPPORT.LIST.STATUS') }}</th>
+              <th class="py-2 px-3">{{ t('SUPPORT.LIST.PRIORITY') }}</th>
+              <th class="py-2 px-3">{{ t('SUPPORT.LIST.LAST_ACTIVITY') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="ticket in tickets"
+              :key="ticket.id"
+              class="border-t border-n-weak hover:bg-n-solid-3"
+            >
+              <td class="py-2 px-3">
+                <button
+                  type="button"
+                  class="text-woot-500 hover:text-woot-700"
+                  @click="
+                    router.push({
+                      name: 'support_ticket_show',
+                      params: { accountId: route.params.accountId, ticketId: ticket.id },
+                    })
+                  "
+                >
+                  {{ ticket.subject }}
+                </button>
+                <span
+                  v-if="ticket.unread"
+                  class="ml-2 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+                >
+                  {{ t('SUPPORT.LIST.UNREAD') }}
+                </span>
+              </td>
+              <td class="py-2 px-3">{{ ticket.status }}</td>
+              <td class="py-2 px-3">{{ ticket.priority }}</td>
+              <td class="py-2 px-3">{{ formatTimestamp(ticket.last_activity_at) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
 </template>

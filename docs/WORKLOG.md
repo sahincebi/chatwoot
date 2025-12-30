@@ -1,5 +1,162 @@
 # Worklog
 
+## 2025-12-30 16:10
+- Tarih/Saat (TR): 2025-12-30 16:10
+- Amac: Destek bildirimlerinde okundu/okunmadi durumunu gostermek (super admin ve kullanici).
+- Sorun / Belirti: Ticket olusturma/yanitlasma sonrasi bildirim okunma durumu gorunmuyor.
+- Kok Neden (Varsa): Support ticket modelinde okuma/metin takibi icin alanlar yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251230161000_add_read_tracking_to_support_tickets.rb
+  - db/schema.rb
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/index.html.erb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - config/locales/en.yml
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Kullanici yeni ticket olusturur -> super admin listesinde "Unread" etiketi gorunur.
+  - (bekliyor) Super admin show acinca "Unread" kalkar, kullanici tarafinda yanit okunmamis olarak gorunur.
+- Notlar / Riskler:
+  - Okunma durumu globaldir (super adminler arasi ayri takip edilmez).
+
+## 2025-12-30 17:25
+- Tarih/Saat (TR): 2025-12-30 17:25
+- Amac: Destek ekibi mesajlarini kullanici tarafinda dogru etiketlemek ve super admin tarafinda status guncellemek.
+- Sorun / Belirti: Super admin yaniti kullanici tarafinda "Siz" gorunuyor; ticket status kapatilamiyor.
+- Kok Neden (Varsa): SuperAdmin STI oldugu icin sender_type "User" kaydoluyor; status update action yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket_message.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - config/routes.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/show.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Super admin yaniti kullanici tarafinda "Destek Ekibi" gorunmeli.
+  - (bekliyor) Super admin show sayfasinda status degistirilebilir olmali.
+- Notlar / Riskler:
+  - Sender etiketi icin message payload'a sender_is_support eklendi.
+
+## 2025-12-30 17:40
+- Tarih/Saat (TR): 2025-12-30 17:40
+- Amac: Super admin okunmadi etiketi ve kullanici tarafinda "Destek Ekibi" gorunumu duzelsin.
+- Sorun / Belirti: Unread etiketi gorunmuyor; super admin yaniti "Siz" olarak gorunuyor.
+- Kok Neden (Varsa): last_message_sender_type eski kayitlarda bos kalmis ve sender_is_support STI nedeniyle yanlis hesaplanmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Super admin listesinde yeni ticket'lar "Unread" gosterir.
+  - (bekliyor) Kullanici tarafinda super admin yanitlari "Destek Ekibi" olarak gorunur.
+- Notlar / Riskler:
+  - last_message_* alanlari bos ise ilk erisimde guncellenir.
+
+## 2025-12-30 17:55
+- Tarih/Saat (TR): 2025-12-30 17:55
+- Amac: Destek ekibi yanitlari kullanici tarafinda "Destek Ekibi" olarak gorunsun ve okunmadi etiketi geri gelsin.
+- Sorun / Belirti: Super admin yaniti kullanici tarafinda "Siz" gorunuyor; okunmadi etiketi super admin listesinde cikmiyor.
+- Kok Neden (Varsa): API'da sender_type STI bilgisi tasinmiyordu; last_message_sender_type eski kayitlarda yanlis kalmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/models/support_ticket.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Kullanici tarafinda super admin mesajlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde yeni ticket'lar "Unread" gorunur.
+- Notlar / Riskler:
+  - last_message_sender_type uyumsuz ise erisim aninda duzeltilir.
+
+## 2025-12-30 18:15
+- Tarih/Saat (TR): 2025-12-30 18:15
+- Amac: Kullanici mesajlari "Siz", super admin mesajlari "Destek Ekibi" olarak gorunsun ve okunmadi badge duzgun hesaplansin.
+- Sorun / Belirti: Kullanici mesaji Destek Ekibi gorunuyor; super admin listesinde okunmadi yok.
+- Kok Neden (Varsa): Destek/Requestor ayrimi sender type'a dayaninca super admin requestor'lar ters etiketleniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails bundle exec rails runner "SupportTicket.order(id: :desc).limit(5).each { |t| puts([t.id, t.unread_for_admin?, t.last_message_sender_type, t.last_message_at, t.admin_last_read_at].inspect) }"
+- Dogrulama:
+  - (bekliyor) Kullanici tarafinda kendi mesajlari "Siz", super admin yanitlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde yeni ticket'lar "Unread" gorunur.
+- Notlar / Riskler:
+  - sender_is_support artik requester_id bazinda hesaplanir.
+
+## 2025-12-30 18:30
+- Tarih/Saat (TR): 2025-12-30 18:30
+- Amac: Destek yanitlari her zaman "Destek Ekibi", kullanici mesajlari "Siz" olarak gorunsun.
+- Sorun / Belirti: Super admin yaniti kullanici tarafinda "Siz" gorunuyor.
+- Kok Neden (Varsa): SuperAdmin STI oldugu icin sender_id kontrolu yanlis etiketlemeye neden oluyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251230182500_add_sender_role_to_support_ticket_messages.rb
+  - db/schema.rb
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Kullanici mesajlari "Siz", super admin mesajlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde unread etiketi beklenen ticket'larda gorunur.
+- Notlar / Riskler:
+  - sender_role yeni alan; migration gerekli.
+
+## 2025-12-30 18:45
+- Tarih/Saat (TR): 2025-12-30 18:45
+- Amac: Kullanici tarafinda mesaj etiketlerini (Siz/Destek Ekibi) dogru gostermek ve eski mesajlari duzeltmek.
+- Sorun / Belirti: Kullanici tarafinda admin mesajlari da "Siz" gorunuyor; eski mesajlarda sender_role bos.
+- Kok Neden (Varsa): sender_role migrationi yeni; mevcut kayitlar backfill edilmemisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - db/migrate/20251230184500_backfill_support_ticket_sender_roles.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Backfill sonrasinda kullanici mesajlari "Siz", admin mesajlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde unread dogru gorunur.
+- Notlar / Riskler:
+  - Migration calistirilmadan eski kayitlar duzelmez.
+
+## 2025-12-30 15:58
+- Tarih/Saat (TR): 2025-12-30 15:58
+- Amac: Super admin erisimini dogrulamak ve yeni super admin olusturmak.
+- Sorun / Belirti: Super admin paneline giris icin email/sifre gerekiyor.
+- Kok Neden (Varsa): (yok)
+- Yapilan Degisiklikler (dosya bazli):
+  - (dosya degisikligi yok) Veritabani: SuperAdmin olusturuldu (email: superadmin@local.dev).
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails bundle exec rails runner "puts 'super_admins=' + SuperAdmin.pluck(:id,:email,:name).inspect; u=User.find_by(email: 'john@acme.inc'); puts 'john=' + (u ? 'id=' + u.id.to_s + ' type=' + u.type.inspect : 'nil')"
+  - docker compose --% exec -T rails bundle exec rails runner "email='superadmin@local.dev'; if User.exists?(email: email); puts 'exists'; else; sa=SuperAdmin.create!(name: 'Super Admin', email: email, password: 'SupportAdmin!2025', password_confirmation: 'SupportAdmin!2025', confirmed_at: Time.current); puts 'created id=' + sa.id.to_s + ' email=' + sa.email; end"
+- Dogrulama:
+  - SuperAdmin listesinde john@acme.inc var (type=SuperAdmin).
+  - Yeni super admin: superadmin@local.dev olusturuldu.
+- Notlar / Riskler:
+  - Parolayi paylastik; giristen sonra degistirmeniz onerilir.
+
 ## 2025-12-30 15:41
 - Tarih/Saat (TR): 2025-12-30 15:41
 - Amac: Destek ticket reply (messages) endpoint hatasini duzeltmek.
@@ -1474,6 +1631,27 @@
   - VAPID_KEYS yoksa runtime’da {} doner; yeni anahtarlar create edilirken hata olursa dashboard 500 vermez.
 - Sonraki Adimlar:
   - /app/dashboard acilisinda 500 olmadigini kontrol et.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 19:15
+- Amac: Destek mesajlarinda "Siz/Destek Ekibi" ayrimini duzeltmek ve okunmamis isaretini listeye yansitmak.
+- Sorun / Belirti: Super admin yanitlari kullanici panelinde "Siz" gorunuyor; listede okunmamis rozeti bekleniyordu.
+- Kok Neden (Varsa): Frontend mesaj etiketlemesinde sender_role/sender_is_support normalize edilmemisti; yeni sekme listesinde rozet yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: sender_role ve sender_is_support icin normalize + fallback.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: liste tabinda okunmamis rozeti.
+  - app/models/support_ticket_message.rb: sender_role bos gelirse otomatik atama.
+  - script/support_ticket_sender_role_smoke.rb: destek mesaj rolu smoke testi.
+- Calistirilan Komutlar:
+  - bundle exec rails runner script/support_ticket_sender_role_smoke.rb
+- Dogrulama:
+  - API payload icinde sender_role/support ve sender_is_support true gorunmeli.
+  - /app/accounts/1/support/tickets listesinde okunmamis rozeti gorunmeli.
+- Notlar / Riskler:
+  - UI tarafinda senderRole/senderIsSupport camelCase donuslerine de tolerans eklendi.
+- Sonraki Adimlar:
+  - Vite restart + hard refresh ile UI etiketlerini dogrula.
 
 ---
 

@@ -11,6 +11,7 @@
       "STATUS": "Durum",
       "PRIORITY": "\u00D6ncelik",
       "LAST_ACTIVITY": "Son aktivite",
+      "UNREAD": "Okunmad\u0131",
       "LOADING": "Y\u00FCkleniyor...",
       "EMPTY": "Hen\u00FCz destek bildirimi yok.",
       "LOAD_ERROR": "Destek bildirimleri y\u00FCklenemedi."

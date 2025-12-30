@@ -625,7 +625,7 @@ Rails.application.routes.draw do
         post :provision_support_hq_inbox, on: :collection
       end
 
-      resources :support_tickets, only: [:index, :show] do
+      resources :support_tickets, only: [:index, :show, :update] do
         post :reply, on: :member
       end
 

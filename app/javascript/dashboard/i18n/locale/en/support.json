@@ -11,6 +11,7 @@
       "STATUS": "Status",
       "PRIORITY": "Priority",
       "LAST_ACTIVITY": "Last activity",
+      "UNREAD": "Unread",
       "LOADING": "Loading...",
       "EMPTY": "No support tickets found.",
       "LOAD_ERROR": "Could not load support tickets."
