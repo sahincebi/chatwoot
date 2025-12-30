@@ -56,26 +56,15 @@ const ensureShowNavigation = async ticketId => {
     params: { accountId: route.params.accountId, ticketId },
   };
   try {
-    const failure = await router.replace(target);
-    if (failure) {
-      // eslint-disable-next-line no-console
-      console.warn('[support] navigation failed', failure);
-    }
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('[support] replace failed', error);
+    await router.replace(target);
+  } catch (_error) {
+    // fallback below will handle navigation
   }
 
   await nextTick();
   const current = router.currentRoute.value;
   const currentId = current?.params?.ticketId;
   if (current?.name !== 'support_ticket_show' || `${currentId}` !== `${ticketId}`) {
-    // eslint-disable-next-line no-console
-    console.warn('[support] navigation fallback to location.assign', {
-      currentName: current?.name,
-      currentId,
-      ticketId,
-    });
     window.location.assign(buildShowUrl(ticketId));
   }
 };
@@ -101,18 +90,6 @@ const submitTicket = async () => {
       useAlert(t('SUPPORT.NEW.ERROR'));
       return;
     }
-    // eslint-disable-next-line no-console
-    console.warn('[support] created ticketId=', ticketId);
-    // eslint-disable-next-line no-console
-    console.warn('[support] current route=', route.fullPath);
-    // eslint-disable-next-line no-console
-    console.warn(
-      '[support] support routes=',
-      router
-        .getRoutes()
-        .map(routeItem => routeItem.name)
-        .filter(name => String(name).includes('support'))
-    );
     useAlert(t('SUPPORT.NEW.SUCCESS_WITH_ID', { id: ticketId }));
     await ensureShowNavigation(ticketId);
   } catch (error) {

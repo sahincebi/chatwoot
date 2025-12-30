@@ -1583,6 +1583,50 @@
 - Sonraki Adimlar:
   - UI akisini tarayicida teyit et ve gerekiyorsa console loglarini paylas.
 
+---
+
+- Tarih/Saat (TR): 30.12.2025 04:25
+- Amac: Support routes'in ana router'a gercekten register edilmesini garanti etmek.
+- Sorun / Belirti: /support/tickets route'u taninmiyor, index loglari gorunmuyor ve /support/new'e ziplaniyor.
+- Kok Neden (Varsa): support routes registry ana router'da yuklenmiyor/haritalanmiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/index.js: account route altina supportRoutes ekleniyor (support_ticket_index yoksa).
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: debug log kaldi (module load kaniti).
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue: debug log kaldi (mount kaniti).
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/support/tickets acildiginda console'da:
+    - [support] support.routes.js LOADED ...
+    - [support] SupportTicketIndex MOUNT ...
+  - Network'te /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - Hard refresh (Disable cache + Ctrl+F5) onerilir.
+- Sonraki Adimlar:
+  - Console loglarini ve network istegini paylas.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 04:42
+- Amac: Support routes'un ana router'a kesin olarak eklenmesini saglamak (debug log olmadan).
+- Sorun / Belirti: /support/tickets path'i support routes register edilmedigi icin gorunmuyor.
+- Kok Neden (Varsa): support routes dashboard.routes.js icinde olsa da router registry'de yuklenmiyor gibi gorunuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/index.js: accounts/:accountId altina supportRoutes kosulsuz eklendi.
+  - app/javascript/dashboard/routes/dashboard/dashboard.routes.js: supportRoutes yayilimi buradan kaldirildi (tek kaynak routes/index.js).
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: debug log kaldirildi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue: debug log kaldirildi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: debug loglar temizlendi (fallback korunuyor).
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/support/tickets -> index listesi acilmali.
+  - Network: /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - Support routes artik tek noktadan register ediliyor.
+- Sonraki Adimlar:
+  - UI dogrulamasini tarayicida yap.
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).

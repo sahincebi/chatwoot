@@ -7,7 +7,6 @@ import { routes as notificationRoutes } from './notifications/routes';
 import { routes as inboxRoutes } from './inbox/routes';
 import { frontendURL } from '../../helper/URLHelper';
 import { routes as captainRoutes } from './captain/captain.routes';
-import supportRoutes from './support/support.routes';
 import AppContainer from './Dashboard.vue';
 import Suspended from './suspended/Index.vue';
 import NoAccounts from './noAccounts/Index.vue';
@@ -26,7 +25,6 @@ export default {
         ...companyRoutes,
         ...searchRoutes,
         ...notificationRoutes,
-        ...supportRoutes.routes,
       ],
     },
     {
