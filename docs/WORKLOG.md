@@ -1646,6 +1646,24 @@
 - Sonraki Adimlar:
   - UI akisini tarayicida dogrula.
 
+---
+
+- Tarih/Saat (TR): 30.12.2025 05:18
+- Amac: Support sayfalarinda "Missing required prop: name" uyarilarini tamamen kaldirmak.
+- Sorun / Belirti: Vue warn nedeniyle navigation fail ve /support/new fallback.
+- Kok Neden (Varsa): WithLabel bileşeninde name prop required iken bazı kullanımlarda gelmemesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/v3/components/Form/WithLabel.vue: name prop required olmaktan cikti, default '' verildi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /support/tickets sayfasinda Console'da "Missing required prop: name" olmamali.
+  - /support/tickets index acilmali ve /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - name bossa label for baglantisi bos olur; form davranisi degismez.
+- Sonraki Adimlar:
+  - UI dogrulamasini tarayicida yap.
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).
