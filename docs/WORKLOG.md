@@ -1,5 +1,21 @@
 # Worklog
 
+## 2025-12-31 02:08
+- Tarih/Saat (TR): 2025-12-31 02:08
+- Amac: Sol ust marka ikonunu tema bazli ayarlamak (dark/light).
+- Sorun / Belirti: Dark ikon light modda da gorunuyordu.
+- Kok Neden (Varsa): Logo komponenti tek bir src ile render ediyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/icon/Logo.vue: dark modda logoThumbnail, light modda cebi-favicon-light kullan.
+  - public/brand-assets/cebi-favicon-light.svg
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Light modda cebi-favicon-light, dark modda logoThumbnail gorunmeli.
+  - (bekliyor) Vite restart + hard refresh ile UI kontrolu.
+- Notlar / Riskler:
+  - Light ikon yoksa varsayilan logoThumbnail fallback yapar.
+
 ## 2025-12-30 16:10
 - Tarih/Saat (TR): 2025-12-30 16:10
 - Amac: Destek bildirimlerinde okundu/okunmadi durumunu gostermek (super admin ve kullanici).
@@ -1715,6 +1731,23 @@
   - JSON anahtar yapisi korunmustur.
 - Sonraki Adimlar:
   - Gerekirse Vite restart + hard refresh ile UI kontrolu yap.
+
+---
+
+- Tarih/Saat (TR): 31.12.2025 01:50
+- Amac: Website inbox sohbetleri yuklenirken 500 hatasi ile takilma sorununu gidermek.
+- Sorun / Belirti: /api/v1/accounts/1/conversations istegi 500 donuyor, UI "Sohbetler Yükleniyor"da kalıyor.
+- Kok Neden (Varsa): cached_label_list kolonu olmayan ortamlarda Conversation#cached_label_list_array NoMethodError veriyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/conversation.rb: cached_label_list kolonunu guard ile kontrol edip yoksa bos liste donmek.
+- Calistirilan Komutlar:
+  - docker compose logs --tail=200 rails
+- Dogrulama:
+  - /app/accounts/1/inbox/2 sayfasinda sohbet listesi yuklenmeli, 500 olmamali.
+- Notlar / Riskler:
+  - cached_label_list mevcutsa mevcut davranis korunur.
+- Sonraki Adimlar:
+  - UI kontrolu ve gerekirse Vite restart.
 
 ---
 

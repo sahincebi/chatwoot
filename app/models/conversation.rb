@@ -172,7 +172,12 @@ class Conversation < ApplicationRecord
   end
 
   def cached_label_list_array
-    (cached_label_list || '').split(',').map(&:strip)
+    cached_list = if self.class.column_names.include?('cached_label_list')
+                    self[:cached_label_list]
+                  else
+                    nil
+                  end
+    (cached_list || '').split(',').map(&:strip)
   end
 
   def notifiable_assignee_change?
