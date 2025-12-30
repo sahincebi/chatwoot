@@ -1,5 +1,9 @@
 {
   "SUPPORT": {
+    "NAV": {
+      "NEW_TICKET": "Create Support Ticket",
+      "MY_TICKETS": "My Support Tickets"
+    },
     "LIST": {
       "TITLE": "Support Tickets",
       "NEW_TICKET": "New Ticket",

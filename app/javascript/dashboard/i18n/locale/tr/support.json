@@ -1,5 +1,9 @@
 {
   "SUPPORT": {
+    "NAV": {
+      "NEW_TICKET": "Destek Bildirimi Oluştur",
+      "MY_TICKETS": "Destek Bildirimlerim"
+    },
     "LIST": {
       "TITLE": "Destek Bildirimleri",
       "NEW_TICKET": "Yeni Bildirim",

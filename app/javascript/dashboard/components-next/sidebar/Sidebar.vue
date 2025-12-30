@@ -404,13 +404,15 @@ const menuItems = computed(() => {
       icon: 'i-lucide-life-buoy',
       children: [
         {
+          name: 'Support New',
+          label: t('SUPPORT.NAV.NEW_TICKET'),
+          activeOn: ['support_ticket_new'],
+          to: accountScopedRoute('support_ticket_new'),
+        },
+        {
           name: 'Support Tickets',
-          label: t('SIDEBAR.SUPPORT_TICKETS'),
-          activeOn: [
-            'support_ticket_index',
-            'support_ticket_new',
-            'support_ticket_show',
-          ],
+          label: t('SUPPORT.NAV.MY_TICKETS'),
+          activeOn: ['support_ticket_index', 'support_ticket_show'],
           to: accountScopedRoute('support_ticket_index'),
         },
       ],

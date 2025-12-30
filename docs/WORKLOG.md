@@ -1,5 +1,23 @@
 # Worklog
 
+## 2025-12-30 13:43
+- Tarih/Saat (TR): 2025-12-30 13:43
+- Amac: Destek menusu altinda "olustur" ve "liste" ayri item'larini gostermek.
+- Sorun / Belirti: Destek menusu tek item ile list/new karisiyordu.
+- Kok Neden (Varsa): Sidebar support grubunda yalnizca tek item vardi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Sidebar > Destek > "Destek Bildirimi Olustur" -> support_ticket_new
+  - (bekliyor) Sidebar > Destek > "Destek Bildirimlerim" -> support_ticket_index
+- Notlar / Riskler:
+  - Menu sadece UI tarafinda degisti; routing wiring degismedi.
+
 ## 2025-12-30 05:37
 - Tarih/Saat (TR): 2025-12-30 05:37
 - Amac: /support/tickets route'unun router'a dogrudan kaydedilmesini garanti etmek.
