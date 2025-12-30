@@ -202,7 +202,7 @@ onMounted(loadTicket);
           <h2 class="text-sm font-semibold text-n-slate-12 mb-3">
             {{ t('SUPPORT.SHOW.REPLY') }}
           </h2>
-          <WithLabel :label="t('SUPPORT.SHOW.REPLY')">
+          <WithLabel name="reply_body" :label="t('SUPPORT.SHOW.REPLY')">
             <textarea
               v-model="replyBody"
               rows="4"
@@ -211,7 +211,11 @@ onMounted(loadTicket);
               :disabled="isSubmitting"
             />
           </WithLabel>
-          <WithLabel :label="t('SUPPORT.SHOW.ATTACHMENTS')" class="mt-3">
+          <WithLabel
+            name="reply_attachments"
+            :label="t('SUPPORT.SHOW.ATTACHMENTS')"
+            class="mt-3"
+          >
             <input
               type="file"
               multiple

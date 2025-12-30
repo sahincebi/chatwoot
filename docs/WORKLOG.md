@@ -1627,6 +1627,25 @@
 - Sonraki Adimlar:
   - UI dogrulamasini tarayicida yap.
 
+---
+
+- Tarih/Saat (TR): 30.12.2025 05:01
+- Amac: Support sayfalarinda "Missing required prop: name" uyarilarini kaldirarak navigation fail'i engellemek.
+- Sorun / Belirti: /support/tickets acilinca Vue warn (name prop) ve rota new'e dusuyor.
+- Kok Neden (Varsa): WithLabel bileşeni name prop'u required iken SupportTicketNew/Show'da verilmemesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: WithLabel'lara name prop eklendi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: reply/attachments WithLabel name prop eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/support/tickets sayfasinda Console'da "Missing required prop: name" olmamali.
+  - /support/tickets index acilmali ve /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - WithLabel name yalnizca label for baglantisi icin kullanilir.
+- Sonraki Adimlar:
+  - UI akisini tarayicida dogrula.
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).

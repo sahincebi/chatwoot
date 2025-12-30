@@ -114,7 +114,7 @@ const submitTicket = async () => {
     </div>
 
     <form class="grid gap-4" @submit.prevent="submitTicket">
-      <WithLabel :label="t('SUPPORT.NEW.SUBJECT.LABEL')">
+      <WithLabel name="subject" :label="t('SUPPORT.NEW.SUBJECT.LABEL')">
         <NextInput
           v-model="subject"
           type="text"
@@ -124,7 +124,7 @@ const submitTicket = async () => {
         />
       </WithLabel>
 
-      <WithLabel :label="t('SUPPORT.NEW.CATEGORY.LABEL')">
+      <WithLabel name="category" :label="t('SUPPORT.NEW.CATEGORY.LABEL')">
         <select
           v-model="category"
           class="!mb-0 text-sm"
@@ -140,7 +140,7 @@ const submitTicket = async () => {
         </select>
       </WithLabel>
 
-      <WithLabel :label="t('SUPPORT.NEW.PRIORITY.LABEL')">
+      <WithLabel name="priority" :label="t('SUPPORT.NEW.PRIORITY.LABEL')">
         <select
           v-model="priority"
           class="!mb-0 text-sm"
@@ -156,7 +156,7 @@ const submitTicket = async () => {
         </select>
       </WithLabel>
 
-      <WithLabel :label="t('SUPPORT.NEW.MESSAGE.LABEL')">
+      <WithLabel name="description" :label="t('SUPPORT.NEW.MESSAGE.LABEL')">
         <textarea
           v-model="description"
           rows="6"
@@ -166,7 +166,7 @@ const submitTicket = async () => {
         />
       </WithLabel>
 
-      <WithLabel :label="t('SUPPORT.NEW.ATTACHMENTS.LABEL')">
+      <WithLabel name="attachments" :label="t('SUPPORT.NEW.ATTACHMENTS.LABEL')">
         <input
           type="file"
           multiple
