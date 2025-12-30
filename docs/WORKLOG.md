@@ -1531,6 +1531,58 @@
 - Sonraki Adimlar:
   - DevTools console loglarini paylas (created ticketId, current route, support routes list).
 
+---
+
+- Tarih/Saat (TR): 30.12.2025 03:18
+- Amac: Destek sayfasinda index deneyimini geri getirip dogru route/UX akisini saglamak.
+- Sorun / Belirti: /support/tickets dashboard'a dusuyor, sidebar new'e gidiyor, liste gorunmuyor.
+- Kok Neden (Varsa): support_ticket_index route'u redirect'e donmus ve sidebar new'e bagliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index component + meta.permissions ile geri alindi.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu support_ticket_index'e baglandi (activeOn index/new/show).
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: "Tum Ticketlar" butonu index'e baglandi.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: SHOW.ALL_TICKETS eklendi.
+- Calistirilan Komutlar:
+  - docker compose exec -T vite sh -lc "rm -rf node_modules/.vite tmp/cache 2>/dev/null || true"
+  - docker compose restart rails sidekiq vite
+  - git grep -n "support_ticket_index" app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - git grep -n "SupportTicketIndex" app/javascript/dashboard/routes/dashboard/support/support.routes.js
+- Dogrulama:
+  - Hard refresh (Disable cache + Ctrl+F5) notu uygulandi.
+  - /app/accounts/:id/support/tickets -> index listesi, ticketlar gorunur.
+  - Index -> ticket tikla -> /support/tickets/:id (show).
+  - Show -> Tum Ticketlar -> index.
+  - Index -> Yeni Destek Bildirimi -> /support/new.
+  - New create -> /support/tickets/:id (show).
+- Notlar / Riskler:
+  - Vite cache temizligi sonrasinda ilk yukleme yavas olabilir.
+- Sonraki Adimlar:
+  - UI testlerini tarayicida uygula ve gerekiyorsa console loglarini paylas.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 03:23
+- Amac: Destek index route'unu geri getirip sidebar'i index'e baglamak ve show/index navigasyonunu duzeltmek.
+- Sorun / Belirti: /support/tickets dashboard'a dusuyor, sidebar new'e gidiyor, index listesi gorunmuyor.
+- Kok Neden (Varsa): support_ticket_index route'u redirect edilmis; sidebar new'e bagli kalmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index -> SupportTicketIndex component ve permissions.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu support_ticket_index'e alindi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: "Tum Ticketlar" butonu index'e baglandi.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: ALL_TICKETS metni eklendi.
+- Calistirilan Komutlar:
+  - docker compose restart rails sidekiq vite
+- Dogrulama:
+  - /app/accounts/:id/support/tickets -> index listesi gorunur.
+  - Index'ten ticket tikla -> /support/tickets/:id show.
+  - Show'dan "Tum Ticketlar" -> index.
+  - Index'ten "Yeni Destek Bildirimi" -> /support/new.
+  - New create -> /support/tickets/:id show.
+- Notlar / Riskler:
+  - Hard refresh (Disable cache + Ctrl+F5) onerilir.
+- Sonraki Adimlar:
+  - UI akisini tarayicida teyit et ve gerekiyorsa console loglarini paylas.
+
 - Tarih/Saat (TR): 29.12.2025 05:50
 - Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
 - Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).

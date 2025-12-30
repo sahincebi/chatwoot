@@ -51,6 +51,7 @@
     "SHOW": {
       "TITLE": "Support Ticket",
       "NEW_TICKET": "New Support Request",
+      "ALL_TICKETS": "All Tickets",
       "SUBJECT": "Subject",
       "STATUS": "Status",
       "CATEGORY": "Category",

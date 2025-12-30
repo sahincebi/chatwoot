@@ -91,9 +91,9 @@ onMounted(loadTicket);
       </h1>
       <NextButton
         outline
-        @click="router.push({ name: 'support_ticket_new', params: { accountId: route.params.accountId } })"
+        @click="router.push({ name: 'support_ticket_index', params: { accountId: route.params.accountId } })"
       >
-        {{ t('SUPPORT.SHOW.NEW_TICKET') }}
+        {{ t('SUPPORT.SHOW.ALL_TICKETS') }}
       </NextButton>
     </div>
 

@@ -51,6 +51,7 @@
     "SHOW": {
       "TITLE": "Destek Bildirimi",
       "NEW_TICKET": "Yeni Destek Bildirimi",
+      "ALL_TICKETS": "T\u00FCm Ticketlar",
       "SUBJECT": "Konu",
       "STATUS": "Durum",
       "CATEGORY": "Kategori",
