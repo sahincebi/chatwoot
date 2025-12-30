@@ -1,7 +1,13 @@
 import { frontendURL } from '../../../helper/URLHelper';
+import {
+  ROLES,
+  CONVERSATION_PERMISSIONS,
+} from '../../../constants/permissions';
 import SupportTicketIndex from './SupportTicketIndex.vue';
 import SupportTicketNew from './SupportTicketNew.vue';
 import SupportTicketShow from './SupportTicketShow.vue';
+
+const SUPPORT_PERMISSIONS = [...ROLES, ...CONVERSATION_PERMISSIONS];
 
 export default {
   routes: [
@@ -10,7 +16,7 @@ export default {
       name: 'support_ticket_index',
       component: SupportTicketIndex,
       meta: {
-        permissions: ['administrator', 'agent', 'custom_role'],
+        permissions: SUPPORT_PERMISSIONS,
       },
     },
     {
@@ -18,7 +24,7 @@ export default {
       name: 'support_ticket_new',
       component: SupportTicketNew,
       meta: {
-        permissions: ['administrator', 'agent', 'custom_role'],
+        permissions: SUPPORT_PERMISSIONS,
       },
     },
     {
@@ -26,7 +32,7 @@ export default {
       name: 'support_ticket_show',
       component: SupportTicketShow,
       meta: {
-        permissions: ['administrator', 'agent', 'custom_role'],
+        permissions: SUPPORT_PERMISSIONS,
       },
     },
   ],

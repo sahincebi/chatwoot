@@ -1,5 +1,21 @@
 # Worklog
 
+## 2025-12-30 15:05
+- Tarih/Saat (TR): 2025-12-30 15:05
+- Amac: Destek ticket route'larinin permission guard ile uyumlu calismasini saglamak.
+- Sorun / Belirti: /support/tickets route'u /support/new'e dusuyor; permission guard yalnis eslesiyor olabilir.
+- Kok Neden (Varsa): Support route meta.permissions yalnizca role string'lerini kullaniyordu; userPermissions listesi permission string'leri donuyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/routes/index.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails sh -lc "bundle exec rails runner \"require 'net/http'; u=URI('http://127.0.0.1:3000/app/accounts/1/support/tickets'); r=Net::HTTP.get_response(u); puts({code:r.code, location:r['location'], content_type:r['content-type']}.inspect)\""
+- Dogrulama:
+  - (bekliyor) /app/accounts/:id/support/tickets -> index acilmali, /api/v1/accounts/:id/support_tickets 200 donmeli.
+- Notlar / Riskler:
+  - Debug loglar kaldirildi; Vite hard refresh gerekli olabilir.
+
 ## 2025-12-30 13:43
 - Tarih/Saat (TR): 2025-12-30 13:43
 - Amac: Destek menusu altinda "olustur" ve "liste" ayri item'larini gostermek.
