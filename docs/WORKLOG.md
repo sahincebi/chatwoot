@@ -1,5 +1,35 @@
 # Worklog
 
+## 2025-12-30 15:34
+- Tarih/Saat (TR): 2025-12-30 15:34
+- Amac: Support tickets API listeleme hatasini gidermek.
+- Sorun / Belirti: "Destek bildirimleri yuklenemedi" ve rails log'da Account#support_tickets NoMethodError.
+- Kok Neden (Varsa): Account modelinde support_tickets association yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/account.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails sh -lc "grep -n 'support_tickets' log/development.log | tail -n 50"
+- Dogrulama:
+  - (bekliyor) /api/v1/accounts/:id/support_tickets 200 ve liste gorunur.
+- Notlar / Riskler:
+  - Rails restart gerekebilir.
+
+## 2025-12-30 15:24
+- Tarih/Saat (TR): 2025-12-30 15:24
+- Amac: Destek bildirimi sayfasinda ikinci sekme ile ticket listesini gostermek.
+- Sorun / Belirti: /support/tickets yonlendirme sorunu ve liste gorunmuyor; yeni sayfada kalma.
+- Kok Neden (Varsa): SPA yonlendirme/guard akisi nedeniyle index sayfasi acilmiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) /app/accounts/:id/support/new icinde "Destek Bildirimlerim" sekmesi altinda liste gorunmeli.
+- Notlar / Riskler:
+  - Liste API: /api/v1/accounts/:id/support_tickets.
+
 ## 2025-12-30 15:05
 - Tarih/Saat (TR): 2025-12-30 15:05
 - Amac: Destek ticket route'larinin permission guard ile uyumlu calismasini saglamak.
