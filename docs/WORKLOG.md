@@ -1,5 +1,50 @@
 # Worklog
 
+## 2025-12-31 03:00
+- Tarih/Saat (TR): 2025-12-31 03:00
+- Amac: Account bazli AI konfigurasyonu, bakiye ve kullanim loglari icin veri modeli eklemek.
+- Sorun / Belirti: AI prompt id/version ve cuzdan bilgileri DB'de olmadigi icin runtime guncelleme yoktu.
+- Kok Neden (Varsa): AI konfigurasyonu ve bakiye modellemesi tanimli degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251231023000_add_ai_fields_to_accounts.rb
+  - db/migrate/20251231023010_create_ai_wallets_transactions_usage_logs.rb
+  - app/models/account.rb
+  - app/models/ai_wallet.rb
+  - app/models/ai_transaction.rb
+  - app/models/ai_usage_log.rb
+  - lib/tasks/ai_backfill.rake
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rails runner "a=Account.first; puts [a.ai_enabled,a.ai_prompt_id,a.ai_prompt_version,a.ai_wallet&.balance_cents].inspect"
+  - docker compose exec -T rails bundle exec rake ai:backfill_wallets
+- Notlar / Riskler:
+  - ai_wallets account_id unique; backfill idempotent.
+
+## 2025-12-31 03:25
+- Tarih/Saat (TR): 2025-12-31 03:25
+- Amac: AI temsilciyi otomatik olusturmak, varsayilan atama yapmak ve AI calisma kosullarini gatelamak.
+- Sorun / Belirti: AI temsilci yoktu; yeni konusmalar varsayilan AI'ya atanmiyordu; prompt guncellemeleri runtime'a yansimiyordu.
+- Kok Neden (Varsa): AI agent provisioning ve gating mantigi tanimli degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251231030000_add_is_ai_agent_to_users.rb
+  - app/services/account/provision_ai_agent_service.rb
+  - app/jobs/account/provision_ai_agent_job.rb
+  - app/models/account.rb
+  - app/models/conversation.rb
+  - lib/integrations/llm_base_service.rb
+  - lib/tasks/ai_backfill.rake
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rake ai:backfill_agents
+  - docker compose exec -T rails bundle exec rails runner "a=Account.first; a.reload; puts [a.ai_agent_user_id, a.ai_agent&.is_ai_agent, a.ai_wallet&.balance_cents].inspect"
+  - docker compose exec -T rails bundle exec rails runner "c=Conversation.last; puts [c.assignee_id, c.account.ai_agent_user_id].inspect"
+- Notlar / Riskler:
+  - AI calisma kosullari ai_prompt_id + wallet + assignee kontrolune baglandi.
+
 ## 2025-12-31 02:08
 - Tarih/Saat (TR): 2025-12-31 02:08
 - Amac: Sol ust marka ikonunu tema bazli ayarlamak (dark/light).

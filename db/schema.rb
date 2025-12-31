@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_30_184500) do
+ActiveRecord::Schema[7.1].define(version: 2025_12_31_030000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -73,6 +73,11 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_30_184500) do
     t.integer "status", default: 0
     t.jsonb "internal_attributes", default: {}, null: false
     t.jsonb "settings", default: {}
+    t.boolean "ai_enabled", default: true, null: false
+    t.string "ai_prompt_id"
+    t.integer "ai_prompt_version", default: 1, null: false
+    t.bigint "ai_agent_user_id"
+    t.index ["ai_agent_user_id"], name: "index_accounts_on_ai_agent_user_id"
     t.index ["status"], name: "index_accounts_on_status"
   end
 
@@ -142,6 +147,53 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_30_184500) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_agent_capacity_policies_on_account_id"
+  end
+
+  create_table "ai_transactions", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.integer "kind", null: false
+    t.bigint "amount_cents", null: false
+    t.string "currency", default: "USD", null: false
+    t.string "provider"
+    t.string "provider_ref"
+    t.jsonb "meta"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_ai_transactions_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_ai_transactions_on_account_id"
+    t.index ["provider_ref"], name: "index_ai_transactions_on_provider_ref"
+  end
+
+  create_table "ai_usage_logs", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "conversation_id"
+    t.bigint "message_id"
+    t.string "prompt_id"
+    t.integer "prompt_version"
+    t.string "model"
+    t.integer "input_tokens", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.integer "total_tokens", default: 0, null: false
+    t.bigint "cost_cents", default: 0, null: false
+    t.string "currency", default: "USD", null: false
+    t.jsonb "meta"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "created_at"], name: "index_ai_usage_logs_on_account_id_and_created_at"
+    t.index ["account_id"], name: "index_ai_usage_logs_on_account_id"
+    t.index ["conversation_id"], name: "index_ai_usage_logs_on_conversation_id"
+    t.index ["message_id"], name: "index_ai_usage_logs_on_message_id"
+  end
+
+  create_table "ai_wallets", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "balance_cents", default: 0, null: false
+    t.string "currency", default: "USD", null: false
+    t.integer "status", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_ai_wallets_on_account_id", unique: true
+    t.check_constraint "balance_cents >= 0", name: "ai_wallets_balance_cents_nonnegative"
   end
 
   create_table "applied_slas", force: :cascade do |t|
@@ -1263,7 +1315,9 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_30_184500) do
     t.integer "consumed_timestep"
     t.boolean "otp_required_for_login", default: false, null: false
     t.text "otp_backup_codes"
+    t.boolean "is_ai_agent", default: false, null: false
     t.index ["email"], name: "index_users_on_email"
+    t.index ["is_ai_agent"], name: "index_users_on_is_ai_agent"
     t.index ["otp_required_for_login"], name: "index_users_on_otp_required_for_login"
     t.index ["otp_secret"], name: "index_users_on_otp_secret", unique: true
     t.index ["pubsub_token"], name: "index_users_on_pubsub_token", unique: true
@@ -1299,8 +1353,12 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_30_184500) do
     t.index ["inbox_id"], name: "index_working_hours_on_inbox_id"
   end
 
+  add_foreign_key "accounts", "users", column: "ai_agent_user_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "ai_transactions", "accounts"
+  add_foreign_key "ai_usage_logs", "accounts"
+  add_foreign_key "ai_wallets", "accounts"
   add_foreign_key "inboxes", "portals"
   add_foreign_key "support_ticket_messages", "support_tickets"
   add_foreign_key "support_tickets", "accounts"

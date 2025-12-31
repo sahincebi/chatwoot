@@ -14,6 +14,7 @@ class Integrations::LlmBaseService
 
   def perform
     return nil unless valid_event_name?
+    return nil unless ai_allowed?
 
     return value_from_cache if value_from_cache.present?
 
@@ -157,10 +158,35 @@ class Integrations::LlmBaseService
       account_id: hook.account_id,
       conversation_id: conversation&.display_id,
       feature_name: event_name,
+      prompt_id: ai_prompt_id,
+      prompt_version: ai_prompt_version,
       model: parsed_body['model'],
       messages: parsed_body['messages'],
       temperature: parsed_body['temperature']
     }
+  end
+
+  def ai_allowed?
+    account = reloaded_account
+    return false unless account&.ai_enabled?
+    return false if account.ai_prompt_id.blank?
+    return false unless account.ai_wallet&.balance_cents.to_i.positive?
+    return false unless conversation&.assignee_id.present?
+    return false unless account.ai_agent_user_id.present?
+
+    conversation.assignee_id == account.ai_agent_user_id
+  end
+
+  def reloaded_account
+    @reloaded_account ||= Account.find_by(id: hook.account_id)
+  end
+
+  def ai_prompt_id
+    reloaded_account&.ai_prompt_id
+  end
+
+  def ai_prompt_version
+    reloaded_account&.ai_prompt_version
   end
 
   def build_error_response_from_exception(error, messages)
