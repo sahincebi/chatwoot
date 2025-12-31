@@ -169,7 +169,7 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 ---
 
 ### P0-4: **Wallet Top-up / Bakiye yönetimi (Admin)**
-- [ ] Top-up endpoint:
+- [x] Top-up endpoint:
   - POST `/api/v1/accounts/:id/ai_wallet/topup` (amount_cents)
   - `AiTransaction(kind: topup)` + wallet.balance_cents artır
 - [ ] UI sonra; önce API

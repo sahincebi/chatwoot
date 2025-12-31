@@ -2386,3 +2386,33 @@
   - commit: 3000b6490
 - Notlar / Riskler:
   - (yok)
+## 2026-01-01 01:15
+- Tarih/Saat (TR): 2026-01-01 01:15
+- Amac: P0-4 admin wallet topup API eklemek.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/ai_wallets_controller.rb
+  - config/routes.rb
+  - spec/requests/api/v1/accounts/ai_wallets_spec.rb
+  - docs/AI_AGENT_GUIDE.md
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails sh -lc "bundle exec rails routes | grep -E 'ai_wallet'"
+  - docker compose exec -T rails bundle exec rails runner "a = Account.find(1); w = AiWallet.find_or_create_by!(account_id: a.id); before = w.balance_cents; ActiveRecord::Base.transaction do; w.with_lock { w.update!(balance_cents: before + 1234) }; AiTransaction.create!(account_id: a.id, kind: :topup, amount_cents: 1234, provider: 'admin', provider_ref: 'runner-test'); end; puts({before: before, after: AiWallet.find(w.id).balance_cents}.inspect)"
+  - docker compose exec -T rails bundle exec rspec spec/requests/api/v1/accounts/ai_wallets_spec.rb
+- Test Sahnesi + Dogrulama:
+  - Amac: wallet show/topup endpointleri ve idempotency dogrulamasi.
+  - Kurulum / On Sart: ai_wallets tablosu mevcut olmali.
+  - Komutlar:
+    - routes grep (ai_wallet)
+    - runner (topup balance artisi)
+    - rspec (ai_wallets_spec)
+  - Beklenen cikti:
+    - routes: ai_wallet + topup path'leri gorunur
+    - runner: before/after farki +1234
+    - rspec: 7 examples, 0 failures
+  - Sonuc (runner cikti):
+    - {before: 10000, after: 11234}
+  - Sonuc (rspec cikti):
+    - 7 examples, 0 failures
+- Notlar / Riskler:
+  - Agent kullanici icin 401 doner (check_admin_authorization?).

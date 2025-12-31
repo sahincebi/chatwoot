@@ -154,6 +154,9 @@ Rails.application.routes.draw do
             post :messages, on: :member
           end
           resource :ai_settings, only: [:show, :update]
+          resource :ai_wallet, only: [:show] do
+            post :topup
+          end
           namespace :ai_integrations do
             resource :google_calendar, only: [:update]
           end
