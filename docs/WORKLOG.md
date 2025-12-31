@@ -2377,3 +2377,12 @@
     - 5 examples, 0 failures
 - Notlar / Riskler:
   - refresh_token GET response'ta masklenir; sadece has_refresh_token true/false doner.
+## 2026-01-01 01:03
+- Tarih/Saat (TR): 2026-01-01 01:03
+- Amac: P0-3 commit hash kaydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Dogrulama:
+  - commit: 3000b6490
+- Notlar / Riskler:
+  - (yok)
