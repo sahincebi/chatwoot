@@ -1,0 +1,82 @@
+{
+  "SUPPORT": {
+    "NAV": {
+      "NEW_TICKET": "Destek Bildirimi Oluştur",
+      "MY_TICKETS": "Destek Bildirimlerim"
+    },
+    "LIST": {
+      "TITLE": "Destek Bildirimleri",
+      "NEW_TICKET": "Yeni Bildirim",
+      "SUBJECT": "Konu",
+      "STATUS": "Durum",
+      "PRIORITY": "\u00D6ncelik",
+      "LAST_ACTIVITY": "Son aktivite",
+      "UNREAD": "Okunmad\u0131",
+      "LOADING": "Y\u00FCkleniyor...",
+      "EMPTY": "Hen\u00FCz destek bildirimi yok.",
+      "LOAD_ERROR": "Destek bildirimleri y\u00FCklenemedi."
+    },
+    "NEW": {
+      "TITLE": "Destek Bildirimi Olu\u015Ftur",
+      "DESCRIPTION": "Destek ekibimizle g\u00F6r\u00FC\u015Fmek i\u00E7in a\u015Fa\u011F\u0131daki formu doldurun.",
+      "SUBJECT": {
+        "LABEL": "Konu",
+        "PLACEHOLDER": "K\u0131saca \u00F6zetleyin"
+      },
+      "CATEGORY": {
+        "LABEL": "Kategori",
+        "OPTIONS": {
+          "TECHNICAL": "Teknik",
+          "BILLING": "Faturaland\u0131rma",
+          "INTEGRATION": "Entegrasyon",
+          "FEATURE_REQUEST": "\u00D6zellik Talebi",
+          "OTHER": "Di\u011Fer"
+        }
+      },
+      "PRIORITY": {
+        "LABEL": "\u00D6ncelik",
+        "OPTIONS": {
+          "NORMAL": "Normal",
+          "HIGH": "Y\u00FCksek",
+          "URGENT": "Acil"
+        }
+      },
+      "MESSAGE": {
+        "LABEL": "A\u00E7\u0131klama",
+        "PLACEHOLDER": "Sorunu detayl\u0131 anlat\u0131n"
+      },
+      "ATTACHMENTS": {
+        "LABEL": "Dosyalar"
+      },
+      "SUBMIT": "Bildirimi G\u00F6nder",
+      "SUCCESS": "Destek bildiriminiz al\u0131nd\u0131.",
+      "SUCCESS_WITH_ID": "Destek bildiriminiz al\u0131nd\u0131. Bilet No: {id}",
+      "ERROR": "Destek bildirimi olu\u015Fturulamad\u0131. L\u00FCtfen tekrar deneyin."
+    },
+    "SHOW": {
+      "TITLE": "Destek Bildirimi",
+      "NEW_TICKET": "Yeni Destek Bildirimi",
+      "ALL_TICKETS": "T\u00FCm Ticketlar",
+      "SUBJECT": "Konu",
+      "STATUS": "Durum",
+      "CATEGORY": "Kategori",
+      "PRIORITY": "\u00D6ncelik",
+      "DESCRIPTION": "A\u00E7\u0131klama",
+      "REQUESTER": "Talep Sahibi",
+      "CREATED_AT": "Olu\u015Fturulma",
+      "LAST_ACTIVITY": "Son aktivite",
+      "MESSAGES": "Mesajlar",
+      "REPLY": "Yan\u0131tla",
+      "REPLY_PLACEHOLDER": "Yan\u0131t yaz\u0131n",
+      "SEND_REPLY": "Yan\u0131t\u0131 G\u00F6nder",
+      "ATTACHMENTS": "Ekler",
+      "YOU": "Siz",
+      "SUPPORT_TEAM": "Destek Ekibi",
+      "LOADING": "Y\u00FCkleniyor...",
+      "NOT_FOUND": "Destek bildirimi bulunamad\u0131.",
+      "LOAD_ERROR": "Destek bildirimi y\u00FCklenemedi.",
+      "REPLY_SUCCESS": "Yan\u0131t g\u00F6nderildi.",
+      "REPLY_ERROR": "Yan\u0131t g\u00F6nderilemedi. L\u00FCtfen tekrar deneyin."
+    }
+  }
+}

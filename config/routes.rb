@@ -14,6 +14,7 @@ Rails.application.routes.draw do
   else
     root to: 'dashboard#index'
 
+    get '/manifest.json', to: 'manifest#show'
     get '/app', to: 'dashboard#index'
     get '/app/*params', to: 'dashboard#index'
     get '/app/accounts/:account_id/settings/inboxes/new/twitter', to: 'dashboard#index', as: 'app_new_twitter_inbox'
@@ -146,6 +147,11 @@ Rails.application.routes.draw do
               get :inbox_assistant
               get :reporting_events if ChatwootApp.enterprise?
             end
+          end
+
+          resources :support_requests, only: [:create]
+          resources :support_tickets, only: [:index, :create, :show] do
+            post :messages, on: :member
           end
 
           resources :search, only: [:index] do
@@ -615,6 +621,12 @@ Rails.application.routes.draw do
 
       resource :settings, only: [:show] do
         get :refresh, on: :collection
+        post :provision_support_inboxes, on: :collection
+        post :provision_support_hq_inbox, on: :collection
+      end
+
+      resources :support_tickets, only: [:index, :show, :update] do
+        post :reply, on: :member
       end
 
       # resources that doesn't appear in primary navigation in super admin

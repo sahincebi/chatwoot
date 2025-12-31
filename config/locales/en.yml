@@ -30,6 +30,8 @@
 # available at https://guides.rubyonrails.org/i18n.html.
 
 en:
+  support_tickets:
+    unread: "Unread"
   hello: 'Hello world'
   inbox:
     reauthorization:

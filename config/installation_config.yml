@@ -15,21 +15,29 @@
 
 # ------- Branding Related Config ------- #
 - name: INSTALLATION_NAME
-  value: 'Chatwoot'
+  value: "\u00c7ebi Medya AI Panel"
   display_title: 'Installation Name'
   description: 'The installation wide name that would be used in the dashboard, title etc.'
 - name: LOGO_THUMBNAIL
-  value: '/brand-assets/logo_thumbnail.svg'
+  value: '/brand-assets/cebi-favicon-dark.svg'
   display_title: 'Logo Thumbnail'
   description: 'The thumbnail that would be used for favicon (512px X 512px)'
 - name: LOGO
-  value: '/brand-assets/logo.svg'
+  value: '/brand-assets/cebi-logo.svg'
   display_title: 'Logo'
   description: 'The logo that would be used on the dashboard, login page etc.'
 - name: LOGO_DARK
-  value: '/brand-assets/logo_dark.svg'
+  value: '/brand-assets/cebi-logo-dark.svg'
   display_title: 'Logo Dark Mode'
   description: 'The logo that would be used on the dashboard, login page etc. for dark mode'
+- name: BRAND_LOGO_URL
+  value: '/brand-assets/cebi-logo.svg'
+  display_title: 'Brand Logo'
+  description: 'The primary brand logo used on auth screens'
+- name: BRAND_LOGO_DARK_URL
+  value: '/brand-assets/cebi-logo-dark.svg'
+  display_title: 'Brand Logo Dark'
+  description: 'The dark mode brand logo used on auth screens'
 - name: BRAND_URL
   value: 'https://www.chatwoot.com'
   display_title: 'Brand URL'
@@ -39,9 +47,25 @@
   display_title: 'Widget Brand URL'
   description: 'The URL that would be used in the widget under the section “Powered By”'
 - name: BRAND_NAME
-  value: 'Chatwoot'
+  value: "\u00c7ebi Medya"
   display_title: 'Brand Name'
   description: 'The name that would be used in emails and the widget'
+- name: APP_TITLE
+  value: "\u00c7ebi Medya AI Panel"
+  display_title: 'App Title'
+  description: 'The title that would be used in the browser and app metadata'
+- name: MANIFEST_NAME
+  value: "\u00c7ebi Medya AI Panel"
+  display_title: 'Manifest Name'
+  description: 'The name that would be used in the web app manifest'
+- name: MANIFEST_SHORT_NAME
+  value:
+  display_title: 'Manifest Short Name'
+  description: 'The short name that would be used in the web app manifest'
+- name: FAVICON_URL
+  value: '/brand-assets/cebi-favicon-dark.svg'
+  display_title: 'Favicon URL'
+  description: 'The favicon that would be used across the app'
 - name: TERMS_URL
   value: 'https://www.chatwoot.com/terms-of-service'
   display_title: 'Terms URL'
@@ -93,6 +117,32 @@
   value: 40
   display_title: 'Attachment size limit (MB)'
   description: 'Maximum attachment size in MB allowed for uploads'
+  locked: false
+- name: SUPPORT_INBOX_AUTO_PROVISION
+  value: true
+  display_title: 'Auto provision support inbox'
+  description: 'Automatically create a support inbox for new accounts'
+  locked: false
+  type: boolean
+- name: SUPPORT_INBOX_NAME
+  value: 'Destek'
+  display_title: 'Support inbox name'
+  description: 'Inbox name used for support ticket routing'
+  locked: false
+- name: SUPPORT_HQ_ACCOUNT_ID
+  value:
+  display_title: 'Support HQ Account ID'
+  description: 'Account ID where support tickets are centralized'
+  locked: false
+- name: SUPPORT_HQ_INBOX_NAME
+  value: 'Support'
+  display_title: 'Support HQ inbox name'
+  description: 'Inbox name in Support HQ account for centralized tickets'
+  locked: false
+- name: SUPPORT_TICKET_SOURCE
+  value: 'internal_support_form'
+  display_title: 'Support ticket source'
+  description: 'Source prefix for support ticket contact inbox'
   locked: false
 # ------- End of Account Related Config ------- #
 

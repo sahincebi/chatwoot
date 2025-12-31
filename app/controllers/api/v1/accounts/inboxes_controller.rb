@@ -8,7 +8,8 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
   before_action :validate_whatsapp_cloud_channel, only: [:health]
 
   def index
-    @inboxes = policy_scope(Current.account.inboxes.order_by_name.includes(:channel, { avatar_attachment: [:blob] }))
+    inboxes = policy_scope(Current.account.inboxes.order_by_name.includes(:channel, { avatar_attachment: [:blob] }))
+    @inboxes = include_support? ? inboxes : filter_support_inboxes(inboxes)
   end
 
   def show; end
@@ -96,6 +97,30 @@ class Api::V1::Accounts::InboxesController < Api::V1::Accounts::BaseController
 
   def fetch_agent_bot
     @agent_bot = AgentBot.find(params[:agent_bot]) if params[:agent_bot]
+  end
+
+  def include_support?
+    params[:include_support].to_s == 'true'
+  end
+
+  def filter_support_inboxes(inboxes)
+    return inboxes.where(is_support: false) if support_column_available?
+
+    names = support_inbox_names
+    return inboxes if names.empty?
+
+    inboxes.where.not('lower(name) IN (?)', names.map(&:downcase))
+  end
+
+  def support_column_available?
+    Inbox.column_names.include?('is_support')
+  end
+
+  def support_inbox_names
+    [
+      InstallationConfig.get_value('SUPPORT_INBOX_NAME'),
+      InstallationConfig.get_value('SUPPORT_HQ_INBOX_NAME')
+    ].compact
   end
 
   def validate_whatsapp_cloud_channel

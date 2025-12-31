@@ -6,9 +6,10 @@ import store from 'dashboard/store';
 import { validateLoggedInRoutes } from '../helper/routeHelpers';
 import AnalyticsHelper from '../helper/AnalyticsHelper';
 
-const routes = [...dashboard.routes];
-
-export const router = createRouter({ history: createWebHistory(), routes });
+export const router = createRouter({
+  history: createWebHistory(),
+  routes: [...dashboard.routes],
+});
 
 export const validateAuthenticateRoutePermission = (to, next) => {
   const { isLoggedIn, getCurrentUser: user } = store.getters;

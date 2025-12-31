@@ -79,7 +79,7 @@ export default {
 </script>
 
 <template>
-  <woot-modal v-model:show="localShow" :on-close="onClose">
+  <woot-modal v-model:show="localShow" @close="onClose">
     <woot-modal-header
       :header-title="$t('MERGE_CONTACTS.TITLE')"
       :header-content="$t('MERGE_CONTACTS.DESCRIPTION')"

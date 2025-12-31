@@ -1,18 +1,30 @@
 # ------- Branding Related Config ------- #
 - name: INSTALLATION_NAME
-  value: 'Chatwoot'
+  value: "\u00c7ebi Medya AI Panel"
 - name: LOGO_THUMBNAIL
-  value: '/brand-assets/logo_thumbnail.svg'
+  value: '/brand-assets/cebi-favicon-dark.svg'
 - name: LOGO
-  value: '/brand-assets/logo.svg'
+  value: '/brand-assets/cebi-logo.svg'
 - name: LOGO_DARK
-  value: '/brand-assets/logo_dark.svg'
+  value: '/brand-assets/cebi-logo-dark.svg'
+- name: BRAND_LOGO_URL
+  value: '/brand-assets/cebi-logo.svg'
+- name: BRAND_LOGO_DARK_URL
+  value: '/brand-assets/cebi-logo-dark.svg'
 - name: BRAND_URL
   value: 'https://www.chatwoot.com'
 - name: WIDGET_BRAND_URL
   value: 'https://www.chatwoot.com'
 - name: BRAND_NAME
-  value: 'Chatwoot'
+  value: "\u00c7ebi Medya"
+- name: APP_TITLE
+  value: "\u00c7ebi Medya AI Panel"
+- name: MANIFEST_NAME
+  value: "\u00c7ebi Medya AI Panel"
+- name: MANIFEST_SHORT_NAME
+  value:
+- name: FAVICON_URL
+  value: '/brand-assets/cebi-favicon-dark.svg'
 - name: TERMS_URL
   value: 'https://www.chatwoot.com/terms-of-service'
 - name: PRIVACY_URL

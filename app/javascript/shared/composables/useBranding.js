@@ -14,7 +14,8 @@ export function useBranding() {
   const replaceInstallationName = text => {
     if (!text) return text;
 
-    const installationName = globalConfig.value?.installationName;
+    const installationName =
+      globalConfig.value?.brandName || globalConfig.value?.installationName;
     if (!installationName) return text;
 
     return text.replace(/Chatwoot/g, installationName);

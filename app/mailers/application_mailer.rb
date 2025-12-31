@@ -1,7 +1,7 @@
 class ApplicationMailer < ActionMailer::Base
   include ActionView::Helpers::SanitizeHelper
 
-  default from: ENV.fetch('MAILER_SENDER_EMAIL', 'Chatwoot <accounts@chatwoot.com>')
+  default from: BrandingConfig.mailer_sender_email || 'support@example.com'
   before_action { ensure_current_account(params.try(:[], :account)) }
   around_action :switch_locale
   layout 'mailer/base'
@@ -12,7 +12,7 @@ class ApplicationMailer < ActionMailer::Base
   helper :frontend_urls
   helper do
     def global_config
-      @global_config ||= GlobalConfig.get('BRAND_NAME', 'BRAND_URL')
+      @global_config ||= BrandingConfig.to_h
     end
   end
 
@@ -54,7 +54,7 @@ class ApplicationMailer < ActionMailer::Base
   def liquid_locals
     # expose variables you want to be exposed in liquid
     locals = {
-      global_config: GlobalConfig.get('BRAND_NAME', 'BRAND_URL'),
+      global_config: BrandingConfig.to_h,
       action_url: @action_url
     }
 

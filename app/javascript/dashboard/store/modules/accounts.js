@@ -5,6 +5,7 @@ import { differenceInDays } from 'date-fns';
 import EnterpriseAccountAPI from '../../api/enterprise/account';
 import { throwErrorMessage } from '../utils/api';
 import { getLanguageDirection } from 'dashboard/components/widgets/conversation/advancedFilterItems/languages';
+import { isEnterpriseEnabled } from 'dashboard/helper/enterpriseFlag';
 
 const findRecordById = ($state, id) =>
   $state.records.find(record => record.id === Number(id)) || {};
@@ -143,11 +144,38 @@ export const actions = {
 
   limits: async ({ commit }) => {
     commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: true });
+    const getAccountIdFromRoute = () => {
+      const parts = window.location.pathname.split('/');
+      const idx = parts.indexOf('accounts');
+      return idx >= 0 ? parts[idx + 1] : null;
+    };
+    const accountId = getAccountIdFromRoute();
+    if (!accountId) {
+      commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
+      return;
+    }
+    if (!isEnterpriseEnabled()) {
+      commit(types.default.SET_ACCOUNT_LIMITS, {
+        id: Number(accountId) || accountId,
+        limits: null,
+      });
+      commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
+      return;
+    }
+
     try {
-      const response = await EnterpriseAccountAPI.getLimits();
+      const response = await EnterpriseAccountAPI.getLimits(accountId);
       commit(types.default.SET_ACCOUNT_LIMITS, response.data);
     } catch (error) {
-      // silent error
+      if (error?.response?.status === 404) {
+        commit(types.default.SET_ACCOUNT_LIMITS, {
+          id: Number(accountId) || accountId,
+          limits: null,
+        });
+        return;
+      }
+      // eslint-disable-next-line no-console
+      console.error(error);
     } finally {
       commit(types.default.SET_ACCOUNT_UI_FLAG, { isFetchingLimits: false });
     }

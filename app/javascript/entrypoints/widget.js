@@ -16,9 +16,11 @@ import {
   isPhoneNumberValidWithDialCode,
 } from 'shared/helpers/Validators';
 
+const defaultLocale = window.chatwootConfig?.selectedLocale || 'tr';
 const i18n = createI18n({
   legacy: false, // https://github.com/intlify/vue-i18n/issues/1902
-  locale: 'en',
+  locale: defaultLocale,
+  fallbackLocale: 'tr',
   messages: i18nMessages,
 });
 

@@ -7,7 +7,6 @@ import { required, email } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { SESSION_STORAGE_KEYS } from 'dashboard/constants/sessionStorage';
 import SessionStorage from 'shared/helpers/sessionStorage';
-import { useBranding } from 'shared/composables/useBranding';
 
 // components
 import SimpleDivider from '../../components/Divider/SimpleDivider.vue';
@@ -45,9 +44,7 @@ export default {
     authError: { type: String, default: '' },
   },
   setup() {
-    const { replaceInstallationName } = useBranding();
     return {
-      replaceInstallationName,
       v$: useVuelidate(),
     };
   },
@@ -98,6 +95,34 @@ export default {
     },
     showSamlLogin() {
       return this.allowedLoginMethods.includes('saml');
+    },
+    brandName() {
+      return this.globalConfig.brandName || this.globalConfig.installationName;
+    },
+    runtimeConfig() {
+      return window.chatwootConfig || {};
+    },
+    logoLight() {
+      return (
+        this.runtimeConfig.LOGO ||
+        this.runtimeConfig.BRAND_LOGO_URL ||
+        '/brand-assets/cebi-logo.svg'
+      );
+    },
+    logoDark() {
+      return (
+        this.runtimeConfig.LOGO_DARK ||
+        this.runtimeConfig.BRAND_LOGO_DARK_URL ||
+        '/brand-assets/cebi-logo-dark.svg'
+      );
+    },
+    logoAlt() {
+      return (
+        this.globalConfig.appTitle ||
+        this.brandName ||
+        this.runtimeConfig.APP_TITLE ||
+        this.runtimeConfig.BRAND_NAME
+      );
     },
   },
   created() {
@@ -223,19 +248,12 @@ export default {
     class="flex flex-col w-full min-h-screen py-20 bg-n-brand/5 dark:bg-n-background sm:px-6 lg:px-8"
   >
     <section class="max-w-5xl mx-auto">
-      <img
-        :src="globalConfig.logo"
-        :alt="globalConfig.installationName"
-        class="block w-auto h-8 mx-auto dark:hidden"
-      />
-      <img
-        v-if="globalConfig.logoDark"
-        :src="globalConfig.logoDark"
-        :alt="globalConfig.installationName"
-        class="hidden w-auto h-8 mx-auto dark:block"
-      />
+      <picture>
+        <source v-if="logoDark" :srcset="logoDark" media="(prefers-color-scheme: dark)" />
+        <img :src="logoLight" :alt="logoAlt" class="block w-auto h-8 mx-auto" />
+      </picture>
       <h2 class="mt-6 text-3xl font-medium text-center text-n-slate-12">
-        {{ replaceInstallationName($t('LOGIN.TITLE')) }}
+        {{ $t('LOGIN.TITLE', { brand_name: brandName }) }}
       </h2>
       <p v-if="showSignupLink" class="mt-3 text-sm text-center text-n-slate-11">
         {{ $t('COMMON.OR') }}

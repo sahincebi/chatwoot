@@ -67,6 +67,7 @@ class Conversation < ApplicationRecord
   validates :contact_id, presence: true
   before_validation :validate_additional_attributes
   before_validation :reset_agent_bot_when_assignee_present
+  before_validation :assign_ai_agent, on: :create
   validates :additional_attributes, jsonb_attributes_length: true
   validates :custom_attributes, jsonb_attributes_length: true
   validates :uuid, uniqueness: true
@@ -172,7 +173,12 @@ class Conversation < ApplicationRecord
   end
 
   def cached_label_list_array
-    (cached_label_list || '').split(',').map(&:strip)
+    cached_list = if self.class.column_names.include?('cached_label_list')
+                    self[:cached_label_list]
+                  else
+                    nil
+                  end
+    (cached_list || '').split(',').map(&:strip)
   end
 
   def notifiable_assignee_change?
@@ -245,6 +251,13 @@ class Conversation < ApplicationRecord
     return if assignee_id.blank?
 
     self.assignee_agent_bot_id = nil
+  end
+
+  def assign_ai_agent
+    return if assignee_id.present?
+    return if account&.ai_agent_user_id.blank?
+
+    self.assignee_id = account.ai_agent_user_id
   end
 
   def determine_conversation_status

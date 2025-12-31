@@ -15,13 +15,37 @@
 #  index_installation_configs_on_name_and_created_at  (name,created_at) UNIQUE
 #
 class InstallationConfig < ApplicationRecord
+  class SerializedValueCoder
+    def self.dump(value)
+      return {} if value.nil?
+      return value if value.is_a?(Hash)
+      return value if value.is_a?(String)
+
+      value.to_yaml
+    end
+
+    def self.load(value)
+      return {}.with_indifferent_access if value.nil?
+      return value.with_indifferent_access if value.is_a?(Hash)
+      return {}.with_indifferent_access if value == ''
+
+      loaded = YAML.safe_load(value)
+      return loaded.with_indifferent_access if loaded.is_a?(Hash)
+
+      {}.with_indifferent_access
+    rescue Psych::Exception
+      {}.with_indifferent_access
+    end
+  end
+
   # https://stackoverflow.com/questions/72970170/upgrading-to-rails-6-1-6-1-causes-psychdisallowedclass-tried-to-load-unspecif
   # https://discuss.rubyonrails.org/t/cve-2022-32224-possible-rce-escalation-bug-with-serialized-columns-in-active-record/81017
   # FIX ME : fixes breakage of installation config. we need to migrate.
   # Fix configuration in application.rb
-  serialize :serialized_value, coder: YAML, type: ActiveSupport::HashWithIndifferentAccess
+  serialize :serialized_value, coder: SerializedValueCoder, type: ActiveSupport::HashWithIndifferentAccess
 
-  before_validation :set_lock
+  after_initialize :ensure_serialized_value
+  before_validation :set_lock, :ensure_serialized_value
   validates :name, presence: true
   validate :saml_sso_users_check, if: -> { name == 'ENABLE_SAML_SSO_LOGIN' }
 
@@ -31,6 +55,23 @@ class InstallationConfig < ApplicationRecord
   scope :editable, -> { where(locked: false) }
 
   after_commit :clear_cache
+  SUPPORT_KEYS = %w[SUPPORT_HQ_ACCOUNT_ID SUPPORT_HQ_INBOX_NAME SUPPORT_TICKET_SOURCE].freeze
+
+  class << self
+    def get_value(key)
+      find_by(name: key)&.value
+    end
+
+    def set_value(key, raw_value, locked: nil)
+      config = unscoped.find_or_initialize_by(name: key)
+      config.locked = false if SUPPORT_KEYS.include?(key) && config.locked?
+      config.serialized_value = {}.with_indifferent_access if config[:serialized_value].nil?
+      config.locked = locked unless locked.nil?
+      config.serialized_value = { 'value' => raw_value }.with_indifferent_access
+      config.save!
+      config.value
+    end
+  end
 
   def value
     # This is an extra hack again cause of the YAML serialization, in case of new object initialization in super admin
@@ -50,6 +91,10 @@ class InstallationConfig < ApplicationRecord
 
   def set_lock
     self.locked = true if locked.nil?
+  end
+
+  def ensure_serialized_value
+    self.serialized_value = {}.with_indifferent_access if self[:serialized_value].nil?
   end
 
   def clear_cache

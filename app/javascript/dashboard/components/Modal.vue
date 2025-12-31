@@ -7,7 +7,7 @@ import Button from 'dashboard/components-next/button/Button.vue';
 const { modalType, closeOnBackdropClick, onClose } = defineProps({
   closeOnBackdropClick: { type: Boolean, default: true },
   showCloseButton: { type: Boolean, default: true },
-  onClose: { type: Function, required: true },
+  onClose: { type: Function, default: null },
   fullWidth: { type: Boolean, default: false },
   modalType: { type: String, default: 'centered' },
   size: { type: String, default: '' },
@@ -35,7 +35,9 @@ const handleMouseDown = () => {
 const close = () => {
   show.value = false;
   emit('close');
-  onClose();
+  if (onClose && typeof onClose === 'function') {
+    onClose();
+  }
 };
 
 const onMouseUp = () => {
@@ -58,7 +60,12 @@ useEventListener(document.body, 'mouseup', onMouseUp);
 useEventListener(document, 'keydown', onKeydown);
 
 onMounted(() => {
-  if (import.meta.env.DEV && onClose && typeof onClose === 'function') {
+  if (
+    import.meta.env.DEV &&
+    window?.__CHATWOOT_DEBUG__ === true &&
+    onClose &&
+    typeof onClose === 'function'
+  ) {
     // eslint-disable-next-line no-console
     console.warn(
       "[DEPRECATED] The 'onClose' prop is deprecated. Please use the 'close' event instead."

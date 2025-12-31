@@ -52,7 +52,7 @@ export default {
 <template>
   <woot-modal
     v-model:show="localShow"
-    :on-close="onCancel"
+    @close="onCancel"
     modal-type="right-aligned"
   >
     <div class="flex flex-col h-auto overflow-auto">

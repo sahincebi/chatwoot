@@ -37,8 +37,10 @@ By default, it renders:
       <title><%= @portal.page_title%></title>
     <% end %>
     
-    <% if @portal.logo.present? %>
-      <link rel="icon" href="<%= url_for(@portal.logo) %>">
+    <% favicon_url = @portal.logo.present? ? url_for(@portal.logo) : BrandingConfig.favicon_url %>
+    <% if favicon_url.present? %>
+      <% favicon_type = favicon_url.end_with?('.svg') ? 'image/svg+xml' : 'image/png' %>
+      <link rel="icon" type="<%= favicon_type %>" href="<%= favicon_url %>">
     <% end %>
 
     <% unless @theme_from_params.blank? %>

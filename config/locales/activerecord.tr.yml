@@ -1,0 +1,8 @@
+tr:
+  errors:
+    messages:
+      taken: "zaten al\u0131nd\u0131"
+  activerecord:
+    errors:
+      messages:
+        taken: "zaten al\u0131nd\u0131"

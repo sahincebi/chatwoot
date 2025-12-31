@@ -1,0 +1,82 @@
+{
+  "SUPPORT": {
+    "NAV": {
+      "NEW_TICKET": "Create Support Ticket",
+      "MY_TICKETS": "My Support Tickets"
+    },
+    "LIST": {
+      "TITLE": "Support Tickets",
+      "NEW_TICKET": "New Ticket",
+      "SUBJECT": "Subject",
+      "STATUS": "Status",
+      "PRIORITY": "Priority",
+      "LAST_ACTIVITY": "Last activity",
+      "UNREAD": "Unread",
+      "LOADING": "Loading...",
+      "EMPTY": "No support tickets found.",
+      "LOAD_ERROR": "Could not load support tickets."
+    },
+    "NEW": {
+      "TITLE": "Create Support Ticket",
+      "DESCRIPTION": "Fill out the form below to reach our support team.",
+      "SUBJECT": {
+        "LABEL": "Subject",
+        "PLACEHOLDER": "Summarize briefly"
+      },
+      "CATEGORY": {
+        "LABEL": "Category",
+        "OPTIONS": {
+          "TECHNICAL": "Technical",
+          "BILLING": "Billing",
+          "INTEGRATION": "Integration",
+          "FEATURE_REQUEST": "Feature Request",
+          "OTHER": "Other"
+        }
+      },
+      "PRIORITY": {
+        "LABEL": "Priority",
+        "OPTIONS": {
+          "NORMAL": "Normal",
+          "HIGH": "High",
+          "URGENT": "Urgent"
+        }
+      },
+      "MESSAGE": {
+        "LABEL": "Description",
+        "PLACEHOLDER": "Describe the issue in detail"
+      },
+      "ATTACHMENTS": {
+        "LABEL": "Attachments"
+      },
+      "SUBMIT": "Submit Ticket",
+      "SUCCESS": "Support request received.",
+      "SUCCESS_WITH_ID": "Support request received. Ticket ID: {id}",
+      "ERROR": "Could not create the support ticket. Please try again."
+    },
+    "SHOW": {
+      "TITLE": "Support Ticket",
+      "NEW_TICKET": "New Support Request",
+      "ALL_TICKETS": "All Tickets",
+      "SUBJECT": "Subject",
+      "STATUS": "Status",
+      "CATEGORY": "Category",
+      "PRIORITY": "Priority",
+      "DESCRIPTION": "Description",
+      "REQUESTER": "Requester",
+      "CREATED_AT": "Created at",
+      "LAST_ACTIVITY": "Last activity",
+      "MESSAGES": "Messages",
+      "REPLY": "Reply",
+      "REPLY_PLACEHOLDER": "Write a reply",
+      "SEND_REPLY": "Send Reply",
+      "ATTACHMENTS": "Attachments",
+      "YOU": "You",
+      "SUPPORT_TEAM": "Support Team",
+      "LOADING": "Loading...",
+      "NOT_FOUND": "Support ticket not found.",
+      "LOAD_ERROR": "Could not load the support ticket.",
+      "REPLY_SUCCESS": "Reply sent.",
+      "REPLY_ERROR": "Could not send reply. Please try again."
+    }
+  }
+}

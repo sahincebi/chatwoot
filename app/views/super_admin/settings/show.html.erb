@@ -1,6 +1,8 @@
 <% content_for(:title) do %>
   Settings
 <% end %>
+<% brand_name = BrandingConfig.brand_name %>
+<% support_email = BrandingConfig.mailer_support_email %>
 <header class="flex px-8 py-4 items-center border-b border-n-weak" role="banner">
   <div class="border border-n-weak mr-4 p-2 rounded-full">
     <svg width="24" height="24"><use xlink:href="#icon-settings-2-line" /></svg>
@@ -16,8 +18,15 @@
   <% if Redis::Alfred.get(Redis::Alfred::CHATWOOT_INSTALLATION_CONFIG_RESET_WARNING) %>
     <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-5" role="alert">
     <strong class="font-bold">Alert!</strong>
-    <span class="block sm:inline">Unauthorized premium changes detected in Chatwoot. To keep using them, please upgrade your plan.
-      Contact for help :</span><span class="inline rounded-full bg-red-200 px-2  text-white  ml-2">sales@chatwoot.com</span>
+    <span class="block sm:inline">
+      Unauthorized premium changes detected in <%= brand_name %>. To keep using them, please upgrade your plan.
+      <% if support_email.present? %>
+        Contact for help :
+      <% end %>
+    </span>
+    <% if support_email.present? %>
+      <span class="inline rounded-full bg-red-200 px-2 text-white ml-2"><%= support_email %></span>
+    <% end %>
     </div>
   <% end %>
 
@@ -38,6 +47,13 @@
           </svg>
         </button>
       </div>
+    </div>
+    <div class="flex items-center mb-6">
+      <h4 class="text-sm font-medium leading-5 h-5 text-n-slate-12 mr-4">Support Inboxes</h4>
+      <%= button_to 'Provision Support Inboxes', provision_support_inboxes_super_admin_settings_path, method: :post,
+                    class: 'ml-auto inline-flex items-center justify-center h-9 px-3 rounded text-sm font-medium text-n-slate-12 bg-transparent outline outline-1 outline-n-container hover:bg-slate-50' %>
+      <%= button_to 'Provision Support HQ Inbox', provision_support_hq_inbox_super_admin_settings_path, method: :post,
+                    class: 'ml-2 inline-flex items-center justify-center h-9 px-3 rounded text-sm font-medium text-n-slate-12 bg-transparent outline outline-1 outline-n-container hover:bg-slate-50' %>
     </div>
     <% if ChatwootApp.enterprise? %>
       <div class="flex p-4 outline outline-1 outline-n-container rounded-lg items-start md:items-center shadow-sm flex-col md:flex-row">

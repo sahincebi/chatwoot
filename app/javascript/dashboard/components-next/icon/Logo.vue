@@ -1,17 +1,30 @@
 <script setup>
+import { computed } from 'vue';
 import { useAttrs } from 'vue';
 import { useMapGetter } from 'dashboard/composables/store';
 
 const attrs = useAttrs();
 const globalConfig = useMapGetter('globalConfig/get');
+const logoThumbnailDark = computed(() => globalConfig.value?.logoThumbnail);
+const logoThumbnailLight = computed(
+  () =>
+    globalConfig.value?.logoThumbnailLight || '/brand-assets/cebi-favicon-light.svg'
+);
 </script>
 
 <template>
-  <img
-    v-if="globalConfig.logoThumbnail"
-    v-bind="attrs"
-    :src="globalConfig.logoThumbnail"
-  />
+  <template v-if="logoThumbnailDark">
+    <img
+      v-bind="attrs"
+      class="hidden dark:block"
+      :src="logoThumbnailDark"
+    />
+    <img
+      v-bind="attrs"
+      class="block dark:hidden"
+      :src="logoThumbnailLight"
+    />
+  </template>
   <svg
     v-else
     v-once

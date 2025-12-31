@@ -147,7 +147,7 @@ export default {
     </div>
     <woot-modal
       v-model:show="showCustomSnoozeModal"
-      :on-close="hideCustomSnoozeModal"
+      @close="hideCustomSnoozeModal"
     >
       <CustomSnoozeModal
         @close="hideCustomSnoozeModal"

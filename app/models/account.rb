@@ -94,6 +94,10 @@ class Account < ApplicationRecord
   has_many :notifications, dependent: :destroy_async
   has_many :portals, dependent: :destroy_async, class_name: '::Portal'
   has_many :sms_channels, dependent: :destroy_async, class_name: '::Channel::Sms'
+  has_many :support_tickets, dependent: :destroy_async
+  has_one :ai_wallet, dependent: :destroy
+  has_many :ai_transactions, dependent: :destroy
+  has_many :ai_usage_logs, dependent: :destroy
   has_many :teams, dependent: :destroy_async
   has_many :telegram_channels, dependent: :destroy_async, class_name: '::Channel::Telegram'
   has_many :twilio_sms, dependent: :destroy_async, class_name: '::Channel::TwilioSms'
@@ -103,6 +107,7 @@ class Account < ApplicationRecord
   has_many :webhooks, dependent: :destroy_async
   has_many :whatsapp_channels, dependent: :destroy_async, class_name: '::Channel::Whatsapp'
   has_many :working_hours, dependent: :destroy_async
+  belongs_to :ai_agent, class_name: 'User', foreign_key: :ai_agent_user_id, optional: true
 
   has_one_attached :contacts_export
 
@@ -112,7 +117,7 @@ class Account < ApplicationRecord
   scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
 
   before_validation :validate_limit_keys
-  after_create_commit :notify_creation
+  after_create_commit :notify_creation, :provision_support_inbox, :provision_ai_agent
   after_destroy :remove_account_sequences
 
   def agents
@@ -146,7 +151,7 @@ class Account < ApplicationRecord
   end
 
   def support_email
-    super.presence || ENV.fetch('MAILER_SENDER_EMAIL') { GlobalConfig.get('MAILER_SUPPORT_EMAIL')['MAILER_SUPPORT_EMAIL'] }
+    super.presence || BrandingConfig.mailer_support_email || BrandingConfig.mailer_sender_email
   end
 
   def usage_limits
@@ -168,6 +173,14 @@ class Account < ApplicationRecord
 
   def notify_creation
     Rails.configuration.dispatcher.dispatch(ACCOUNT_CREATED, Time.zone.now, account: self)
+  end
+
+  def provision_support_inbox
+    Account::ProvisionSupportInboxJob.perform_later(id)
+  end
+
+  def provision_ai_agent
+    Account::ProvisionAiAgentJob.perform_later(id)
   end
 
   trigger.after(:insert).for_each(:row) do

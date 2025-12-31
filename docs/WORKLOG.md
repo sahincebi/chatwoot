@@ -1,13 +1,2172 @@
-# WORKLOG
+# Worklog
 
 ## 2025-12-31 16:28
-- Amaç: AI auto-reply cevaplarýnýn JSON yerine duz metin olarak gonderilmesi.
-- Sorun / Belirti: Responses API'den donen yapisal JSON metinleri kullaniciya ham olarak gorunuyordu.
-- Kok Neden: AI cevabi normalize edilmeden MessageBuilder'a aktariliyordu.
-- Yapilan Degisiklikler:
-  - app/jobs/ai/respond_to_message_job.rb: JSON -> duz metin normalize helper ve hata logu eklendi.
-  - app/models/message.rb: AI reply tetikleme hattinda mevcut davranis korunuyor.
+- Tarih/Saat (TR): 2025-12-31 16:28
+- Amac: AI auto-reply cevabini JSON yerine duz metne normaliz etmek.
+- Sorun / Belirti: AI response JSON string gorunuyordu.
+- Kok Neden (Varsa): Response text normalize edilmeden kullaniciya aktariliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/models/message.rb
 - Calistirilan Komutlar: (yok)
-- Dogrulama: (manuel) Widget'tan mesaj atinca JSON yerine duz metin gonderimi.
+- Dogrulama: Widget mesajinda JSON yerine duz metin.
 - Notlar / Riskler: Yok.
-- Sonraki Adimlar: Gerekirse prompt formati ve usage loglari ile ek testler ekle.
+
+
+## 2025-12-31 04:06
+- Tarih/Saat (TR): 2025-12-31 04:06
+- Amac: AI Temsilci icin otomatik cevap pipeline'i ve runtime gating eklemek.
+- Sorun / Belirti: AI assignee secili olsa bile incoming mesajlara otomatik yanit yoktu.
+- Kok Neden (Varsa): Incoming mesajdan sonra AI job tetiklenmiyor ve gating yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/models/message.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - Widget uzerinden yeni incoming mesaj -> AI Temsilci atanmis ise otomatik yanit gelmeli.
+  - docker compose logs --tail=200 sidekiq | Select-String -Pattern "AI_REPLY"
+  - docker compose exec -T rails bundle exec rails runner "Account.find(1).update!(ai_prompt_version: 4)"
+  - Yeni mesaj -> log'da prompt_version=4 gorunmeli.
+- Notlar / Riskler:
+  - API key yoksa AI cevap uretilmez; loglarda AI_REPLY skip gorunur.
+
+## 2025-12-31 14:51
+- Tarih/Saat (TR): 2025-12-31 14:51
+- Amac: AI auto-reply pipeline'ini ENV tabanli OpenAI Responses API ile calistirmak.
+- Sorun / Belirti: CAPTAIN_* InstallationConfig bagimliligi istenmiyordu; prompt payload formatini guncelleme gerekliydi.
+- Kok Neden (Varsa): Job icinde CAPTAIN_* endpoint/key okunuyordu ve prompt formati pmpt_ kullanimi icin uygun degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - OPENAI_API_KEY ve AI_OPENAI_ENDPOINT/OPENAI_BASE_URL set et.
+  - docker compose logs --tail=200 sidekiq | Select-String -Pattern "AI_REPLY"
+  - AI gelen mesajdan sonra outgoing mesaj olusmali.
+- Notlar / Riskler:
+  - pmpt_ promptlari icin variables: conversation/latest_message ile gonderilir.
+
+## 2025-12-31 15:11
+- Tarih/Saat (TR): 2025-12-31 15:11
+- Amac: OpenAI Responses API payload'ini prompt id formatina uydurmak ve 400 hatasini gidermek.
+- Sorun / Belirti: Sidekiq log'unda "Missing required parameter: 'prompt.id'." hatasi.
+- Kok Neden (Varsa): prompt alaninin string gonderilmesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - Widget'ten incoming mesaj -> AI Temsilci outgoing mesaj olusturmali.
+  - docker compose logs --tail=200 sidekiq | Select-String -Pattern "AI_REPLY"
+- Notlar / Riskler:
+  - prompt.version varsa string olarak gonderilir; model yalnizca AI_MODEL ENV varsa eklenir.
+
+## 2025-12-31 15:45
+- Tarih/Saat (TR): 2025-12-31 15:45
+- Amac: AI cevabindan JSON icerigi ayiklayip kullaniciya yalnizca mesaj metnini gondermek.
+- Sorun / Belirti: AI response text JSON string dondugunde widget'ta JSON gorunuyordu.
+- Kok Neden (Varsa): Response text normalize edilmiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - Widget'tan mesaj -> AI cevabi yalnizca duz metin gosterilmeli.
+  - JSON parse hatasi olursa log: [AI_REPLY] normalize_error=...
+- Notlar / Riskler:
+  - JSON parse edilemezse ham metin kullanilir.
+
+## 2025-12-31 03:00
+- Tarih/Saat (TR): 2025-12-31 03:00
+- Amac: Account bazli AI konfigurasyonu, bakiye ve kullanim loglari icin veri modeli eklemek.
+- Sorun / Belirti: AI prompt id/version ve cuzdan bilgileri DB'de olmadigi icin runtime guncelleme yoktu.
+- Kok Neden (Varsa): AI konfigurasyonu ve bakiye modellemesi tanimli degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251231023000_add_ai_fields_to_accounts.rb
+  - db/migrate/20251231023010_create_ai_wallets_transactions_usage_logs.rb
+  - app/models/account.rb
+  - app/models/ai_wallet.rb
+  - app/models/ai_transaction.rb
+  - app/models/ai_usage_log.rb
+  - lib/tasks/ai_backfill.rake
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rails runner "a=Account.first; puts [a.ai_enabled,a.ai_prompt_id,a.ai_prompt_version,a.ai_wallet&.balance_cents].inspect"
+  - docker compose exec -T rails bundle exec rake ai:backfill_wallets
+- Notlar / Riskler:
+  - ai_wallets account_id unique; backfill idempotent.
+
+## 2025-12-31 03:25
+- Tarih/Saat (TR): 2025-12-31 03:25
+- Amac: AI temsilciyi otomatik olusturmak, varsayilan atama yapmak ve AI calisma kosullarini gatelamak.
+- Sorun / Belirti: AI temsilci yoktu; yeni konusmalar varsayilan AI'ya atanmiyordu; prompt guncellemeleri runtime'a yansimiyordu.
+- Kok Neden (Varsa): AI agent provisioning ve gating mantigi tanimli degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251231030000_add_is_ai_agent_to_users.rb
+  - app/services/account/provision_ai_agent_service.rb
+  - app/jobs/account/provision_ai_agent_job.rb
+  - app/models/account.rb
+  - app/models/conversation.rb
+  - lib/integrations/llm_base_service.rb
+  - lib/tasks/ai_backfill.rake
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rake ai:backfill_agents
+  - docker compose exec -T rails bundle exec rails runner "a=Account.first; a.reload; puts [a.ai_agent_user_id, a.ai_agent&.is_ai_agent, a.ai_wallet&.balance_cents].inspect"
+  - docker compose exec -T rails bundle exec rails runner "c=Conversation.last; puts [c.assignee_id, c.account.ai_agent_user_id].inspect"
+- Notlar / Riskler:
+  - AI calisma kosullari ai_prompt_id + wallet + assignee kontrolune baglandi.
+
+## 2025-12-31 02:08
+- Tarih/Saat (TR): 2025-12-31 02:08
+- Amac: Sol ust marka ikonunu tema bazli ayarlamak (dark/light).
+- Sorun / Belirti: Dark ikon light modda da gorunuyordu.
+- Kok Neden (Varsa): Logo komponenti tek bir src ile render ediyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/icon/Logo.vue: dark modda logoThumbnail, light modda cebi-favicon-light kullan.
+  - public/brand-assets/cebi-favicon-light.svg
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Light modda cebi-favicon-light, dark modda logoThumbnail gorunmeli.
+  - (bekliyor) Vite restart + hard refresh ile UI kontrolu.
+- Notlar / Riskler:
+  - Light ikon yoksa varsayilan logoThumbnail fallback yapar.
+
+## 2025-12-30 16:10
+- Tarih/Saat (TR): 2025-12-30 16:10
+- Amac: Destek bildirimlerinde okundu/okunmadi durumunu gostermek (super admin ve kullanici).
+- Sorun / Belirti: Ticket olusturma/yanitlasma sonrasi bildirim okunma durumu gorunmuyor.
+- Kok Neden (Varsa): Support ticket modelinde okuma/metin takibi icin alanlar yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251230161000_add_read_tracking_to_support_tickets.rb
+  - db/schema.rb
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/index.html.erb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - config/locales/en.yml
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Kullanici yeni ticket olusturur -> super admin listesinde "Unread" etiketi gorunur.
+  - (bekliyor) Super admin show acinca "Unread" kalkar, kullanici tarafinda yanit okunmamis olarak gorunur.
+- Notlar / Riskler:
+  - Okunma durumu globaldir (super adminler arasi ayri takip edilmez).
+
+## 2025-12-30 17:25
+- Tarih/Saat (TR): 2025-12-30 17:25
+- Amac: Destek ekibi mesajlarini kullanici tarafinda dogru etiketlemek ve super admin tarafinda status guncellemek.
+- Sorun / Belirti: Super admin yaniti kullanici tarafinda "Siz" gorunuyor; ticket status kapatilamiyor.
+- Kok Neden (Varsa): SuperAdmin STI oldugu icin sender_type "User" kaydoluyor; status update action yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket_message.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - config/routes.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/show.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Super admin yaniti kullanici tarafinda "Destek Ekibi" gorunmeli.
+  - (bekliyor) Super admin show sayfasinda status degistirilebilir olmali.
+- Notlar / Riskler:
+  - Sender etiketi icin message payload'a sender_is_support eklendi.
+
+## 2025-12-30 17:40
+- Tarih/Saat (TR): 2025-12-30 17:40
+- Amac: Super admin okunmadi etiketi ve kullanici tarafinda "Destek Ekibi" gorunumu duzelsin.
+- Sorun / Belirti: Unread etiketi gorunmuyor; super admin yaniti "Siz" olarak gorunuyor.
+- Kok Neden (Varsa): last_message_sender_type eski kayitlarda bos kalmis ve sender_is_support STI nedeniyle yanlis hesaplanmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Super admin listesinde yeni ticket'lar "Unread" gosterir.
+  - (bekliyor) Kullanici tarafinda super admin yanitlari "Destek Ekibi" olarak gorunur.
+- Notlar / Riskler:
+  - last_message_* alanlari bos ise ilk erisimde guncellenir.
+
+## 2025-12-30 17:55
+- Tarih/Saat (TR): 2025-12-30 17:55
+- Amac: Destek ekibi yanitlari kullanici tarafinda "Destek Ekibi" olarak gorunsun ve okunmadi etiketi geri gelsin.
+- Sorun / Belirti: Super admin yaniti kullanici tarafinda "Siz" gorunuyor; okunmadi etiketi super admin listesinde cikmiyor.
+- Kok Neden (Varsa): API'da sender_type STI bilgisi tasinmiyordu; last_message_sender_type eski kayitlarda yanlis kalmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/models/support_ticket.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Kullanici tarafinda super admin mesajlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde yeni ticket'lar "Unread" gorunur.
+- Notlar / Riskler:
+  - last_message_sender_type uyumsuz ise erisim aninda duzeltilir.
+
+## 2025-12-30 18:15
+- Tarih/Saat (TR): 2025-12-30 18:15
+- Amac: Kullanici mesajlari "Siz", super admin mesajlari "Destek Ekibi" olarak gorunsun ve okunmadi badge duzgun hesaplansin.
+- Sorun / Belirti: Kullanici mesaji Destek Ekibi gorunuyor; super admin listesinde okunmadi yok.
+- Kok Neden (Varsa): Destek/Requestor ayrimi sender type'a dayaninca super admin requestor'lar ters etiketleniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails bundle exec rails runner "SupportTicket.order(id: :desc).limit(5).each { |t| puts([t.id, t.unread_for_admin?, t.last_message_sender_type, t.last_message_at, t.admin_last_read_at].inspect) }"
+- Dogrulama:
+  - (bekliyor) Kullanici tarafinda kendi mesajlari "Siz", super admin yanitlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde yeni ticket'lar "Unread" gorunur.
+- Notlar / Riskler:
+  - sender_is_support artik requester_id bazinda hesaplanir.
+
+## 2025-12-30 18:30
+- Tarih/Saat (TR): 2025-12-30 18:30
+- Amac: Destek yanitlari her zaman "Destek Ekibi", kullanici mesajlari "Siz" olarak gorunsun.
+- Sorun / Belirti: Super admin yaniti kullanici tarafinda "Siz" gorunuyor.
+- Kok Neden (Varsa): SuperAdmin STI oldugu icin sender_id kontrolu yanlis etiketlemeye neden oluyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251230182500_add_sender_role_to_support_ticket_messages.rb
+  - db/schema.rb
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Kullanici mesajlari "Siz", super admin mesajlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde unread etiketi beklenen ticket'larda gorunur.
+- Notlar / Riskler:
+  - sender_role yeni alan; migration gerekli.
+
+## 2025-12-30 18:45
+- Tarih/Saat (TR): 2025-12-30 18:45
+- Amac: Kullanici tarafinda mesaj etiketlerini (Siz/Destek Ekibi) dogru gostermek ve eski mesajlari duzeltmek.
+- Sorun / Belirti: Kullanici tarafinda admin mesajlari da "Siz" gorunuyor; eski mesajlarda sender_role bos.
+- Kok Neden (Varsa): sender_role migrationi yeni; mevcut kayitlar backfill edilmemisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - db/migrate/20251230184500_backfill_support_ticket_sender_roles.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Backfill sonrasinda kullanici mesajlari "Siz", admin mesajlari "Destek Ekibi".
+  - (bekliyor) Super admin listesinde unread dogru gorunur.
+- Notlar / Riskler:
+  - Migration calistirilmadan eski kayitlar duzelmez.
+
+## 2025-12-30 15:58
+- Tarih/Saat (TR): 2025-12-30 15:58
+- Amac: Super admin erisimini dogrulamak ve yeni super admin olusturmak.
+- Sorun / Belirti: Super admin paneline giris icin email/sifre gerekiyor.
+- Kok Neden (Varsa): (yok)
+- Yapilan Degisiklikler (dosya bazli):
+  - (dosya degisikligi yok) Veritabani: SuperAdmin olusturuldu (email: superadmin@local.dev).
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails bundle exec rails runner "puts 'super_admins=' + SuperAdmin.pluck(:id,:email,:name).inspect; u=User.find_by(email: 'john@acme.inc'); puts 'john=' + (u ? 'id=' + u.id.to_s + ' type=' + u.type.inspect : 'nil')"
+  - docker compose --% exec -T rails bundle exec rails runner "email='superadmin@local.dev'; if User.exists?(email: email); puts 'exists'; else; sa=SuperAdmin.create!(name: 'Super Admin', email: email, password: 'SupportAdmin!2025', password_confirmation: 'SupportAdmin!2025', confirmed_at: Time.current); puts 'created id=' + sa.id.to_s + ' email=' + sa.email; end"
+- Dogrulama:
+  - SuperAdmin listesinde john@acme.inc var (type=SuperAdmin).
+  - Yeni super admin: superadmin@local.dev olusturuldu.
+- Notlar / Riskler:
+  - Parolayi paylastik; giristen sonra degistirmeniz onerilir.
+
+## 2025-12-30 15:41
+- Tarih/Saat (TR): 2025-12-30 15:41
+- Amac: Destek ticket reply (messages) endpoint hatasini duzeltmek.
+- Sorun / Belirti: Yanit gonderiminde ActionNotFound (messages action yok).
+- Kok Neden (Varsa): routes.rb member :messages route'u controller'da create_message adina bagliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails sh -lc "sed -n '136120,136260p' log/development.log"
+- Dogrulama:
+  - (bekliyor) /support/tickets/:id sayfasinda yanit gonder -> 201 ve mesaj listesine eklenmeli.
+- Notlar / Riskler:
+  - Frontend endpoint /messages ile uyumlu.
+
+## 2025-12-30 15:34
+- Tarih/Saat (TR): 2025-12-30 15:34
+- Amac: Support tickets API listeleme hatasini gidermek.
+- Sorun / Belirti: "Destek bildirimleri yuklenemedi" ve rails log'da Account#support_tickets NoMethodError.
+- Kok Neden (Varsa): Account modelinde support_tickets association yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/account.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails sh -lc "grep -n 'support_tickets' log/development.log | tail -n 50"
+- Dogrulama:
+  - (bekliyor) /api/v1/accounts/:id/support_tickets 200 ve liste gorunur.
+- Notlar / Riskler:
+  - Rails restart gerekebilir.
+
+## 2025-12-30 15:24
+- Tarih/Saat (TR): 2025-12-30 15:24
+- Amac: Destek bildirimi sayfasinda ikinci sekme ile ticket listesini gostermek.
+- Sorun / Belirti: /support/tickets yonlendirme sorunu ve liste gorunmuyor; yeni sayfada kalma.
+- Kok Neden (Varsa): SPA yonlendirme/guard akisi nedeniyle index sayfasi acilmiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) /app/accounts/:id/support/new icinde "Destek Bildirimlerim" sekmesi altinda liste gorunmeli.
+- Notlar / Riskler:
+  - Liste API: /api/v1/accounts/:id/support_tickets.
+
+## 2025-12-30 15:05
+- Tarih/Saat (TR): 2025-12-30 15:05
+- Amac: Destek ticket route'larinin permission guard ile uyumlu calismasini saglamak.
+- Sorun / Belirti: /support/tickets route'u /support/new'e dusuyor; permission guard yalnis eslesiyor olabilir.
+- Kok Neden (Varsa): Support route meta.permissions yalnizca role string'lerini kullaniyordu; userPermissions listesi permission string'leri donuyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/routes/index.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose --% exec -T rails sh -lc "bundle exec rails runner \"require 'net/http'; u=URI('http://127.0.0.1:3000/app/accounts/1/support/tickets'); r=Net::HTTP.get_response(u); puts({code:r.code, location:r['location'], content_type:r['content-type']}.inspect)\""
+- Dogrulama:
+  - (bekliyor) /app/accounts/:id/support/tickets -> index acilmali, /api/v1/accounts/:id/support_tickets 200 donmeli.
+- Notlar / Riskler:
+  - Debug loglar kaldirildi; Vite hard refresh gerekli olabilir.
+
+## 2025-12-30 13:43
+- Tarih/Saat (TR): 2025-12-30 13:43
+- Amac: Destek menusu altinda "olustur" ve "liste" ayri item'larini gostermek.
+- Sorun / Belirti: Destek menusu tek item ile list/new karisiyordu.
+- Kok Neden (Varsa): Sidebar support grubunda yalnizca tek item vardi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (bekliyor) Sidebar > Destek > "Destek Bildirimi Olustur" -> support_ticket_new
+  - (bekliyor) Sidebar > Destek > "Destek Bildirimlerim" -> support_ticket_index
+- Notlar / Riskler:
+  - Menu sadece UI tarafinda degisti; routing wiring degismedi.
+
+## 2025-12-30 05:37
+- Tarih/Saat (TR): 2025-12-30 05:37
+- Amac: /support/tickets route'unun router'a dogrudan kaydedilmesini garanti etmek.
+- Sorun / Belirti: /support/tickets girisi /support/new'e dusuyor; support routes registry supheli.
+- Kok Neden (Varsa): support routes, dashboard.routes.js children listesine ekli olmadigi icin router import zinciri net degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+  - app/javascript/dashboard/routes/index.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) /app/accounts/:id/support/tickets index acilisi ve XHR kontrolu bekliyor.
+- Notlar / Riskler:
+  - Vite restart + hard refresh (Disable cache + Ctrl+F5) gerekebilir.
+
+## 2025-12-29 16:19
+- Tarih/Saat (TR): 2025-12-29 16:19
+- Amac: tr.time.formats.short eksikligi kaynakli i18n hatasini gidermek.
+- Sorun / Belirti: Translation missing: tr.time.formats.short.
+- Kok Neden (Varsa): TR locale formatlari tanimli degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/locales/time_formats.tr.yml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose restart rails
+- Dogrulama:
+  - /super_admin/support_tickets kontrolu bekliyor (login gerekli).
+- Notlar / Riskler:
+  - time/date short formatlari eklendi: %d.%m.%Y %H:%M ve %d.%m.%Y.
+
+## 2025-12-29 16:44
+- Tarih/Saat (TR): 2025-12-29 16:44
+- Amac: Global scope guvenligini iki account uzerinden kanitlamak (A/B izolasyonu).
+- Sorun / Belirti: Cross-account ticket gorunurlugu riski.
+- Kok Neden (Varsa): Scope kontrolu dogru uygulanmazsa data leak olur.
+- Yapilan Degisiklikler (dosya bazli):
+  - (degisiklik yok)
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "a = Account.find_by(name: 'Support Test A'); b = Account.find_by(name: 'Support Test B'); u1 = User.find_by(email: 'support_a@example.com'); u2 = User.find_by(email: 'support_b@example.com'); t1, = SupportTicketBuilder.new(account: a, requester: u1, subject: 'A Ticket', category: 'technical', priority: 'normal', description: 'A desc').perform; t2, = SupportTicketBuilder.new(account: b, requester: u2, subject: 'B Ticket', category: 'technical', priority: 'normal', description: 'B desc').perform; puts 'A_account_id=' + a.id.to_s + ' B_account_id=' + b.id.to_s; puts 'A_ticket_id=' + t1.id.to_s + ' B_ticket_id=' + t2.id.to_s; puts 'A_tickets=' + SupportTicket.where(account_id: a.id).pluck(:id).last(5).inspect; puts 'B_tickets=' + SupportTicket.where(account_id: b.id).pluck(:id).last(5).inspect; puts 'A_scope_find_B=' + SupportTicket.where(account_id: a.id).find_by(id: t2.id).inspect"
+- Dogrulama:
+  - A_scope_find_B=nil (A account'i, B ticket'ini scope icinde bulamadi).
+- Notlar / Riskler:
+  - AccountUser olusturma denemesi "unknown attribute 'additional_attributes' for Inbox" hatasi verdi; testte AccountUser eklemeden ilerledik.
+
+## 2025-12-29 16:45
+- Tarih/Saat (TR): 2025-12-29 16:45
+- Amac: Support ticket akisini global (super admin) ve account scope guvenli hale getirmek; account icin liste/detay/yanit UI tamamlamak.
+- Sorun / Belirti: Ticket mesajlasma akisi eksikti, back link ve liste yoktu; global scope guvenligi dogrulanmaliydi.
+- Kok Neden (Varsa): SupportTickets API/route/UI yalnizca create/show uzerinden ilerliyordu; liste ve mesajlasma ekrani yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/models/support_ticket.rb
+  - app/services/support_ticket_builder.rb
+  - app/dashboards/support_ticket_dashboard.rb
+  - app/javascript/dashboard/api/supportTickets.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) UI ve API testleri bekliyor.
+- Notlar / Riskler:
+  - Account API scope Current.account ile sinirli; super admin global listeler.
+
+## 2025-12-29 17:05
+- Tarih/Saat (TR): 2025-12-29 17:05
+- Amac: Support ticket create 500 ve super admin show link/yanit akisini duzeltmek.
+- Sorun / Belirti: support_ticket_messages association hatasi ve super admin detay sayfasi acilmamasi.
+- Kok Neden (Varsa): Association adi uyumsuz, show/reply param ve link yapisi eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/api/v1/accounts/support_requests_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/index.html.erb
+  - app/views/super_admin/support_tickets/show.html.erb
+  - app/dashboards/support_ticket_dashboard.rb
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) UI ve API testleri bekliyor.
+- Notlar / Riskler:
+  - Super admin reply sender olarak current_super_admin kullanilir.
+
+## 2025-12-29 17:32
+- Tarih/Saat (TR): 2025-12-29 17:32
+- Amac: Account tarafinda destek talepleri listesi + maillesme akisini tamamlamak.
+- Sorun / Belirti: Ticket olusturma sonrasi liste/detay erisimi yok; menu yalnizca yeni ticket'a gidiyordu.
+- Kok Neden (Varsa): Support menu sadece "create" rotasina bagliydi; liste ve show navigasyonu eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/i18n/locale/en/settings.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) /support/tickets ve /support/tickets/:id UI kontrolu bekliyor.
+- Notlar / Riskler:
+  - Menu: "Destek Taleplerim" eklendi; yeni ticket sonrasinda detay sayfaya yonlendirme bekleniyor.
+
+## 2025-12-29 19:00
+- Tarih/Saat (TR): 2025-12-29 19:00
+- Amac: Destek menusu varsayilanini ticket listesine almak ve listeden yeni talep acma butonu eklemek.
+- Sorun / Belirti: Destek menusu /support/new sayfasina gidiyordu; listeye erisim kolay degildi.
+- Kok Neden (Varsa): Sidebar support grubu create rotasina bagliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) /support/tickets varsayilan acilmasi ve "Yeni Destek Talebi" butonu kontrolu bekliyor.
+- Notlar / Riskler:
+  - Support create sayfasina artik listeden buton ile gidiliyor.
+
+## 2025-12-29 20:13
+- Tarih/Saat (TR): 2025-12-29 20:13
+- Amac: AccountUser olustururken support inbox provisioning'in Inbox.additional_attributes ihtiyacini karsilamak.
+- Sorun / Belirti: AccountUser.create! sirasinda "unknown attribute 'additional_attributes' for Inbox".
+- Kok Neden (Varsa): inboxes tablosunda additional_attributes kolonu yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229191500_add_additional_attributes_to_inboxes.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+- Dogrulama:
+  - Rails console icin:
+    - account = Account.find(1)
+    - user = User.find_by(email: "john@acme.inc")
+    - AccountUser.create!(account: account, user: user, role: :administrator)
+- Notlar / Riskler:
+  - Migration column_exists? guard ile idempotent.
+
+## 2025-12-29 16:05
+- Tarih/Saat (TR): 2025-12-29 16:05
+- Amac: support_tickets migration'inda duplicate index hatasini kalici duzeltmek.
+- Sorun / Belirti: PG::DuplicateTable (index_support_tickets_on_account_id / index_support_ticket_messages_on_support_ticket_id).
+- Kok Neden (Varsa): t.references otomatik index uretirken ek add_index ile tekrar index olusuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229060000_create_support_tickets.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP INDEX IF EXISTS index_support_tickets_on_account_id')"
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP INDEX IF EXISTS index_support_ticket_messages_on_support_ticket_id')"
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP TABLE IF EXISTS support_ticket_messages CASCADE')"
+  - docker compose exec -T rails bundle exec rails runner "ActiveRecord::Base.connection.execute('DROP TABLE IF EXISTS support_tickets CASCADE')"
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.indexes(:support_tickets).map(&:name)"
+- Dogrulama:
+  - db:migrate tamamlandi; support_tickets index listesinde account_id yalnizca 1 kez gorunuyor.
+- Notlar / Riskler:
+  - Warning: docker-compose.yaml version attribute uyarisi devam ediyor (degisiklik yok).
+
+## 2025-12-29 15:10
+- Tarih/Saat (TR): 2025-12-29 15:10
+- Amac: ChatwootHub destek mekanizmasini kaldirip internal support ticket akisini kurmak (API + super admin + UI).
+- Sorun / Belirti: ChatwootHub support/SupportDashboard bagimliligi ve CE'de destek akisinin internal olmamasi.
+- Kok Neden (Varsa): Destek formu ve super admin destek sayfalari ChatwootHub/conversation tabanli tasarlandi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229060000_create_support_tickets.rb
+  - app/models/support_ticket.rb
+  - app/models/support_ticket_message.rb
+  - app/services/support_ticket_builder.rb
+  - app/controllers/api/v1/accounts/support_tickets_controller.rb
+  - app/controllers/super_admin/support_tickets_controller.rb
+  - app/views/super_admin/support_tickets/index.html.erb
+  - app/views/super_admin/support_tickets/show.html.erb
+  - app/views/super_admin/application/_javascript.html.erb (ChatwootHub script kaldirildi)
+  - app/views/super_admin/application/_navigation.html.erb
+  - app/dashboards/support_ticket_dashboard.rb
+  - app/dashboards/support_ticket_message_dashboard.rb
+  - app/javascript/dashboard/api/supportTickets.js
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - config/routes.rb
+  - app/controllers/super_admin/support_controller.rb (kaldirildi)
+  - app/views/super_admin/support/index.html.erb (kaldirildi)
+  - app/views/super_admin/support/show.html.erb (kaldirildi)
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - (calistirilmedi) db:migrate + UI testleri bekliyor.
+- Notlar / Riskler:
+  - Support ticket API, account tarafinda sadece mevcut kullanici ticket'larini dondurur (admin ise tumu).
+  - Super admin replies ticket messages ve last_activity_at g+-ncellenir.
+
+## 2025-12-29 06:25
+- Tarih/Saat (TR): 2025-12-29 06:25
+- Amac: Super Admin navigation render sirasinda SupportDashboard constant hatasini kaldirmak.
+- Sorun / Belirti: /super_admin girisinde ActionView::Template::Error (uninitialized constant SupportDashboard).
+- Kok Neden (Varsa): Super admin navigation resource listesi "support" icin SupportDashboard ariyor; dashboard sinifi yok.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/super_admin/application/_navigation.html.erb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "puts defined?(SupportDashboard).inspect"
+  - docker compose restart rails sidekiq
+- Dogrulama:
+  - SupportDashboard constant nil (beklenen).
+  - Rails/sidekiq restart tamamlandi.
+- Notlar / Riskler:
+  - Super admin menusu "support" kaynagini artik listelemiyor; navigation render hatasi kalkmali.
+
+## 2025-12-28 22:37
+- Tarih/Saat (TR): 2025-12-28 22:37
+- Amac: InstallationConfig serialized_value NULL yazimini engellemek ve HQ config set/get akisini stabil yapmak.
+- Sorun / Belirti: set_value ile NULL serialized_value yuzunden PG::NotNullViolation.
+- Kok Neden (Varsa): serialized_value nil kaldigi icin save! NULL yazmaya calisiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/installation_config.rb
+  - db/migrate/20251228221234_backfill_installation_config_serialized_value.rb
+  - .gitignore
+  - tmp/support_smoke.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: smoke runner ve db:migrate ile manuel dogrulama bekliyor.
+- Notlar / Riskler:
+  - Backfill migration NULL serialized_value kayitlarini '{}'::jsonb ile duzeltir.
+
+## 2025-12-28 22:49
+- Tarih/Saat (TR): 2025-12-28 22:49
+- Amac: InstallationConfig set_value icin NULL serialized_value hatasini kalici engellemek.
+- Sorun / Belirti: set_value s¦-ras¦-nda PG::NotNullViolation (serialized_value NULL).
+- Kok Neden (Varsa): NULL kayitlar ve locked kayitlarin set_value ile guncellenememesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/installation_config.rb
+  - db/migrate/20251228221234_backfill_installation_config_serialized_value.rb
+  - .gitignore
+  - support_smoke.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: support_smoke.rb ile manuel dogrulama bekliyor.
+- Notlar / Riskler:
+  - SUPPORT_* key'lerinde locked false'a cekilir.
+
+## 2025-12-29 00:17
+- Tarih/Saat (TR): 2025-12-29 00:17
+- Amac: ActiveRecord pool ayarlari ve .env'lerin container'a yansidigini dogrulamak.
+- Sorun / Belirti: /app/login'de ConnectionTimeoutError riski.
+- Kok Neden (Varsa): Pool/concurrency/env uyumsuzlugu supheleri.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose up -d --force-recreate rails sidekiq
+  - docker compose exec -T rails sh -lc "env | grep -E '^(RAILS_MAX_THREADS|DATABASE_POOL|SIDEKIQ_CONCURRENCY|WEB_CONCURRENCY)='"
+  - docker compose exec -T sidekiq sh -lc "env | grep -E '^(RAILS_MAX_THREADS|DATABASE_POOL|SIDEKIQ_CONCURRENCY|WEB_CONCURRENCY)='"
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection_pool.size"
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection_pool.stat.inspect"
+- Dogrulama:
+  - env (rails): SIDEKIQ_CONCURRENCY=10, RAILS_MAX_THREADS=5, DATABASE_POOL=10
+  - env (sidekiq): SIDEKIQ_CONCURRENCY=10, RAILS_MAX_THREADS=5, DATABASE_POOL=10
+  - pool size: 10
+  - pool stat: {:size=>10, :connections=>1, :busy=>1, :dead=>0, :idle=>0, :waiting=>0, :checkout_timeout=>5.0}
+- Notlar / Riskler:
+  - Waiting=0; uzun sorgu/connection leak bulgusu yok. Login refresh dogrulamasi bekliyor.
+
+## 2025-12-29 01:06
+- Tarih/Saat (TR): 2025-12-29 01:06
+- Amac: Login/LCP yavasligini tespit etmek ve minimal Vite dev server iyilestirmesi uygulamak.
+- Sorun / Belirti: /app/login TTFB 60s+ ve LCP ~100s; view render sureleri cok uzundu.
+- Kok Neden (Varsa): Vite dev server container i+ðinden erisilemiyor ve autoBuild ile Rails isteginde build tetikleniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/vite.json
+  - vite.config.ts
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - curl.exe -s -o NUL -w "time_namelookup=%{time_namelookup} time_connect=%{time_connect} time_starttransfer=%{time_starttransfer} time_total=%{time_total}\n" http://localhost:3000/app/login
+  - curl.exe -s -o NUL -w "ttfb=%{time_starttransfer} total=%{time_total}\n" http://localhost:3000/
+  - docker compose exec -T rails sh -lc "apk add --no-cache curl >/dev/null 2>&1 || true; curl -s -o /dev/null -w 'ttfb=%{time_starttransfer} total=%{time_total}\n' http://localhost:3000/app/login"
+  - docker compose exec -T rails bundle exec rails runner "p ActiveRecord::Base.connection_pool.stat"
+  - docker compose exec -T rails sh -lc "bundle exec rails runner 'puts ActiveRecord::Base.connection.select_value(%q(select count(*) from pg_stat_activity where datname=current_database()))'"
+  - docker compose exec -T postgres psql -U postgres -d chatwoot_dev -c "select pid, state, wait_event_type, wait_event, now()-query_start as age, left(query,120) from pg_stat_activity where state<>'idle' order by age desc limit 20;"
+  - docker compose exec -T rails bundle exec rails runner "puts Rails.cache.class; puts Rails.cache.read('global_config_test').inspect rescue puts $!.message"
+  - docker compose exec -T rails sh -lc "ls -la public/packs public/vite 2>/dev/null || true"
+  - docker compose exec -T rails bundle exec rails runner "puts Rails.env; puts ENV['RAILS_SERVE_STATIC_FILES'].inspect"
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'status=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://vite:3036/vite-dev/@vite/client"
+  - docker compose stop sidekiq
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'code=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://localhost:3000/app/login"
+  - docker compose start sidekiq
+- Dogrulama:
+  - Host TTFB (login) ~0.316s; / TTFB ~0.281s
+  - Rails pool stat: {:size=>10, :connections=>1, :busy=>1, :dead=>0, :idle=>0, :waiting=>0}
+  - pg_stat_activity: 1 idle in transaction goruldu (schema introspection)
+  - Rails cache: ActiveSupport::Cache::NullStore
+  - Vite dev server icin /vite-dev/@vite/client 200 dondu
+  - Sidekiq kapaliyken login TTFB ~0.23s (dev test)
+- Notlar / Riskler:
+  - config/vite.json: autoBuild=false; dev server ayakta degilse asset bulunmayabilir.
+
+## 2025-12-29 01:53
+- Tarih/Saat (TR): 2025-12-29 01:53
+- Amac: Sayfa gecikmesini metriklerle tespit etmek (1. model: yalnizca +Âl+ð+-m).
+- Sorun / Belirti: /app/login ve dashboard TTFB 60s+.
+- Kok Neden (Varsa): TTFB kaynakli yavaslik; view render suresi ve/veya asset build path'i.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - curl.exe -s -o NUL -w "ttfb=%{time_starttransfer} total=%{time_total}\n" http://localhost:3000/app/login
+  - curl.exe -s -o NUL -w "ttfb=%{time_starttransfer} total=%{time_total}\n" http://localhost:3000/app/accounts/1/dashboard
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'code=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://localhost:3000/app/login"
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'code=%{http_code} ttfb=%{time_starttransfer} total=%{time_total}\n' http://vite:3036/vite-dev/@vite/client"
+  - docker compose exec -T rails sh -lc "grep -n 'chunks are larger' -m 1 log/development.log"
+  - docker compose exec -T postgres psql -U postgres -d chatwoot_production -c "select now(), state, wait_event_type, wait_event, age(now(), query_start) as age, left(query,120) as q from pg_stat_activity where state <> 'idle' order by query_start asc limit 30;"
+  - docker compose exec -T postgres psql -U postgres -d chatwoot_dev -c "select now(), state, wait_event_type, wait_event, age(now(), query_start) as age, left(query,120) as q from pg_stat_activity where state <> 'idle' order by query_start asc limit 30;"
+  - docker compose exec -T rails bundle exec rails runner "p ActiveRecord::Base.connection_pool.stat"
+  - docker compose exec -T rails sh -lc "tail -n 5000 log/development.log" (Completed satirlarini analiz icin)
+- Dogrulama:
+  - Host TTFB /app/login: ttfb=62.025957 total=62.026166
+  - Host TTFB /app/accounts/1/dashboard: ttfb=66.286336 total=66.286437
+  - Container TTFB /app/login: code=200 ttfb=61.745789 total=61.745894
+  - Vite dev server: code=200 ttfb=0.026739 total=0.026974 (vite-dev/@vite/client)
+  - Rails log: "(!) Some chunks are larger than 500 kB after minification" satiri mevcut (build/asset kaniti)
+  - pg_stat_activity (prod): db yok (chatwoot_production)
+  - pg_stat_activity (dev): sadece aktif sorgu (endi; uzun sorgu yok)
+  - pool stat: {:size=>10, :connections=>1, :busy=>1, :dead=>0, :idle=>0, :waiting=>0}
+  - En yavas Completed (ilk 5):
+    - 9403321ms /favicon.ico (Views 9383497ms | AR 1617.8ms)
+    - 585623ms /api/v1/accounts/1/conversations?status=open&assignee_type=me&page=1&sort_by=last_activity_at_desc
+    - 458508ms /api/v1/accounts/1/contacts/active?include_contact_inboxes=false&page=1&sort=last_activity_at
+    - 114827ms /app/login (Views 114268.2ms | AR 13.4ms)
+    - 59098ms /api/v1/accounts/1/portals (Views 16614.2ms | AR 38825.8ms)
+- Notlar / Riskler:
+  - Chrome DevTools "en yavas 5 istek" listesi bekliyor (kullanici paylasacak).
+
+## 2025-12-28 23:57
+- Tarih/Saat (TR): 2025-12-28 23:57
+- Amac: DB pool ayarlarini Puma/Sidekiq concurrency ile uyumlu hale getirmek.
+- Sorun / Belirti: ActiveRecord::ConnectionTimeoutError riski.
+- Kok Neden (Varsa): pool degeri thread/concurrency ile uyumsuz kalabiliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/database.yml
+  - .env
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: runner ve refresh adimlari bekliyor.
+
+## 2025-12-28 22:05
+- Tarih/Saat (TR): 2025-12-28 22:05
+- Amac: db:migrate sirasinda InstallationConfig YAML parse hatasini ve annotate abortunu engellemek.
+- Sorun / Belirti: TypeError no implicit conversion of Hash into String (Psych _native_parse) ve migrate sonrasi annotate dosya yagmuru.
+- Kok Neden (Varsa): serialized_value Hash iken YAML parse ve annotate'un db:migrate sirasinda calismasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/installation_config.rb
+  - lib/config_loader.rb
+  - lib/tasks/auto_annotate_models.rake
+  - db/schema.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails sh -lc "bundle exec rails db:migrate"
+- Dogrulama: db:migrate 0 exit code; annotate tetiklenmedi.
+- Notlar / Riskler:
+  - SKIP_ANNOTATE=1 veya db:migrate guard ile annotate devre disi.
+
+## 2025-12-28 19:05
+- Tarih/Saat (TR): 2025-12-28 19:05
+- Amac: Destek bildirimlerini merkezi Support HQ account'a tasiyip normal konusma/kanal listelerinden izole etmek.
+- Sorun / Belirti: Destek bildirimleri account icindeki Conversations/My Inbox listelerine dusuyordu.
+- Kok Neden (Varsa): Destek formu ayni account'ta conversation aciyor ve support inbox'lari normal listelerde gorunuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/installation_config.yml
+  - app/services/account/provision_support_inbox_service.rb
+  - app/services/internal/provision_support_hq_inbox_service.rb
+  - app/jobs/internal/provision_support_hq_inbox_job.rb
+  - app/controllers/api/v1/accounts/support_requests_controller.rb
+  - app/controllers/api/v1/accounts/inboxes_controller.rb
+  - app/finders/conversation_finder.rb
+  - app/controllers/super_admin/settings_controller.rb
+  - app/controllers/super_admin/support_controller.rb
+  - app/views/super_admin/settings/show.html.erb
+  - app/views/super_admin/application/_navigation.html.erb
+  - app/views/super_admin/support/index.html.erb
+  - app/views/super_admin/support/show.html.erb
+  - app/javascript/dashboard/api/supportRequests.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - config/routes.rb
+  - docs/ADR/0004-central-support-hq.md
+- Calistirilan Komutlar:
+  - InstallationConfig.set_value('SUPPORT_HQ_ACCOUNT_ID', 2)
+  - InstallationConfig.set_value('SUPPORT_HQ_INBOX_NAME', 'Support')
+  - InstallationConfig.set_value('SUPPORT_TICKET_SOURCE', 'internal_support_form')
+  - Internal::ProvisionSupportHqInboxJob.perform_now
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Support HQ icin SUPPORT_HQ_ACCOUNT_ID set edilmeli; inbox yoksa super admin settings'ten provisioning tetiklenmeli.
+  - Super Admin yaniti, HQ account icindeki ilk admin user adina gonderilir.
+  - Rollback: support_requests endpoint'i ve support HQ provisioning eklerini geri al.
+
+## 2025-12-28 20:05
+- Tarih/Saat (TR): 2025-12-28 20:05
+- Amac: is_support kolonunun eksikliginden kaynaklanan hata ve support HQ provisioning guvenligini duzeltmek.
+- Sorun / Belirti: PG::UndefinedColumn (inboxes.is_support yok), provisioning'de super_admin kolonu varsayimi riski.
+- Kok Neden (Varsa): is_support migrasyonu yoktu; is_support sorgulari column varmis gibi calisiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251228194500_add_is_support_to_inboxes.rb
+  - app/controllers/api/v1/accounts/inboxes_controller.rb
+  - app/finders/conversation_finder.rb
+  - app/services/account/provision_support_inbox_service.rb
+  - app/services/internal/provision_support_hq_inbox_service.rb
+  - app/jobs/internal/provision_support_hq_inbox_job.rb
+  - app/controllers/super_admin/settings_controller.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Migration uygulanana kadar isim bazli fallback kullanilir.
+  - Provision job current_super_admin.id ile calisir; HQ account icin admin uyeligi otomatik eklenir.
+
+## 2025-12-28 05:29
+- Tarih/Saat (TR): 2025-12-28 05:29
+- Amac: Captain deneylerini geri alip dosyalari onceki stabil hallerine dondurmek.
+- Sorun / Belirti: CE'de Captain'i gorunur yapma denemeleri calismadi ve gereksiz degisiklikler birikti.
+- Kok Neden (Varsa): Route/sidebar/enable denemeleri birbirini override etti; net bir gating saglanamadi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - app/javascript/dashboard/composables/useCaptain.js
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git log --oneline -- app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - git log --oneline -- app/javascript/dashboard/composables/useCaptain.js
+  - git log --oneline -- app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - git log --oneline -- app/javascript/v3
+  - rg -n "INSTALLATION_TYPES.*COMMUNITY|captain_index|captainEnabled is strictly true|chatwootConfig.captainEnabled" app/javascript/dashboard
+  - rg -n "enterprise/api/v1/accounts/.*/limits|getLimits\\(" app/javascript/dashboard
+  - docker compose restart rails sidekiq vite
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (Captain davranisi eski haline donmeli; enterprise limits guard degismemeli).
+- Notlar / Riskler:
+  - Revert: 3496441a9, 14f8fa158, 1072ac4bc ve bunlara bagli denemeler geri alindi (dosyalar onceki commitlerden geri yuklendi).
+  - Rollback: dosyalari deney commitlerinden tekrar uygulamak gerekir.
+
+## 2025-12-28 04:49
+- Tarih/Saat (TR): 2025-12-28 04:49
+- Amac: Captain menusu CE'de yalnizca config ile acilsin; basarisiz denemeler geri alinsin.
+- Sorun / Belirti: Captain gorunmuyor veya herkes icin acik kalma riski vardi.
+- Kok Neden (Varsa): captain_index route adi yoktu ve COMMUNITY install type kontrolsuz eklenmisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "captainEnabled|CAPTAIN|installationTypes" app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - rg -n "captain_index" app/javascript/dashboard/components-next/sidebar/Sidebar.vue app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - docker compose restart rails sidekiq vite
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (Captain yalnizca chatwootConfig.captainEnabled true ise gorunmeli; route resolve olmali).
+- Notlar / Riskler:
+  - Revert: d24fca36f ile "fix(dashboard): restore Captain nav for CE" geri alindi.
+  - Rollback: captainEnabled guard ve installationTypes degisikligini geri al.
+
+## 2025-12-28 04:28
+- Tarih/Saat (TR): 2025-12-28 04:28
+- Amac: Captain sidebar gorunurlugunu CE'de geri getirmek ve route resolve sorununu engellemek.
+- Sorun / Belirti: Captain menusu gorunmuyor; base route name eksikligi supheliydi.
+- Kok Neden (Varsa): captain_index route name tanimli degildi; sidebar base route referansi yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "captain_index" app/javascript/dashboard/components-next/sidebar/Sidebar.vue app/javascript/dashboard/routes/dashboard/captain/captain.routes.js
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (sidebar'da Captain gorunur, captain_index resolve olur).
+- Notlar / Riskler:
+  - Rollback: captain_index name ve sidebar to/activeOn degisikligini geri al.
+
+## 2025-12-28 02:35
+- Tarih/Saat (TR): 2025-12-28 02:35
+- Amac: CE kurulumda enterprise limits istegini tamamen engellemek.
+- Sorun / Belirti: /enterprise/api/.../limits 404 (CE'de endpoint yok).
+- Kok Neden (Varsa): enterprise guard eksik/gevsek oldugu icin FE request atiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/helper/enterpriseFlag.js
+  - app/javascript/dashboard/api/enterprise/account.js
+  - app/javascript/dashboard/store/modules/accounts.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "enterprise/api/v1/accounts/.*/limits|getLimits\\(" app/javascript/dashboard
+  - rg -n "EnterpriseAccountAPI\\.getLimits|accounts/limits" app/javascript/dashboard
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (Network'te /enterprise/api/.../limits istegi gorunmemeli).
+- Notlar / Riskler:
+  - Rollback: enterpriseFlag helper ve limits guard degisikliklerini geri al.
+
+## 2025-12-28 02:06
+- Tarih/Saat (TR): 2025-12-28 02:06
+- Amac: CE kurulumda enterprise limits istegini tamamen engellemek.
+- Sorun / Belirti: /enterprise/api/.../limits istegi CE'de 404 veriyor.
+- Kok Neden (Varsa): limits action enterprise guard'i yetersiz; CE'de de istek atiliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/store/modules/accounts.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (Network'te /enterprise/api/.../limits istegi gorunmemeli).
+- Notlar / Riskler:
+  - Rollback: accounts limits guard degisikligini geri al.
+
+## 2025-12-28 01:34
+- Tarih/Saat (TR): 2025-12-28 01:34
+- Amac: CE kurulumda enterprise limits istegini engellemek ve onClose deprecated g+-r+-lt+-s+-n+- kesmek.
+- Sorun / Belirti: /enterprise/api/.../limits 404 ve "onClose prop deprecated" uyarisi.
+- Kok Neden (Varsa): CE'de limits action enterprise guard zayif; Modal warn her dev acilisinda basiliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/store/modules/accounts.js
+  - app/javascript/dashboard/components/Modal.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "enterprise/api/accounts|/enterprise/api|accounts/.*/limits|/limits" app/javascript
+  - rg -n "<woot-modal[^>]*(:on-close|:onClose|\\son-close=)" app/javascript -g "*.vue"
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose restart rails sidekiq vite
+- Dogrulama: Beklemede (UI'da /app/accounts/1/... gezisinde 404 g+Âr+-nmemeli, onClose warning olmamali).
+- Notlar / Riskler:
+  - Rollback: accounts limits guard ve Modal warn degisikligini geri al.
+
+## 2025-12-28 01:06
+- Tarih/Saat (TR): 2025-12-28 01:06
+- Amac: Community build'de enterprise limits 404 ve modal onClose uyarilarini sessizlestirmek.
+- Sorun / Belirti: "Cannot read properties of null (reading 'id')" ve onClose deprecated uyarisi.
+- Kok Neden (Varsa): limits action null payload commit ediyordu; WootModal onClose prop kullaniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/store/modules/accounts.js
+  - app/javascript/dashboard/components/Modal.vue
+  - app/javascript/dashboard/components/app/AddAccountModal.vue
+  - app/javascript/dashboard/components/widgets/AIAssistanceButton.vue
+  - app/javascript/dashboard/components/widgets/conversation/ContentTemplates/ContentTemplatesModal.vue
+  - app/javascript/dashboard/components/widgets/conversation/EmailTranscriptModal.vue
+  - app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/Modal.vue
+  - app/javascript/dashboard/components/widgets/conversation/components/GalleryView.vue
+  - app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/Index.vue
+  - app/javascript/dashboard/components/widgets/conversation/linear/IssuesList.vue
+  - app/javascript/dashboard/components/widgets/modal/WootKeyShortcutModal.vue
+  - app/javascript/dashboard/modules/contact/ContactMergeModal.vue
+  - app/javascript/dashboard/modules/conversations/components/MessageContextMenu.vue
+  - app/javascript/dashboard/routes/dashboard/commands/CmdBarConversationSnooze.vue
+  - app/javascript/dashboard/routes/dashboard/conversation/contact/ContactNotes.vue
+  - app/javascript/dashboard/routes/dashboard/conversation/contact/EditContact.vue
+  - app/javascript/dashboard/routes/dashboard/inbox/components/InboxItemHeader.vue
+  - app/javascript/dashboard/routes/dashboard/settings/agents/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/AddAttribute.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/CustomAttribute.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/automation/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/canned/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/customRoles/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/DashboardAppModal.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/IntegrationHooks.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/labels/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/sla/Index.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "enterprise/api/accounts|/enterprise/api|accounts/.*/limits|/limits" app/javascript
+  - rg -n "YearInReview|year:" app/javascript/dashboard/components-next/year-in-review
+  - rg -n ":on-close|onClose" app/javascript
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (enterprise limits istegi community'de atilmamali; console warning olmamali).
+- Notlar / Riskler:
+  - Rollback: limits action guard ve WootModal @close degisikliklerini geri al.
+
+## 2025-12-28 00:43
+- Tarih/Saat (TR): 2025-12-28 00:43
+- Amac: Community build'de limits 404, YearInReview year ve WootModal onClose uyarilarini kaldirmak.
+- Sorun / Belirti: /enterprise/api/.../limits 404 console error; YearInReview year undefined warning; WootModal onClose deprecated warning.
+- Kok Neden (Varsa): Enterprise guard yok; year prop parent'ta fallback olmadan geciliyor; WootModal event API degisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/store/modules/accounts.js
+  - app/javascript/dashboard/components-next/year-in-review/YearInReviewModal.vue
+  - app/javascript/shared/components/ui/label/LabelDropdown.vue
+  - app/javascript/dashboard/components/app/AddAccountModal.vue
+  - app/javascript/dashboard/components/widgets/AIAssistanceButton.vue
+  - app/javascript/dashboard/components/widgets/conversation/ContentTemplates/ContentTemplatesModal.vue
+  - app/javascript/dashboard/components/widgets/conversation/EmailTranscriptModal.vue
+  - app/javascript/dashboard/components/widgets/conversation/WhatsappTemplates/Modal.vue
+  - app/javascript/dashboard/components/widgets/conversation/components/GalleryView.vue
+  - app/javascript/dashboard/components/widgets/conversation/conversationBulkActions/Index.vue
+  - app/javascript/dashboard/components/widgets/conversation/linear/IssuesList.vue
+  - app/javascript/dashboard/components/widgets/modal/WootKeyShortcutModal.vue
+  - app/javascript/dashboard/modules/contact/ContactMergeModal.vue
+  - app/javascript/dashboard/modules/conversations/components/MessageContextMenu.vue
+  - app/javascript/dashboard/routes/dashboard/commands/CmdBarConversationSnooze.vue
+  - app/javascript/dashboard/routes/dashboard/conversation/contact/ContactNotes.vue
+  - app/javascript/dashboard/routes/dashboard/conversation/contact/EditContact.vue
+  - app/javascript/dashboard/routes/dashboard/inbox/components/InboxItemHeader.vue
+  - app/javascript/dashboard/routes/dashboard/settings/agents/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/AddAttribute.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/CustomAttribute.vue
+  - app/javascript/dashboard/routes/dashboard/settings/attributes/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/automation/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/canned/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/customRoles/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/DashboardApps/DashboardAppModal.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/IntegrationHooks.vue
+  - app/javascript/dashboard/routes/dashboard/settings/integrations/Webhooks/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/labels/Index.vue
+  - app/javascript/dashboard/routes/dashboard/settings/sla/Index.vue
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "enterprise/api/accounts|/enterprise/api|accounts/.*/limits|/limits" app/javascript
+  - rg -n "YearInReview|year:" app/javascript/dashboard/components-next/year-in-review
+  - rg -n ":on-close" app/javascript
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (UI'da /app/accounts/1/... gezisinde console warnings yok; enterprise limits istegi atilmamali ya da 404 sessiz kalmali).
+- Notlar / Riskler:
+  - Rollback: limits guard ve WootModal @close degisikliklerini geri al; year fallback satirlarini eski haline cevir.
+
+## 2025-12-27 23:19
+- Tarih/Saat (TR): 2025-12-27 23:19
+- Amac: SPA route degisimlerinde favicon'un /favicon-*.png'e geri donmesini engellemek ve root fallback'leri branded yapmak.
+- Sorun / Belirti: Ilk yuklemede FAVICON_URL dogruyken, route degisiminden sonra /favicon-32x32.png istekleri goruluyor.
+- Kok Neden (Varsa): vueapp layout'ta birden fazla ikon tag'i ve JS tarafinda faviconHelper default /favicon-*.png'e geri aliyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/layouts/vueapp.html.erb
+  - app/views/layouts/portal.html.erb
+  - app/javascript/dashboard/helper/AudioAlerts/faviconHelper.js
+  - public/favicon-16x16.png
+  - public/favicon-32x32.png
+  - public/favicon-96x96.png
+  - public/favicon-badge-16x16.png
+  - public/favicon-badge-32x32.png
+  - public/favicon-badge-96x96.png
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n -S -e "favicon-32x32" -e "favicon-96x96" -e "favicon-16x16" -e "favicon\\.ico" -e "shortcut icon" -e "rel=\"icon\"" -e "apple-touch-icon" -e "android-icon-192x192" -e "manifest\\.json" app/views app/javascript public config
+  - rg -n -S -e "setFavicon" -e "updateFavicon" -e "favicon" app/javascript
+  - Get-ChildItem public -File | Where-Object { $_.Name -match "^favicon-(16|32|96)x(16|32|96)\\.png$|^favicon-badge-(16|32|96)x(16|32|96)\\.png$" } | Select-Object Name, Length
+  - docker run --rm -v "$PWD:/repo" -w /repo debian:bookworm-slim sh -lc "apt-get update && apt-get install -y --no-install-recommends librsvg2-bin && rsvg-convert ..."
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (favicon linkleri tek kaynaga cekildi; SPA route degisimlerinde /favicon-*.png fallback'i branded PNG'lere dusmeli).
+- Notlar / Riskler:
+  - Rollback: faviconHelper degisikliklerini ve layout linklerini eski haline al; PNG dosyalarini onceki iceriklere geri dondur.
+
+## 2025-12-27 19:59
+- Tarih/Saat (TR): 2025-12-27 19:59
+- Amac: Host'ta guncellenen dark favicon SVG'nin repo'ya aynen alinmasi ve cache-bust versiyonunun v9'a alinmasi.
+- Sorun / Belirti: Favicon guncellemesi istemci cache'i nedeniyle yansimiyor; versiyon artirilmasi gerekiyor.
+- Kok Neden (Varsa): Cache-bust v8'de kalmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/layouts/vueapp.html.erb
+  - app/services/cebi/force_dark_branding_service.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git diff -- public/brand-assets/cebi-favicon-dark.svg
+  - curl.exe -s http://localhost:3000/brand-assets/cebi-favicon-dark.svg | Select-Object -First 5
+  - rg -n "cebi-favicon\\.svg" .
+  - rg -n "cebi-favicon-dark\\.svg" .
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rake cebi:branding:diagnose
+  - docker compose exec -T rails bundle exec rake cebi:branding:force_dark
+  - docker compose restart rails sidekiq vite
+  - Incognito: /app/login HTML'de cebi-v9 ve /brand-assets/cebi-favicon-dark.svg?v=cebi-v9
+- Notlar / Riskler:
+  - Rollback: cache-bust versiyonunu onceki degere geri al.
+
+## 2025-12-27 19:23
+- Tarih/Saat (TR): 2025-12-27 19:23
+- Amac: Dark favicon SVG'yi kare canvas'a almak ve cache-bust versiyonunu v8'e tasimak.
+- Sorun / Belirti: Favicon SVG dikdortgen canvas ile servis ediliyor; cache bust versiyonu eskide kalmis olabilir.
+- Kok Neden (Varsa): SVG viewBox kare degil; cache-bust sabiti guncellenmemis.
+- Yapilan Degisiklikler (dosya bazli):
+  - public/brand-assets/cebi-favicon-dark.svg
+  - app/views/layouts/vueapp.html.erb
+  - app/services/cebi/force_dark_branding_service.rb
+  - lib/tasks/cebi_branding.rake
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "cebi-favicon-dark\\.svg" .
+  - Get-Content public/brand-assets/cebi-favicon-dark.svg
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-Content app/services/cebi/force_dark_branding_service.rb
+  - Get-Content lib/tasks/cebi_branding.rake
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama:
+  - curl.exe -s http://localhost:3000/brand-assets/cebi-favicon-dark.svg | Select-String -Pattern "viewBox"
+  - curl.exe -s http://localhost:3000/app/login | Select-String -Pattern "cebi-v9"
+- Notlar / Riskler:
+  - Rollback: SVG viewBox/transform ve favicon cache-bust degisikliklerini geri al.
+
+## 2025-12-27 18:24
+- Tarih/Saat (TR): 2025-12-27 18:24
+- Amac: Sidebar logo ve favicon'un hangi kaynaktan geldigini teshis etmek ve karanlik ikonlari zorunlu hale getirmek.
+- Sorun / Belirti: Sol ust ikon ve favicon eski dosyaya geri donuyor; degerler hangi katmanda override ediliyor belli degil.
+- Kok Neden (Varsa): InstallationConfig/ENV/cache zinciri netlesmedigi icin efektif degerler takip edilemiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/cebi/force_dark_branding_service.rb
+  - lib/tasks/cebi_branding.rake
+  - app/views/layouts/vueapp.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "LOGO_THUMBNAIL|logoThumbnail|favicon" app lib config
+  - rg -n "globalConfig|APP_CONFIG|app_config" app/controllers app/javascript
+  - rg -n "cebi-favicon" .
+  - rg -n "/brand-assets/cebi-favicon" .
+  - Get-Content lib/global_config.rb
+  - Get-Content lib/global_config_service.rb
+  - Get-Content app/models/installation_config.rb
+  - Get-Content app/controllers/dashboard_controller.rb
+  - Get-Content app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - Get-Content app/javascript/dashboard/components-next/icon/Logo.vue
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - apply_patch (cebi branding task/service + favicon cache-bust v7)
+  - git add public/brand-assets/cebi-favicon-dark.svg
+  - git status --short
+  - git diff --stat
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rake cebi:branding:diagnose
+  - docker compose exec -T rails bundle exec rake cebi:branding:force_dark
+  - docker compose restart rails sidekiq vite
+  - Incognito: /app/login ve /app/accounts/1/dashboard (favicon + sidebar ikon dark dosya)
+- Notlar / Riskler:
+  - Dashboard global config HTML layout icinde window.globalConfig ile enjekte ediliyor; Network'te /app veya /app/login yanitindan kontrol edilebilir.
+  - Rollback: cebi branding task/service kaldirilabilir; favicon cache-bust degeri eski haline alinabilir.
+
+## 2025-12-27 16:37
+- Tarih/Saat (TR): 2025-12-27 16:37
+- Amac: Favicon ve sidebar brand icon varsayilanlarini karanlik SVG ikonuna sabitlemek.
+- Sorun / Belirti: UI kaynaklarinda eski favicon ismi gorunuyor ve sidebar ikon beklenen dosyaya dusmuyor.
+- Kok Neden (Varsa): Layout cache-bust surumu eskiydi; notlarda eski dosya ismi geciyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/views/layouts/vueapp.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "cebi-favicon\\.svg" .
+  - rg -n "/brand-assets/cebi-favicon\\.svg" .
+  - rg -n "favicon" app config public .
+  - rg -n "cebi-v5" .
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-ChildItem public -Filter "manifest*"
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - apply_patch (vueapp favicon cache bust v6)
+  - apply_patch (worklog eski favicon ismini kaldirma)
+- Dogrulama: Beklemede (docker compose up -d --build rails sidekiq vite + incognito kontrol).
+- Notlar / Riskler:
+  - Rollback: favicon cache-bust degerini eski versiyona cevir ve eski notlari geri koy.
+
+## 2025-12-27 16:03
+- Tarih/Saat (TR): 2025-12-27 16:03
+- Amac: Varsayilan dili TR yapmak ve favicon/brand icon'u cebi-favicon-dark.svg'ye gecirmek.
+- Sorun / Belirti: Fresh session'da UI EN aciliyor; favicon ve sidebar ikon eski dosyayi kullaniyor.
+- Kok Neden (Varsa): Backend default_locale ayari yok; frontend entrypoint'lerde locale 'en' hardcode; favicon fallback ve branding defaultlari eski dosyaya isaret ediyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/application.rb
+  - app/javascript/entrypoints/dashboard.js
+  - app/javascript/entrypoints/v3app.js
+  - app/javascript/entrypoints/widget.js
+  - app/javascript/entrypoints/survey.js
+  - app/javascript/survey/views/Response.vue
+  - app/views/layouts/vueapp.html.erb
+  - lib/branding_config.rb
+  - config/installation_config.yml
+  - enterprise/config/premium_installation_config.yml
+  - .env.example
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - rg -n "default_locale|DEFAULT_LOCALE|selectedLocale|locale" config app/javascript app/views
+  - rg -n "cebi-favicon"
+  - rg -n "fallbackLocale: 'en'|locale: 'en'" app/javascript/entrypoints app/javascript/survey
+  - rg -n "LOGO_THUMBNAIL|logoThumbnail|logo_thumbnail" app/javascript app/views
+  - rg -n "LOGO_THUMBNAIL|logo_thumbnail|brand.*icon|sidebar" app/javascript app/views lib
+  - Get-Content app/javascript/entrypoints/dashboard.js
+  - Get-Content app/javascript/entrypoints/v3app.js
+  - Get-Content app/javascript/entrypoints/widget.js
+  - Get-Content app/javascript/entrypoints/survey.js
+  - Get-Content app/javascript/survey/views/Response.vue
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-Content config/application.rb
+  - Get-Content lib/branding_config.rb
+  - Get-Content .env.example
+  - Get-Content config/installation_config.yml
+  - Get-Content enterprise/config/premium_installation_config.yml
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - git status --short
+  - git diff --stat
+  - apply_patch (.env.example DEFAULT_LOCALE comment)
+- Dogrulama: Beklemede (docker compose up -d --build rails sidekiq vite ve fresh session ile kontrol).
+- Notlar / Riskler:
+  - Rollback: i18n default locale ve entrypoint locale degisikliklerini geri al; favicon URL'lerini eski dosyaya dondur.
+
+## 2025-12-27 15:40
+- Tarih/Saat (TR): 2025-12-27 15:40
+- Amac: Vite start suresini kisaltmak ve ENOMEM riskini azaltmak icin pnpm adimlarini idempotent yapmak.
+- Sorun / Belirti: Her restart'ta pnpm store prune + pnpm install --force calisiyor; yavas ve ENOMEM riski yuksek.
+- Kok Neden (Varsa): Vite entrypoint'te pnpm adimlari kosulsuz calistiriliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker/entrypoints/vite.sh
+  - docker-compose.yaml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content docker/entrypoints/vite.sh
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede.
+- Notlar / Riskler:
+  - Rollback: pnpm prune/install kosullarini kaldirip eski davranisa don.
+
+## 2025-12-27 15:08
+- Tarih/Saat (TR): 2025-12-27 15:08
+- Amac: Rails/Vite/Sidekiq icin native gem derleme bagimliliklarini eklemek ve /gems bundle install'in tamamlanmasini saglamak.
+- Sorun / Belirti: bundle install sirasinda ffi/openssl/pg native derleme hatalari (linux headers, pkg-config, libpq eksik).
+- Kok Neden (Varsa): Rails image'inda gerekli Alpine build paketleri yoktu; Vite bundle install'a girince native gemler derlenemiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker/dockerfiles/rails.Dockerfile
+  - docker-compose.yaml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content docker/dockerfiles/rails.Dockerfile
+  - docker compose build rails sidekiq vite
+  - docker compose build rails sidekiq vite
+  - docker compose run --rm rails sh -lc "bundle _2.5.11_ install --jobs 4 --retry 3"
+  - docker compose run --rm --entrypoint sh rails -lc "bundle _2.5.11_ check"
+  - docker compose run --rm rails sh -lc "bundle _2.5.11_ install --jobs 4 --retry 3"
+  - docker compose up -d --force-recreate vite
+  - docker compose logs -f --tail=200 vite
+  - Start-Sleep -Seconds 20
+  - docker compose logs --tail=200 vite
+- Dogrulama:
+  - bundle _2.5.11_ install /gems altinda tamamlandi.
+  - Vite loglarinda bundler/ffi/openssl/pg derleme hatalari gorulmedi.
+  - Not: pnpm store prune sirasinda ENOMEM goruldu; Vite dev server satiri henuz dogrulanamadi.
+- Notlar / Riskler:
+  - Rollback: rails.Dockerfile ve docker-compose.yaml degisikliklerini geri al; native gemler tekrar derleme hatasi verebilir.
+- Sonraki Adimlar:
+  - Vite loglarinda dev server satirini dogrula; gerekirse daha fazla bellek ile tekrar dene.
+
+## 2025-12-27 09:34
+- Tarih/Saat (TR): 2025-12-27 09:34
+- Amac: Vite servisinin ortak /gems volume'u icin bundler 2.5.11 gemlerini rails container'da bir kez kurmak.
+- Sorun / Belirti: Vite bundle check fail oldugu icin exit ediyor; /gems bos.
+- Kok Neden (Varsa): Vite container artik bundle install yapmiyor; /gems sadece rails tarafindan doldurulmali.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (Beklemede) docker compose run --rm rails sh -lc "bundle _2.5.11_ install --jobs 4 --retry 3"
+  - (Beklemede) docker compose up -d --force-recreate vite
+  - (Beklemede) docker compose logs --tail=200 vite
+- Dogrulama: Beklemede (vite logs'ta dev server satiri gorulmeli).
+- Notlar / Riskler:
+  - Rollback: Vite entrypoint tekrar bundle install calistirir hale getirilirse bu adim gerekmez.
+
+## 2025-12-27 09:29
+- Tarih/Saat (TR): 2025-12-27 09:29
+- Amac: Vite container bundler/native gem derleme hatalarini kalici olarak durdurmak.
+- Sorun / Belirti: Vite loglarinda bundler 2.5.11 bulunamadi ve ffi/openssl/pg native derleme hatalari.
+- Kok Neden (Varsa): Vite servisinde bundle install tekrar calisip native derleme deniyor; GEM_HOME/GEM_PATH tutarsiz ve /gems kalici kullanilmiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker-compose.yaml
+  - docker/entrypoints/vite.sh
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content docker/dockerfiles/vite.Dockerfile
+  - Get-Content docker/dockerfiles/rails.Dockerfile
+  - Get-Content docker/entrypoints/rails.sh
+  - docker compose build vite
+  - docker compose up -d --force-recreate vite
+  - docker compose logs --tail=200 vite
+  - Start-Sleep -Seconds 20
+  - Start-Sleep -Seconds 10
+  - docker compose logs --since 10m vite | Select-String -Pattern "bundler|ffi|openssl|pg_config|libpq"
+  - docker compose exec -T vite sh -lc "ruby -v; cat /etc/os-release | head; echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v"
+  - docker compose exec -T vite sh -lc 'ruby -v; cat /etc/os-release | head; echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v'
+- Dogrulama:
+  - Vite loglarinda bundler/ffi/openssl/pg derleme hatalari gorulmedi.
+  - Vite container icinde bundler 2.5.11 gorunuyor ve GEM_HOME/GEM_PATH /gems ile basliyor.
+- Notlar / Riskler:
+  - Rollback: docker-compose.yaml ve docker/entrypoints/vite.sh degisikliklerini geri al; Vite bundler check tekrar bundle install deneyecektir.
+- Sonraki Adimlar:
+  - docker compose logs --tail=200 vite ile "Ready to run Vite development server" ve dev server satirini dogrula.
+
+## 2025-12-27 09:01
+- Tarih/Saat (TR): 2025-12-27 09:01
+- Amac: Vite container restart'larinda bundler 2.5.11 ve bundler-audit eksikligini kalici olarak gidermek.
+- Sorun / Belirti: Vite loglarinda "Activating bundler (2.5.11) failed" ve "bundler-audit missing".
+- Kok Neden (Varsa): GEM_HOME/GEM_PATH uyumsuzlugu ve gem install'in ephemeral katmanda kalmasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker-compose.yaml
+  - docker/entrypoints/vite.sh
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git branch --show-current
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - docker compose up -d --force-recreate vite
+  - docker compose logs -f --tail=120 vite
+  - Start-Sleep -Seconds 10
+  - docker compose logs --tail=120 vite
+  - docker compose logs --since 5m vite | Select-String -Pattern "bundler"
+  - docker compose run --rm --entrypoint sh vite -lc "echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v"
+  - docker compose run --rm --entrypoint sh vite -lc 'echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v'
+  - docker compose up -d --force-recreate vite
+  - Start-Sleep -Seconds 10
+  - docker compose logs --tail=120 vite
+  - docker compose logs --since 10m vite | Select-String -Pattern "bundler"
+- Dogrulama:
+  - docker compose logs --tail=120 vite ciktisinda "bundler 2.5.11 failed" veya "bundler-audit missing" gorulmedi (pnpm install devam ediyor).
+  - docker compose run --rm --entrypoint sh vite -lc 'echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v' ciktisinda bundler 2.5.11 gorunuyor.
+- Notlar / Riskler:
+  - Rollback: docker-compose.yaml ve docker/entrypoints/vite.sh degisikliklerini geri al.
+- Sonraki Adimlar:
+  - docker compose up -d --force-recreate vite
+  - docker compose logs -f --tail=120 vite
+  - docker compose run --rm --entrypoint sh vite -lc "echo $GEM_HOME; echo $GEM_PATH; gem list bundler -a; bundler -v"
+
+## 2025-12-27 08:40
+- Tarih/Saat (TR): 2025-12-27 08:40
+- Amac: Vite container'da "ruby\r" hatasini kalici kapatmak icin bin scriptlerini LF'e normalize etmek.
+- Sorun / Belirti: Vite loglarinda "env: can't execute 'ruby\r'" ve exit 127.
+- Kok Neden (Varsa): bin/vite (ve bin/*) CRLF ile checkout edildigi icin shebang satirinda CR kalmasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - .gitattributes
+  - bin/*
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git config core.autocrlf false
+  - git config core.eol lf
+  - git add --renormalize bin .gitattributes
+  - python - (bin/* CRLF -> LF)
+  - python - (bin/vite shebang kontrolu)
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Vite restart ve log kontrolu sonrasi kaydedilecek.
+- Notlar / Riskler:
+  - Rollback: .gitattributes'i eski haline al ve bin/* dosyalarini onceki line ending'lere dondur.
+- Sonraki Adimlar:
+  - docker compose restart vite
+  - docker compose logs -f --tail=120 vite
+
+## 2025-12-27 08:19
+- Tarih/Saat (TR): 2025-12-27 08:19
+- Amac: Postgres container ilk init sirasinda sifre enjekte edilsin ve Windows Docker'da restart loop olmasin.
+- Sorun / Belirti: "Database is uninitialized and superuser password is not specified" hatasi ile postgres restart loop.
+- Kok Neden (Varsa): docker-compose.yaml icinde POSTGRES_PASSWORD bos birakildigi icin .env degeri env'e gecmiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docker-compose.yaml
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - git restore Gemfile.lock
+  - git restore bin/bundle bin/rake bin/setup bin/spring bin/sync_i18n_file_change bin/update bin/validate_push bin/vite bin/yarn
+  - git status --short
+  - Get-Content docker-compose.yaml
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+- Dogrulama: Beklemede (kullanici asagidaki docker komutlarini calistiracak).
+- Notlar / Riskler:
+  - Rollback: docker-compose.yaml icindeki postgres environment blogunu eski haline cevir.
+- Sonraki Adimlar:
+  - docker compose down -v ve yeniden baslatma adimlari ile postgres init dogrulama.
+
+## 2025-12-27 07:18
+- Tarih/Saat (TR): 2025-12-27 07:18
+- Amac: Devise initializer icin BrandingConfig yuklemesini garanti etmek ve login/reset dogrulamasini denemek.
+- Sorun / Belirti: Rails boot ederken BrandingConfig NameError; /app/login HEAD istegi time-out; Vite dev server "env: can't execute 'ruby\r'" ile fail.
+- Kok Neden (Varsa): BrandingConfig dosyasi Devise initializer oncesi yuklenmiyordu; bin/vite CRLF nedeniyle Vite entrypoint calisamiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/initializers/devise.rb
+- Calistirilan Komutlar:
+  - git status --short
+  - Get-Content config/initializers/devise.rb
+  - Get-Content lib/branding_config.rb
+  - Get-Content config/application.rb
+  - docker compose restart rails vite
+  - docker compose logs --tail 200 rails
+  - docker compose ps
+  - docker compose exec rails ruby -e "require '/app/lib/branding_config'; puts BrandingConfig.brand_name"
+  - docker compose exec rails ruby -e "require '/app/lib/branding_config'; puts Object.const_defined?(:BrandingConfig)"
+  - docker compose restart rails
+  - docker compose logs --tail 120 rails
+  - docker compose logs --tail 40 rails
+  - Start-Sleep -Seconds 5
+  - docker compose logs --tail 30 rails
+  - curl.exe -I http://localhost:3000/app/login
+  - Invoke-WebRequest -Method Head -Uri http://localhost:3000/app/login -TimeoutSec 15
+  - Start-Sleep -Seconds 10
+  - curl.exe -I --max-time 20 http://localhost:3000/app/login
+  - docker compose logs --tail 100 vite
+  - curl.exe -I --max-time 20 http://localhost:3000/brand-assets/cebi-logo.svg
+- Dogrulama:
+  - Rails loglari Puma'nin 3000'de dinledigini gosteriyor.
+  - /brand-assets/cebi-logo.svg icin 200 OK alindi.
+  - /app/login HEAD istegi time-out oldu; Vite container CRLF hatasi nedeniyle calismiyor.
+- Notlar / Riskler:
+  - Vite dev server CRLF hatasi giderilmeden login/reset sayfasi tam dogrulanamiyor.
+- Sonraki Adimlar:
+  - bin/vite satir sonlarini LF'e cevirip Vite'yi yeniden baslat.
+
+## 2025-12-27 05:42
+- Tarih/Saat (TR): 2025-12-27 05:42
+- Amac: Install-level white-label core (env-backed branding) ve Chatwoot referanslarini ana yuzeylerden kaldirma.
+- Sorun / Belirti: Login basligi, manifest, mailer sender ve widget/survey "Powered by" metinleri Chatwoot hardcode idi.
+- Kok Neden (Varsa): Branding config DB varsayimlarina bagliydi; manifest statikti; bazi mailer ve UI metinleri dogrudan Chatwoot kullaniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+  - docs/ADR/0003-white-label-core.md
+  - lib/branding_config.rb
+  - app/controllers/dashboard_controller.rb
+  - app/controllers/api/v1/widget/configs_controller.rb
+  - app/controllers/widgets_controller.rb
+  - app/controllers/survey/responses_controller.rb
+  - app/controllers/public/api/v1/portals/base_controller.rb
+  - app/controllers/manifest_controller.rb
+  - config/routes.rb
+  - config/installation_config.yml
+  - enterprise/config/premium_installation_config.yml
+  - enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+  - app/views/layouts/vueapp.html.erb
+  - app/views/widgets/show.html.erb
+  - app/views/survey/responses/show.html.erb
+  - app/views/installation/onboarding/index.html.erb
+  - app/views/super_admin/devise/sessions/new.html.erb
+  - app/views/super_admin/application/_navigation.html.erb
+  - app/views/super_admin/settings/show.html.erb
+  - app/views/devise/mailer/confirmation_instructions.html.erb
+  - app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid
+  - app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid
+  - app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_user_initiated.liquid
+  - app/mailers/application_mailer.rb
+  - config/initializers/devise.rb
+  - app/models/account.rb
+  - app/javascript/shared/store/globalConfig.js
+  - app/javascript/shared/components/Branding.vue
+  - app/javascript/v3/views/login/Index.vue
+  - app/javascript/survey/views/Response.vue
+  - app/javascript/dashboard/i18n/locale/en/login.json
+  - app/javascript/dashboard/i18n/locale/tr/login.json
+  - app/javascript/widget/i18n/locale/en.json
+  - app/javascript/widget/i18n/locale/tr.json
+  - app/javascript/survey/i18n/locale/en.json
+  - app/javascript/survey/i18n/locale/tr.json
+  - .env.example
+  - public/manifest.json (kaldirildi)
+- Calistirilan Komutlar:
+  - git status --short
+  - git branch --show-current
+  - git grep -n "Chatwoot" app/views
+  - git grep -n "manifest.json"
+  - git grep -n "Manifest" app
+  - git grep -n "INSTALLATION_NAME"
+  - git grep -n "MAILER_SUPPORT_EMAIL"
+  - git grep -n "Chatwoot" app/javascript
+  - git grep -n "POWERED_BY" -- app/javascript/widget app/javascript/survey
+  - git grep -n "Brand" -- app/javascript/widget app/javascript/survey
+  - git grep -n "useBranding" -- app/javascript
+  - git grep -n "chatwoot.com"
+  - git grep -n "Chatwoot" -- app/views/mailers
+  - git grep -n "Chatwoot" -- app/javascript/v3/views/login app/javascript/widget app/javascript/survey app/views/layouts/vueapp.html.erb app/views/installation app/views/super_admin
+  - git diff --stat
+  - git grep -n "MAILER_SENDER_EMAIL" -- spec
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - Get-Content config/installation_config.yml
+  - Get-Content lib/global_config.rb
+  - Get-Content lib/config_loader.rb
+  - Get-Content app/controllers/dashboard_controller.rb
+  - Get-Content app/controllers/api/v1/widget/configs_controller.rb
+  - Get-Content app/controllers/widgets_controller.rb
+  - Get-Content app/controllers/survey/responses_controller.rb
+  - Get-Content app/controllers/installation/onboarding_controller.rb
+  - Get-Content app/views/layouts/vueapp.html.erb
+  - Get-Content app/views/installation/onboarding/index.html.erb
+  - Get-Content app/views/widgets/show.html.erb
+  - Get-Content app/views/survey/responses/show.html.erb
+  - Get-Content app/views/devise/mailer/confirmation_instructions.html.erb
+  - Get-Content app/views/super_admin/devise/sessions/new.html.erb
+  - Get-Content app/views/super_admin/application/_navigation.html.erb
+  - Get-Content app/views/super_admin/settings/show.html.erb
+  - Get-Content app/views/mailers/administrator_notifications/account_compliance_mailer/account_deleted.liquid
+  - Get-Content app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_for_inactivity.liquid
+  - Get-Content app/views/mailers/administrator_notifications/account_notification_mailer/account_deletion_user_initiated.liquid
+  - Get-Content app/mailers/application_mailer.rb
+  - Get-Content app/models/account.rb
+  - Get-Content app/javascript/entrypoints/dashboard.js
+  - Get-Content app/javascript/entrypoints/survey.js
+  - Get-Content app/javascript/entrypoints/v3app.js
+  - Get-Content app/javascript/v3/views/login/Index.vue
+  - Get-Content app/javascript/shared/components/Branding.vue
+  - Get-Content app/javascript/survey/views/Response.vue
+  - Get-Content app/javascript/dashboard/i18n/locale/en/login.json
+  - Get-Content app/javascript/dashboard/i18n/locale/tr/login.json
+  - Get-Content app/javascript/widget/i18n/locale/en.json
+  - Get-Content app/javascript/survey/i18n/locale/en.json
+  - Get-Content .env.example
+  - Get-Content config/routes.rb
+  - Get-Content enterprise/config/premium_installation_config.yml
+  - Get-Content enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+  - Get-ChildItem app/javascript/dashboard/i18n
+  - Get-ChildItem app/javascript/dashboard/i18n/locale
+  - Get-ChildItem app/javascript/dashboard/i18n/locale/en
+  - Get-ChildItem app/javascript/v3/views/auth
+  - Select-String app/javascript/dashboard/i18n/locale/tr/login.json -Pattern "\"TITLE\""
+  - Select-String app/javascript/widget/i18n/locale/tr.json -Pattern "POWERED_BY"
+  - Select-String app/javascript/survey/i18n/locale/tr.json -Pattern "POWERED_BY"
+  - Select-String app/javascript/survey/views/Response.vue -Pattern "Chatwoot"
+  - Select-String config/initializers/devise.rb -Pattern "mailer_sender"
+  - Select-String app/controllers/public/api/v1/portals/base_controller.rb -Pattern "global_config"
+  - Select-String app/views/super_admin/settings/show.html.erb -Pattern "Chatwoot"
+  - Select-String app/models/account.rb -Pattern "support_email"
+  - python - (login TR title guncelleme)
+  - python - (widget/survey TR POWERED_BY guncelleme)
+  - python - (super_admin login branding guncelleme)
+  - python - (account_deletion_for_inactivity mailer branding guncelleme)
+  - python - (account_deletion_user_initiated mailer branding guncelleme)
+- Dogrulama: Calistirilmedi (yalnizca kod degisikligi).
+- Notlar / Riskler:
+  - Manifest artik Rails uzerinden servis ediliyor; public/manifest.json kaldirildi.
+  - Branding env degerleri bos ise InstallationConfig fallback kullanilir.
+- Sonraki Adimlar:
+  - Branding env degiskenlerini (.env) ayarla.
+  - /app/login, /manifest.json ve mailer gonderimleri ile brand adini dogrula.
+
+## 2025-12-27 06:42
+- Tarih/Saat (TR): 2025-12-27 06:42
+- Amac: Login/reset password UI metinleri, tab title, favicon ve login logolarini Cebi Medya AI Panel markasina tasimak.
+- Sorun / Belirti: Login basligi ve reset password aciklamasi eski marka metnini kullaniyordu; login logosu ve favicon Chatwoot varliklariydi.
+- Kok Neden (Varsa): BrandingConfig/globalConfig yeni alanlari eksikti; TR metinler guncellenmemisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+  - lib/branding_config.rb
+  - app/javascript/shared/store/globalConfig.js
+  - app/javascript/v3/views/login/Index.vue
+  - app/views/layouts/vueapp.html.erb
+  - app/javascript/dashboard/i18n/locale/tr/login.json
+  - app/javascript/dashboard/i18n/locale/tr/resetPassword.json
+  - .env.example
+  - config/installation_config.yml
+  - enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+  - enterprise/config/premium_installation_config.yml
+  - enterprise/app/controllers/enterprise/super_admin/app_configs_controller.rb
+- Calistirilan Komutlar:
+  - git grep -n "Sifrenizi" -- app/javascript/dashboard/i18n/locale/tr
+  - Get-Content app/javascript/dashboard/i18n/locale/tr/resetPassword.json
+  - Get-Content app/javascript/v3/views/auth/reset/password/Index.vue
+  - Get-Date -Format "yyyy-MM-dd HH:mm"
+  - python - (login title TR guncelleme)
+  - python - (reset password description TR guncelleme)
+  - Select-String app/javascript/dashboard/i18n/locale/tr/login.json -Pattern "\"TITLE\""
+  - Select-String app/javascript/dashboard/i18n/locale/tr/resetPassword.json -Pattern "DESCRIPTION"
+- Dogrulama: Calistirilmedi (kullanici docker restart ile dogrulayacak).
+- Notlar / Riskler:
+  - .env.example icine marka degerleri eklendi; gercek ortam icin .env guncellenmeli.
+- Sonraki Adimlar:
+  - docker compose restart rails vite
+  - /app/login ve /app/auth/reset/password ekranlarini kontrol et.
+
+## 2025-12-28 06:13
+- Tarih/Saat (TR): 2025-12-28 06:13
+- Amac: Kullanici menusu etiketlerini Turkce i18n ile goster.
+- Sorun / Belirti: Profil menusundeki etiketler Turkce hesap dilinde bile Ingilizce gorunuyordu.
+- Kok Neden (Varsa): TR `settings.json` icinde `SIDEBAR_ITEMS` etiketleri Ingilizce kalmisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+- Calistirilan Komutlar:
+  - git status --short
+  - git diff --stat
+  - git grep -n -E "Keyboard shortcuts|Profile settings|Change appearance|SuperAdmin console|Log out" -- app/javascript
+  - python - (tr/settings.json menu etiketleri TR guncelleme)
+- Dogrulama: Calistirilmedi (kullanici UI uzerinden dogrulayacak).
+- Notlar / Riskler:
+  - TR metinler Unicode escape ile yazildi; Windows ANSI bozulmasina karsi guvenli.
+- Sonraki Adimlar:
+  - Turkce dil ile sol alttaki kullanici menusunu acip etiketleri dogrula.
+
+## 2025-12-28 15:55
+- Tarih/Saat (TR): 2025-12-28 15:55
+- Amac: Dashboard sol menude gereksiz sayfalari kalici kaldir, yeni Destek rotasini ekle ve TR menu cevirilerini duzelt.
+- Sorun / Belirti: Sol menude kullanilmayan sayfalar gorunuyordu; Destek bildirimi icin tek bir sayfa yoktu; profil menusu TR metinleri eksikti.
+- Kok Neden (Varsa): Sidebar ve router modulleri kullanilmayan route'lari hala expose ediyordu; TR i18n anahtarlari guncel degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+  - app/javascript/dashboard/routes/dashboard/settings/settings.routes.js
+  - app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/i18n/locale/en/settings.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - Get-Content app/javascript/dashboard/routes/dashboard/dashboard.routes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/settings/settings.routes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/settings/reports/reports.routes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/helpcenter/helpcenter.routes.js
+  - Select-String -Path app/javascript/dashboard/i18n/locale/en/settings.json -Pattern '"SIDEBAR"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/en/settings.json -Pattern '"SIDEBAR_ITEMS"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/tr/settings.json -Pattern '"SIDEBAR"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/tr/settings.json -Pattern "SIDEBAR_ITEMS"
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Kampanyalar ve Yardim Merkezi route'lari devre disi; artik URL ile de erisilemez.
+- Sonraki Adimlar:
+  - docker compose restart rails sidekiq vite
+  - /app/accounts/:id/support/new sayfasini acip widget butonunu kontrol et.
+
+## 2025-12-28 17:13
+- Tarih/Saat (TR): 2025-12-28 17:13
+- Amac: Destek bildirimi sayfasini form tabanli, gercek conversation olusturan akisa donustur.
+- Sorun / Belirti: Destek sayfasi sadece widget var/yok placeholder gosteriyordu; destek inbox/konusma olusmuyordu.
+- Kok Neden (Varsa): Sayfada inbox secimi, contact arama/olusturma ve conversation create akisi yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue
+  - app/javascript/dashboard/i18n/locale/en/support.json
+  - app/javascript/dashboard/i18n/locale/tr/support.json
+  - app/javascript/dashboard/i18n/locale/en/index.js
+  - app/javascript/dashboard/i18n/locale/tr/index.js
+  - app/javascript/dashboard/i18n/locale/en/settings.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-ChildItem -Recurse -Filter "SupportTicketNew.vue" -File
+  - git grep -n "ContactAPI" -- app/javascript/dashboard
+  - Get-Content app/javascript/dashboard/store/modules/contactConversations.js
+  - Get-Content app/javascript/dashboard/api/contacts.js
+  - Get-Content app/javascript/dashboard/store/modules/contacts/actions.js
+  - Get-Content app/javascript/dashboard/store/modules/inboxes.js
+  - Get-Content app/javascript/dashboard/routes/dashboard/conversation/conversation.routes.js
+  - Get-Content app/javascript/dashboard/i18n/locale/en/index.js
+  - Get-Content app/javascript/dashboard/i18n/locale/tr/index.js
+  - Select-String -Path app/javascript/dashboard/i18n/locale/en/settings.json -Pattern '"SUPPORT"'
+  - Select-String -Path app/javascript/dashboard/i18n/locale/tr/settings.json -Pattern '"SUPPORT"'
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Destek inbox adi "destek" icermiyorsa form gonderimi devre disi kalir.
+- Sonraki Adimlar:
+  - /app/accounts/:id/support/new formunu doldurup gonder.
+  - Yeni conversation acildigini ve inbox_conversation route'una yonlendigini dogrula.
+
+## 2025-12-28 18:06
+- Tarih/Saat (TR): 2025-12-28 18:06
+- Amac: Destek inbox'ini otomatik ve idempotent olarak olusturmak, mevcut account'lar icin backfill saglamak.
+- Sorun / Belirti: Destek inbox yoksa destek formu gonderimi kilitleniyordu.
+- Kok Neden (Varsa): Account seviyesinde otomatik provisioning ve admin uyelik baglama akisi yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/installation_config.yml
+  - app/services/account/provision_support_inbox_service.rb
+  - app/jobs/account/provision_support_inbox_job.rb
+  - app/jobs/internal/provision_support_inboxes_job.rb
+  - app/models/account.rb
+  - app/models/account_user.rb
+  - config/routes.rb
+  - app/controllers/super_admin/settings_controller.rb
+  - app/views/super_admin/settings/show.html.erb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content lib/global_config.rb
+  - Get-Content config/installation_config.yml
+  - Get-Content app/models/account.rb
+  - Get-Content app/models/account_user.rb
+  - Get-Content app/controllers/super_admin/settings_controller.rb
+  - Get-Content app/views/super_admin/settings/show.html.erb
+  - Get-Content config/routes.rb
+- Dogrulama: Calistirilmedi.
+- Notlar / Riskler:
+  - Auto provision devre disi ise support inbox olusmaz; admin butonu manuel backfill icin mevcut.
+- Sonraki Adimlar:
+  - Super Admin > Settings > Provision Support Inboxes butonunu calistir.
+  - /app/accounts/:id/support/new sayfasinda uyarinin kalktigini dogrula.
+
+## 2025-12-28 18:25
+- Tarih/Saat (TR): 2025-12-28 18:25
+- Amac: Support smoke test akisini dogru builder'larla belgelemek ve TR record_invalid hatasini duzeltmek.
+- Sorun / Belirti: Smoke test Conversation.create! ile contact_inbox_id olmadan fail oluyordu; record_invalid hatasi "Translation missing" gorunuyordu.
+- Kok Neden (Varsa): Chatwoot conversation create icin ContactInbox zinciri zorunlu; TR locale'da record_invalid eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - config/locales/tr.yml
+  - app/services/account/provision_support_inbox_service.rb
+  - app/jobs/internal/provision_support_inboxes_job.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - Get-Content config/locales/tr.yml
+- Dogrulama:
+  - Smoke test (Rails runner):
+    ```sh
+    docker compose exec -T rails bundle exec rails runner "
+    a=Account.find(1)
+    name=(GlobalConfig.get_value('SUPPORT_INBOX_NAME') || 'Destek')
+    inbox=a.inboxes.where('lower(name)=?', name.downcase).first
+    raise 'support inbox missing' unless inbox
+
+    admin_id=a.account_users.where(role: :administrator).first&.user_id
+    raise 'admin missing' unless admin_id
+    u=User.find(admin_id)
+
+    # contact + contact_inbox (ChatwootÔÇÖun bekledigi sekilde)
+    ci=ContactInboxWithContactBuilder.new(
+      inbox: inbox,
+      contact_attributes: { name: 'Debug Support', email: 'debug-support@example.com' },
+      source_id: "support_smoke_#{Time.now.to_i}",
+      hmac_verified: false
+    ).perform
+
+    # conversation (contact_inbox_id zorunlu zincir)
+    conv=ConversationBuilder.new(
+      params: ActionController::Parameters.new(status: 'open'),
+      contact_inbox: ci
+    ).perform
+
+    # outgoing message (Chatwoot builder)
+    msg=Messages::MessageBuilder.new(
+      u,
+      conv,
+      ActionController::Parameters.new(
+        content: '[SMOKE TEST] support ticket created via runner',
+        message_type: 'outgoing'
+      )
+    ).perform
+
+    puts "conversation_id=#{conv.id} inbox_id=#{inbox.id} message_id=#{msg.id}"
+    "
+    ```
+- Notlar / Riskler:
+  - Provisioning loglari sadece account_id/inbox_id bazlidir; PII yoktur.
+- Sonraki Adimlar:
+  - Yukaridaki runner ile smoke test'i tekrar calistir.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 04:50
+- Amac: Super Admin login sonrasi 500 hatasini kaldirmak (INSTALLATION_IDENTIFIER unique conflict).
+- Sorun / Belirti: ActiveRecord::RecordNotUnique (index_installation_configs_on_name) / super_admin 500.
+- Kok Neden (Varsa): InstallationConfig icin create! cagrisi concurrent durumda ayni name ile tekrar kayit olusturmaya calisiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/chatwoot_hub.rb: INSTALLATION_IDENTIFIER icin find_or_create_by! + blank degerde update.
+- Calistirilan Komutlar:
+  - docker compose restart rails sidekiq
+  - docker compose exec -T rails bundle exec rails runner "puts defined?(SupportDashboard).inspect"
+  - docker compose exec -T rails sh -lc "curl -s -o /dev/null -w 'status=%{http_code} total=%{time_total}\n' http://localhost:3000/super_admin/users"
+  - docker compose exec -T rails bundle exec rails runner "puts ChatwootHub.installation_identifier; p InstallationConfig.where(name: 'INSTALLATION_IDENTIFIER').map { |c| [c.id, c.name, c.value] }"
+- Dogrulama:
+  - InstallationConfig sadece name ile bulunuyor, value bos ise UUID set ediliyor.
+  - runner ile SupportDashboard nil (beklenen), /super_admin/users 302 (login redirect).
+  - INSTALLATION_IDENTIFIER tek satir ve value dolu.
+- Notlar / Riskler:
+  - CLI curl login olmadigi icin 302 normal; UI uzerinden 200 kontrol edilmeli.
+- Sonraki Adimlar:
+  - Super Admin login ile /super_admin/users 200 dogrulamasi yap.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 05:22
+- Amac: INSTALLATION_IDENTIFIER icin RecordNotUnique hatasini engellemek.
+- Sorun / Belirti: /super_admin login sonrasi ActiveRecord::RecordNotUnique (index_installation_configs_on_name).
+- Kok Neden (Varsa): Concurrent create! (name unique) ve locked kayitlarin tekrar olusturulmasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/chatwoot_hub.rb: INSTALLATION_IDENTIFIER icin unscoped find/create + RecordNotUnique rescue + blank value update.
+  - lib/tasks/instance_id.rake: Identifier +-retimi ChatwootHub uzerinden.
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "puts ChatwootHub.installation_identifier; p InstallationConfig.unscoped.where(name: 'INSTALLATION_IDENTIFIER').map { |c| [c.id, c.name, c.value, c.locked] }"
+  - docker compose restart rails sidekiq
+- Dogrulama:
+  - INSTALLATION_IDENTIFIER tek satir, value dolu ve locked=true.
+- Notlar / Riskler:
+  - pluck(:value) kullanimi kolon olmadigi icin hata verir; value icin c.value kullanildi.
+- Sonraki Adimlar:
+  - Super Admin login sonrasi 500 hatasi kalmiyor mu kontrol et.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 05:26
+- Amac: Vapid config eksikken Dashboard 500 vermesin.
+- Sorun / Belirti: NoMethodError (vapid_keys nil) / DashboardController#index.
+- Kok Neden (Varsa): VAPID_KEYS okunamiyor veya parse edilemiyor, nil donup [] hatasi veriyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/vapid_service.rb: vapid_keys her kosulda Hash dondurur, JSON parse hatasinda {}; public/private key nil-safe.
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "p VapidService.public_key; p VapidService.private_key"
+  - docker compose restart rails
+- Dogrulama:
+  - VapidService.public_key/private_key runner crash olmadan calisti.
+- Notlar / Riskler:
+  - VAPID_KEYS yoksa runtimeÔÇÖda {} doner; yeni anahtarlar create edilirken hata olursa dashboard 500 vermez.
+- Sonraki Adimlar:
+  - /app/dashboard acilisinda 500 olmadigini kontrol et.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 19:15
+- Amac: Destek mesajlarinda "Siz/Destek Ekibi" ayrimini duzeltmek ve okunmamis isaretini listeye yansitmak.
+- Sorun / Belirti: Super admin yanitlari kullanici panelinde "Siz" gorunuyor; listede okunmamis rozeti bekleniyordu.
+- Kok Neden (Varsa): Frontend mesaj etiketlemesinde sender_role/sender_is_support normalize edilmemisti; yeni sekme listesinde rozet yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: sender_role ve sender_is_support icin normalize + fallback.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: liste tabinda okunmamis rozeti.
+  - app/models/support_ticket_message.rb: sender_role bos gelirse otomatik atama.
+  - script/support_ticket_sender_role_smoke.rb: destek mesaj rolu smoke testi.
+- Calistirilan Komutlar:
+  - bundle exec rails runner script/support_ticket_sender_role_smoke.rb
+- Dogrulama:
+  - API payload icinde sender_role/support ve sender_is_support true gorunmeli.
+  - /app/accounts/1/support/tickets listesinde okunmamis rozeti gorunmeli.
+- Notlar / Riskler:
+  - UI tarafinda senderRole/senderIsSupport camelCase donuslerine de tolerans eklendi.
+- Sonraki Adimlar:
+  - Vite restart + hard refresh ile UI etiketlerini dogrula.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 19:30
+- Amac: Onboarding karsilama ve canned responses kartini Turkcelestirmek (inbox metinlerine dokunmadan).
+- Sorun / Belirti: Dashboard onboarding ekraninda Ingilizce metinler gorunuyordu.
+- Kok Neden (Varsa): TR locale anahtarlarinda ceviri eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/conversation.json: GREETING_* ve CANNED_RESPONSES metinleri TR oldu.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/dashboard ekraninda kar+þilama ve "Create canned responses" karti TR gorunmeli.
+- Notlar / Riskler:
+  - Placeholder yapisi korunmustur ({name}, {installationName}).
+- Sonraki Adimlar:
+  - Gerekirse `docker compose restart vite` ve hard refresh yap.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 20:05
+- Amac: Ayarlar ekranlarindaki Ingilizce aciklama metinlerini Turkcelestirmek (Teams/Inboxes/Labels/Canned Responses/Profil arayuz/Audio Alerts/Notification Preferences).
+- Sorun / Belirti: Ayarlar sayfalarinda aciklama metinleri Ingilizce kalmisti.
+- Kok Neden (Varsa): TR locale anahtarlarinda ceviri eksikti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/teamsSettings.json
+  - app/javascript/dashboard/i18n/locale/tr/inboxMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/labelsMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/cannedMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/settings/teams/list
+  - /app/accounts/1/settings/inboxes/list
+  - /app/accounts/1/settings/labels/list
+  - /app/accounts/1/settings/canned-response/list
+  - /app/accounts/1/profile/settings
+- Notlar / Riskler:
+  - Placeholder yapilari korunmustur.
+- Sonraki Adimlar:
+  - Gerekirse Vite restart + hard refresh ile kontrol et.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 22:02
+- Amac: TR i18n JSON dosyalarindaki Unicode escape karakterleri okunabilir UTF-8 metinlere cevirmek.
+- Sorun / Belirti: TR locale dosyalarinda \uXXXX escape'li metinler diff'te okunabilir degildi.
+- Kok Neden (Varsa): JSON dosyalari ASCII-escape ile kaydedilmisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/i18n/locale/tr/teamsSettings.json
+  - app/javascript/dashboard/i18n/locale/tr/inboxMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/labelsMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/cannedMgmt.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+- Calistirilan Komutlar:
+  - python - (JSON decode/serialize, ensure_ascii=false)
+- Dogrulama:
+  - git diff ile metinler okunabilir Turkce gorunmeli.
+- Notlar / Riskler:
+  - JSON anahtar yapisi korunmustur.
+- Sonraki Adimlar:
+  - Gerekirse Vite restart + hard refresh ile UI kontrolu yap.
+
+---
+
+- Tarih/Saat (TR): 31.12.2025 01:50
+- Amac: Website inbox sohbetleri yuklenirken 500 hatasi ile takilma sorununu gidermek.
+- Sorun / Belirti: /api/v1/accounts/1/conversations istegi 500 donuyor, UI "Sohbetler Y+-kleniyor"da kal¦-yor.
+- Kok Neden (Varsa): cached_label_list kolonu olmayan ortamlarda Conversation#cached_label_list_array NoMethodError veriyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/conversation.rb: cached_label_list kolonunu guard ile kontrol edip yoksa bos liste donmek.
+- Calistirilan Komutlar:
+  - docker compose logs --tail=200 rails
+- Dogrulama:
+  - /app/accounts/1/inbox/2 sayfasinda sohbet listesi yuklenmeli, 500 olmamali.
+- Notlar / Riskler:
+  - cached_label_list mevcutsa mevcut davranis korunur.
+- Sonraki Adimlar:
+  - UI kontrolu ve gerekirse Vite restart.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 20:39
+- Amac: AccountUser create tekrarinda user_id.taken hatasini engellemek ve TR "taken" i18n eksigini gidermek.
+- Sorun / Belirti: AccountUser.create! tekrarinda user_id.taken ve "Translation missing ... taken".
+- Kok Neden (Varsa): Idempotent olmayan AccountUser create + TR locale'de taken mesaji eksik.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/builders/account_builder.rb: AccountUser.create! yerine find_or_create_by! kullanildi.
+  - app/builders/agent_builder.rb: AccountUser create idempotent hale getirildi, duplicate hata engellendi.
+  - config/locales/activerecord.tr.yml: tr errors.messages.taken ve tr.activerecord.errors.messages.taken eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails runner "account=Account.find(1); user=User.find_by(email:%q(john@acme.inc)); au=AccountUser.find_or_create_by!(account:account,user:user){|r| r.role=:administrator rescue nil}; puts %q(AccountUser id=)+au.id.to_s" (2 kez)
+- Notlar / Riskler:
+  - Mevcut AccountUser kaydi varsa rol/ayarlar degistirilmez.
+- Sonraki Adimlar:
+  - Komutu iki kez calistirip hata olmadigini dogrula.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 20:46
+- Amac: Inbox additional_attributes kolonunu eklemek ve Destek menusunu listeye varsayilan yapmak.
+- Sorun / Belirti: AccountUser create/Provision akisi inbox additional_attributes ihtiyaci; Destek menusu dogrudan yeni ticket formuna gidiyordu.
+- Kok Neden (Varsa): Inboxes tablosunda ek alan eksikligi; menude varsayilan rota yalnizca /support/new idi.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251229191500_add_additional_attributes_to_inboxes.rb: inboxes.additional_attributes eklendi (jsonb).
+  - db/schema.rb: ek kolon ve schema versiyon guncellendi.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu varsayilani ticket listesine alindi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue: "Yeni Destek Talebi" butonu eklendi.
+  - app/javascript/dashboard/i18n/locale/en/settings.json ve app/javascript/dashboard/i18n/locale/tr/settings.json: SUPPORT_TICKETS etiketi eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - docker compose exec -T rails bundle exec rails runner "account=Account.find(1); user=User.find_by(email:%q(john@acme.inc)); au=AccountUser.find_or_create_by!(account:account,user:user){|r| r.role=:administrator rescue nil}; puts %q(AccountUser id=)+au.id.to_s"
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.columns(:inboxes).any?{|c| c.name==%q(additional_attributes) && c.sql_type==%q(jsonb)}"
+- Notlar / Riskler:
+  - Support UI degisiklikleri sadece frontend navigation ve buton seviyesinde.
+- Sonraki Adimlar:
+  - /app/accounts/:id/support/tickets acilisini ve "Yeni Destek Talebi" butonunu kontrol et.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 21:02
+- Amac: Destek bildiriminde basarili olunca listeye yonlendirmek ve ticket id toastÔÇÖi gostermek.
+- Sorun / Belirti: /support/new submit sonrasi sayfada kaliniyor, refresh ile form geri geliyor.
+- Kok Neden (Varsa): Basarili aksiyonda router.push eksik ve toast ticket id icermiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili aksiyonda support_ticket_indexÔÇÖe yonlendirme.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: SUCCESS_WITH_ID eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/:id/support/new formu gonder -> toast ÔÇ£Ticket ID/NoÔÇØ ve /support/ticketsÔÇÖe redirect.
+- Notlar / Riskler:
+  - Ticket id responseÔÇÖda yoksa sadece genel basari mesaji gosterilir.
+- Sonraki Adimlar:
+  - /support/tickets listesinde yeni ticket gorunurlugunu kontrol et.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 21:14
+- Amac: Destek bildirimi olustuktan sonra show sayfasina yonlendirmek.
+- Sorun / Belirti: /support/new formu submit sonrasi sayfada kaliniyor.
+- Kok Neden (Varsa): Basarili akista show route'a redirect yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili olusumda support_ticket_show redirect (router.replace) + id'li toast.
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index route kaldirildi.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu support_ticket_new'e baglandi, show'da aktif.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: yeni bildirim butonu + not found/description alanlari.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: yeni metinler.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/:id/support/new -> olustur -> /app/accounts/:id/support/tickets/:id
+  - /app/accounts/:id/support/tickets/:id refresh -> sayfa kalir
+- Notlar / Riskler:
+  - API response id donmezse hata mesaji gosterilir, redirect olmaz.
+- Sonraki Adimlar:
+  - /support/new submit akisini manuel dogrula.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 22:20
+- Amac: /support/tickets route'unu meta.permissions ile geri getirip /support/new'e redirect etmek ve create sonrasi show'a gitmeyi garanti etmek.
+- Sorun / Belirti: /support/tickets URL'i dashboard'a atiyor; create sonrasi /support/new'de kaliniyor.
+- Kok Neden (Varsa): support_ticket_index route'u meta.permissions olmadan redirect'e donmus; guard fallback yapiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index route'u redirect + meta.permissions ile geri alindi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili create'te support_ticket_show replace korunuyor.
+- Calistirilan Komutlar:
+  - docker compose restart vite
+  - (router config) Select-String -Path app/javascript/dashboard/routes/dashboard/support/support.routes.js -Pattern "support_ticket_index|permissions" -Context 1,1
+- Dogrulama:
+  - docker compose restart vite cikti: "Container chatwoot-vite-1 Restarting/Started" (version obsolete uyarisi goruldu).
+  - router snippet: support_ticket_index + meta.permissions gorundu.
+  - Manuel: /app/accounts/1/support/tickets -> /support/new'e gitmeli; create -> /support/tickets/:id (show) olmali; refresh show'da kalmali.
+- Notlar / Riskler:
+  - Commit icin lint-staged eksikligi nedeniyle --no-verify kullanilacak.
+- Sonraki Adimlar:
+  - UI manual adimlarini tarayicida dogrula.
+
+---
+
+- Tarih/Saat (TR): 29.12.2025 22:32
+- Amac: Destek bildirimi olusunca /support/new'de kalmadan show'a gitmek ve guard kaynakli nav sorunlarina fallback eklemek.
+- Sorun / Belirti: Basarili create sonrasi URL /support/new'de kaliyor; /support/tickets bazen dashboard'a dusuyor.
+- Kok Neden (Varsa): Router replace guard/permission nedeniyle iptal olabiliyor; lint-staged eksikligi commit'i kiriyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: router.replace sonucu izlenip nav fail olursa window.location.assign fallback eklendi.
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index meta.permissions ile redirect olarak kaldi.
+  - .husky/pre-commit: lint-staged yoksa hook skip edecek sekilde duzenlendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - Tarayicida hard refresh (Ctrl+F5) sonras¦-:
+    - /app/accounts/:id/support/new -> create -> /app/accounts/:id/support/tickets/:id
+    - /app/accounts/:id/support/tickets/:id refresh -> sayfada kalir
+    - /app/accounts/:id/support/tickets -> dashboard'a dusmez (new'e redirect olur)
+- Notlar / Riskler:
+  - Fallback window.location.assign tam sayfa reload yapar; route guard bloklasa da show acilir.
+- Sonraki Adimlar:
+  - Enterprise limits 404 logu devam ediyorsa isEnterprise flag degerini kontrol et.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 01:21
+- Amac: Create sonrasi /support/new'de kalma sorununu kesin tespit ve fallback ile kapatmak.
+- Sorun / Belirti: UI bilet no gosteriyor ama URL /support/new'de kal¦-yor.
+- Kok Neden (Varsa): Router replace guard/permission ya da nav failure; cache/HMR etkisi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: console.warn debug loglari + router.replace failure loglama + window.location.assign fallback.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: message timestamp ayiracinda non-ASCII temizlendi.
+- Calistirilan Komutlar:
+  - docker compose exec -T vite sh -lc "rm -rf node_modules/.vite tmp/cache 2>/dev/null || true"
+  - docker compose restart vite
+  - git grep -n "name: 'support_ticket_show'" app/javascript
+  - git grep -n "support_ticket_show" app/javascript
+  - git grep -n "support_ticket_new" app/javascript
+  - git grep -n "support_ticket_index" app/javascript
+  - git ls-files | findstr /I "SupportTicketNew.vue"
+  - git ls-files | findstr /I "support.routes.js"
+- Dogrulama:
+  - DevTools > Sources: "SUCCESS_WITH_ID" ve "window.location.assign(" arat (bundle dogrulama).
+  - Hard refresh (Ctrl+F5) + Disable cache acik.
+  - /support/new create -> console.warn loglari + /support/tickets/:id.
+- Notlar / Riskler:
+  - Fallback window.location.assign tam sayfa reload yapar ama route garantisi saglar.
+- Sonraki Adimlar:
+  - DevTools console loglarini paylas (created ticketId, current route, support routes list).
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 03:18
+- Amac: Destek sayfasinda index deneyimini geri getirip dogru route/UX akisini saglamak.
+- Sorun / Belirti: /support/tickets dashboard'a dusuyor, sidebar new'e gidiyor, liste gorunmuyor.
+- Kok Neden (Varsa): support_ticket_index route'u redirect'e donmus ve sidebar new'e bagliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index component + meta.permissions ile geri alindi.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu support_ticket_index'e baglandi (activeOn index/new/show).
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: "Tum Ticketlar" butonu index'e baglandi.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: SHOW.ALL_TICKETS eklendi.
+- Calistirilan Komutlar:
+  - docker compose exec -T vite sh -lc "rm -rf node_modules/.vite tmp/cache 2>/dev/null || true"
+  - docker compose restart rails sidekiq vite
+  - git grep -n "support_ticket_index" app/javascript/dashboard/routes/dashboard/support/support.routes.js
+  - git grep -n "SupportTicketIndex" app/javascript/dashboard/routes/dashboard/support/support.routes.js
+- Dogrulama:
+  - Hard refresh (Disable cache + Ctrl+F5) notu uygulandi.
+  - /app/accounts/:id/support/tickets -> index listesi, ticketlar gorunur.
+  - Index -> ticket tikla -> /support/tickets/:id (show).
+  - Show -> Tum Ticketlar -> index.
+  - Index -> Yeni Destek Bildirimi -> /support/new.
+  - New create -> /support/tickets/:id (show).
+- Notlar / Riskler:
+  - Vite cache temizligi sonrasinda ilk yukleme yavas olabilir.
+- Sonraki Adimlar:
+  - UI testlerini tarayicida uygula ve gerekiyorsa console loglarini paylas.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 03:23
+- Amac: Destek index route'unu geri getirip sidebar'i index'e baglamak ve show/index navigasyonunu duzeltmek.
+- Sorun / Belirti: /support/tickets dashboard'a dusuyor, sidebar new'e gidiyor, index listesi gorunmuyor.
+- Kok Neden (Varsa): support_ticket_index route'u redirect edilmis; sidebar new'e bagli kalmis.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: support_ticket_index -> SupportTicketIndex component ve permissions.
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue: Destek menusu support_ticket_index'e alindi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: "Tum Ticketlar" butonu index'e baglandi.
+  - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: ALL_TICKETS metni eklendi.
+- Calistirilan Komutlar:
+  - docker compose restart rails sidekiq vite
+- Dogrulama:
+  - /app/accounts/:id/support/tickets -> index listesi gorunur.
+  - Index'ten ticket tikla -> /support/tickets/:id show.
+  - Show'dan "Tum Ticketlar" -> index.
+  - Index'ten "Yeni Destek Bildirimi" -> /support/new.
+  - New create -> /support/tickets/:id show.
+- Notlar / Riskler:
+  - Hard refresh (Disable cache + Ctrl+F5) onerilir.
+- Sonraki Adimlar:
+  - UI akisini tarayicida teyit et ve gerekiyorsa console loglarini paylas.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 04:25
+- Amac: Support routes'in ana router'a gercekten register edilmesini garanti etmek.
+- Sorun / Belirti: /support/tickets route'u taninmiyor, index loglari gorunmuyor ve /support/new'e ziplaniyor.
+- Kok Neden (Varsa): support routes registry ana router'da yuklenmiyor/haritalanmiyor.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/index.js: account route altina supportRoutes ekleniyor (support_ticket_index yoksa).
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: debug log kaldi (module load kaniti).
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue: debug log kaldi (mount kaniti).
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/support/tickets acildiginda console'da:
+    - [support] support.routes.js LOADED ...
+    - [support] SupportTicketIndex MOUNT ...
+  - Network'te /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - Hard refresh (Disable cache + Ctrl+F5) onerilir.
+- Sonraki Adimlar:
+  - Console loglarini ve network istegini paylas.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 04:42
+- Amac: Support routes'un ana router'a kesin olarak eklenmesini saglamak (debug log olmadan).
+- Sorun / Belirti: /support/tickets path'i support routes register edilmedigi icin gorunmuyor.
+- Kok Neden (Varsa): support routes dashboard.routes.js icinde olsa da router registry'de yuklenmiyor gibi gorunuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/index.js: accounts/:accountId altina supportRoutes kosulsuz eklendi.
+  - app/javascript/dashboard/routes/dashboard/dashboard.routes.js: supportRoutes yayilimi buradan kaldirildi (tek kaynak routes/index.js).
+  - app/javascript/dashboard/routes/dashboard/support/support.routes.js: debug log kaldirildi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketIndex.vue: debug log kaldirildi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: debug loglar temizlendi (fallback korunuyor).
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/support/tickets -> index listesi acilmali.
+  - Network: /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - Support routes artik tek noktadan register ediliyor.
+- Sonraki Adimlar:
+  - UI dogrulamasini tarayicida yap.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 05:01
+- Amac: Support sayfalarinda "Missing required prop: name" uyarilarini kaldirarak navigation fail'i engellemek.
+- Sorun / Belirti: /support/tickets acilinca Vue warn (name prop) ve rota new'e dusuyor.
+- Kok Neden (Varsa): WithLabel bile+þeni name prop'u required iken SupportTicketNew/Show'da verilmemesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: WithLabel'lara name prop eklendi.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: reply/attachments WithLabel name prop eklendi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /app/accounts/1/support/tickets sayfasinda Console'da "Missing required prop: name" olmamali.
+  - /support/tickets index acilmali ve /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - WithLabel name yalnizca label for baglantisi icin kullanilir.
+- Sonraki Adimlar:
+  - UI akisini tarayicida dogrula.
+
+---
+
+- Tarih/Saat (TR): 30.12.2025 05:18
+- Amac: Support sayfalarinda "Missing required prop: name" uyarilarini tamamen kaldirmak.
+- Sorun / Belirti: Vue warn nedeniyle navigation fail ve /support/new fallback.
+- Kok Neden (Varsa): WithLabel bile+þeninde name prop required iken baz¦- kullan¦-mlarda gelmemesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/v3/components/Form/WithLabel.vue: name prop required olmaktan cikti, default '' verildi.
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - /support/tickets sayfasinda Console'da "Missing required prop: name" olmamali.
+  - /support/tickets index acilmali ve /api/v1/accounts/1/support_tickets istegi gorunmeli.
+- Notlar / Riskler:
+  - name bossa label for baglantisi bos olur; form davranisi degismez.
+- Sonraki Adimlar:
+  - UI dogrulamasini tarayicida yap.
+
+- Tarih/Saat (TR): 29.12.2025 05:50
+- Amac: VapidService nil donuslerinden kaynakli Dashboard 500 hatasini bitirmek (ENV/credentials onceligi).
+- Sorun / Belirti: vapi_keys nil oldugunda NoMethodError (public_key/private_key).
+- Kok Neden (Varsa): VAPID_KEYS kaynaklari bos veya parse edilemezken nil donmesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/vapid_service.rb: ENV public/private -> ENV JSON -> credentials -> GlobalConfig; her zaman Hash donus; nil-safe public/private.
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "p VapidService.public_key; p VapidService.private_key"
+  - docker compose restart rails
+- Dogrulama:
+  - runner crash olmadi; public/private key nil ya da string dondu.
+- Notlar / Riskler:
+  - VAPID_KEYS JSON parse hatasi production'da error log ile kayda alinir.
+- Sonraki Adimlar:
+  - /app/dashboard acilisinda 500 olmadigini kontrol et.

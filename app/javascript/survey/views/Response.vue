@@ -29,6 +29,10 @@ export default {
       feedbackMessage: '',
       isUpdating: false,
       logo: '',
+      brandName:
+        window.globalConfig?.BRAND_NAME ||
+        window.globalConfig?.INSTALLATION_NAME ||
+        '',
       inboxName: '',
       displayType: CSAT_DISPLAY_TYPES.EMOJI,
       messageContent: '',
@@ -136,7 +140,7 @@ export default {
       }
     },
     setLocale(locale) {
-      this.$root.$i18n.locale = locale || 'en';
+      this.$root.$i18n.locale = locale || 'tr';
     },
   },
 };
@@ -157,7 +161,7 @@ export default {
       class="flex flex-col w-full h-full bg-n-solid-1 rounded-lg border border-solid border-n-weak shadow-md lg:w-2/5 lg:h-auto"
     >
       <div class="w-full px-12 pt-12 pb-6 m-auto my-0">
-        <img v-if="logo" :src="logo" alt="Chatwoot logo" class="mb-6 logo" />
+        <img v-if="logo" :src="logo" :alt="brandName" class="mb-6 logo" />
         <p
           v-if="!isRatingSubmitted"
           class="mb-8 text-lg leading-relaxed text-n-slate-12"

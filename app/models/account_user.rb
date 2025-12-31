@@ -36,7 +36,7 @@ class AccountUser < ApplicationRecord
 
   accepts_nested_attributes_for :account
 
-  after_create_commit :notify_creation, :create_notification_setting
+  after_create_commit :notify_creation, :create_notification_setting, :ensure_support_inbox_member
   after_destroy :notify_deletion, :remove_user_from_account
   after_save :update_presence_in_redis, if: :saved_change_to_availability?
 
@@ -78,6 +78,20 @@ class AccountUser < ApplicationRecord
 
   def update_presence_in_redis
     OnlineStatusTracker.set_status(account.id, user.id, availability)
+  end
+
+  def ensure_support_inbox_member
+    return unless administrator?
+
+    inbox_name = GlobalConfig.get('SUPPORT_INBOX_NAME')['SUPPORT_INBOX_NAME'].presence || 'Destek'
+    inbox = account.inboxes.where('lower(name) = ?', inbox_name.downcase).first
+
+    unless inbox
+      Account::ProvisionSupportInboxService.new(account: account).call
+      inbox = account.inboxes.where('lower(name) = ?', inbox_name.downcase).first
+    end
+
+    InboxMember.find_or_create_by!(inbox: inbox, user_id: user_id) if inbox
   end
 end
 
