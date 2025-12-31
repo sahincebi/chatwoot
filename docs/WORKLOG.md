@@ -2416,3 +2416,12 @@
     - 7 examples, 0 failures
 - Notlar / Riskler:
   - Agent kullanici icin 401 doner (check_admin_authorization?).
+## 2026-01-01 01:17
+- Tarih/Saat (TR): 2026-01-01 01:17
+- Amac: P0-4 commit hash kaydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Dogrulama:
+  - commit: d8c04410f
+- Notlar / Riskler:
+  - (yok)
