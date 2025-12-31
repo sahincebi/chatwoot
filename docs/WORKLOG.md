@@ -2462,3 +2462,12 @@
     - (manuel UI dogrulamasi gerekli)
 - Notlar / Riskler:
   - UI dogrulama tarayici uzerinden yapilmali.
+## 2026-01-01 02:04
+- Tarih/Saat (TR): 2026-01-01 02:04
+- Amac: Faturalandirma UI commit hash kaydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Dogrulama:
+  - commit: d5c286d21
+- Notlar / Riskler:
+  - (yok)
