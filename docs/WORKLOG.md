@@ -2170,3 +2170,117 @@
   - VAPID_KEYS JSON parse hatasi production'da error log ile kayda alinir.
 - Sonraki Adimlar:
   - /app/dashboard acilisinda 500 olmadigini kontrol et.
+## 2025-12-31 23:15
+- Tarih/Saat (TR): 2025-12-31 23:15
+- Amac: AI Temsilci platformu icin tek kaynak rehber dokumani eklemek.
+- Sorun / Belirti: Rehber/backlog bilgileri daginikti.
+- Kok Neden (Varsa): (yok)
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/AI_AGENT_GUIDE.md
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - (yok)
+- Notlar / Riskler:
+  - Rehberdeki checklist task tamamlandikca guncellenecek.
+
+## 2025-12-31 23:28
+- Tarih/Saat (TR): 2025-12-31 23:28
+- Amac: AiUsageLog icin dedupe ve unique index ekleyerek double-charge/double-reply riskini azaltmak.
+- Sorun / Belirti: Sidekiq retry veya parallel job durumunda ayni mesaj icin 2 kez debit/response olasligi.
+- Kok Neden (Varsa): Unique index yoktu ve job dedupe kontrolu yapmiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb (already_processed dedupe + response_id log)
+  - db/migrate/20251231190000_add_unique_index_to_ai_usage_logs.rb
+  - db/schema.rb
+  - docs/AI_AGENT_GUIDE.md (P0-1 checklist)
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.indexes(:ai_usage_logs).map(&:name).inspect"
+- Dogrulama:
+  - index_ai_usage_logs_on_account_id_and_message_id_unique listede gorundu.
+  - (opsiyonel) Dedupe runner:
+    docker compose exec -T rails bundle exec rails runner "m=Message.where(message_type: :incoming, private:false).last; 2.times { Ai::RespondToMessageJob.perform_now(m.id) }; puts AiUsageLog.where(account_id:m.account_id, message_id:m.id).count"
+- Notlar / Riskler:
+  - OpenAI cagrisi oncesi dedupe var; tekrar cagrilmasi engellenir.
+  - Spec yazilmadi; runner ile dogrulama onerildi.
+- Git diff --stat (unstaged):
+  - app/jobs/ai/respond_to_message_job.rb | 8 ++++++--
+  - db/schema.rb | 3 ++-
+  - docs/WORKLOG.md | 14 ++++++++++++++
+  - (yeni) db/migrate/20251231190000_add_unique_index_to_ai_usage_logs.rb
+  - (yeni) docs/AI_AGENT_GUIDE.md
+## 2025-12-31 23:45
+- Tarih/Saat (TR): 2025-12-31 23:45
+- Amac: P0-1 idempotency icin minimal RSpec ve quick check dogrulamasi.
+- Sorun / Belirti: (yok)
+- Kok Neden (Varsa): (yok)
+- Yapilan Degisiklikler (dosya bazli):
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.indexes(:ai_usage_logs).map(&:name).sort.inspect"
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+- Test Sahnesi + Dogrulama:
+  - Amac: Ai::RespondToMessageJob icin double-charge/double-reply regresyonunu yakalamak.
+  - Kurulum / On Sart: db:migrate tamamlanmis olmali.
+  - Komutlar:
+    - runner: indexes listesi
+    - rspec: spec/jobs/ai/respond_to_message_job_spec.rb
+  - Beklenen cikti:
+    - unique index listede gorunmeli
+    - rspec 1 example, 0 failures
+  - Sonuc (runner cikti):
+    - ["index_ai_usage_logs_on_account_id", "index_ai_usage_logs_on_account_id_and_created_at", "index_ai_usage_logs_on_account_id_and_message_id_unique", "index_ai_usage_logs_on_conversation_id", "index_ai_usage_logs_on_message_id"]
+  - Sonuc (rspec cikti):
+    - 1 example, 0 failures
+  - Temizlik: (yok)
+- Notlar / Riskler:
+  - RSpec run sirasinda Sidekiq testing warning ve Rails deprecation warning gorundu.
+## 2025-12-31 23:51
+- Tarih/Saat (TR): 2025-12-31 23:51
+- Amac: P0-1 idempotency icin quick check ve minimal spec dogrulamasi (yeniden).
+- Sorun / Belirti: (yok)
+- Kok Neden (Varsa): (yok)
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20251231190000_add_unique_index_to_ai_usage_logs.rb
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - db/schema.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.indexes(:ai_usage_logs).map(&:name).inspect"
+- Test Sahnesi + Dogrulama:
+  - Amac: Ai::RespondToMessageJob icin double-charge/double-reply regresyonunu yakalamak.
+  - Kurulum / On Sart: db:migrate tamamlanmis olmali.
+  - Komutlar:
+    - runner: indexes listesi
+    - rspec: spec/jobs/ai/respond_to_message_job_spec.rb
+  - Beklenen cikti:
+    - unique index listede gorunmeli
+    - rspec 1 example, 0 failures
+  - Sonuc (runner cikti):
+    - ["index_ai_usage_logs_on_account_id", "index_ai_usage_logs_on_account_id_and_created_at", "index_ai_usage_logs_on_account_id_and_message_id_unique", "index_ai_usage_logs_on_conversation_id", "index_ai_usage_logs_on_message_id"]
+  - Sonuc (rspec cikti):
+    - 1 example, 0 failures
+  - Temizlik: (yok)
+- Notlar / Riskler:
+  - RSpec run sirasinda Sidekiq testing warning ve Rails deprecation warning gorundu.
+## 2025-12-31 23:54
+- Tarih/Saat (TR): 2025-12-31 23:54
+- Amac: P0-1 icin commit hash ve dogrulama ozetini kaydetmek.
+- Yapilan Degisiklikler (dosya bazli):
+  - (commit) fc119a027
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "puts ActiveRecord::Base.connection.indexes(:ai_usage_logs).map(&:name).inspect"
+- Dogrulama:
+  - Runner cikti:
+    - ["index_ai_usage_logs_on_account_id", "index_ai_usage_logs_on_account_id_and_created_at", "index_ai_usage_logs_on_account_id_and_message_id_unique", "index_ai_usage_logs_on_conversation_id", "index_ai_usage_logs_on_message_id"]
+  - RSpec cikti:
+    - 1 example, 0 failures
+- Notlar / Riskler:
+  - RSpec run sirasinda Sidekiq testing warning ve Rails deprecation warning gorundu.

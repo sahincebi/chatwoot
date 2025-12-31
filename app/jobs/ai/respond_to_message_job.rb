@@ -16,6 +16,9 @@ class Ai::RespondToMessageJob < ApplicationJob
     conversation = Conversation.find(conversation.id)
 
     ai_user = account.ai_agent
+    if AiUsageLog.exists?(account_id: account.id, message_id: message.id)
+      return log_skip(account, conversation, message, 'already_processed')
+    end
     return log_skip(account, conversation, message, 'ai_agent_missing') unless ai_user&.is_ai_agent?
     return log_skip(account, conversation, message, 'not_assigned_to_ai') unless conversation.assignee_id == ai_user.id
     return log_skip(account, conversation, message, 'ai_disabled') unless account.ai_enabled?
@@ -36,6 +39,7 @@ class Ai::RespondToMessageJob < ApplicationJob
     cost_cents = calculate_cost_cents(input_tokens, output_tokens)
 
     balance_after = nil
+    response_id = response_payload[:response_id]
     wallet.with_lock do
       wallet.reload
       if wallet.balance_cents.to_i < cost_cents
@@ -50,7 +54,7 @@ class Ai::RespondToMessageJob < ApplicationJob
           amount_cents: cost_cents,
           currency: wallet.currency,
           provider: 'openai',
-          provider_ref: response_payload[:response_id],
+          provider_ref: response_id,
           meta: { prompt_id: account.ai_prompt_id, prompt_version: account.ai_prompt_version }
         )
       end
@@ -88,7 +92,7 @@ class Ai::RespondToMessageJob < ApplicationJob
     Rails.logger.info(
       "[AI_REPLY] account=#{account.id} conversation=#{conversation.id} message=#{message.id} " \
       "prompt_version=#{account.ai_prompt_version} tokens=#{total_tokens} cost_cents=#{cost_cents} " \
-      "balance_after=#{balance_after}"
+      "balance_after=#{balance_after} response_id=#{response_id}"
     )
   end
 
