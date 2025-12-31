@@ -337,7 +337,7 @@
     "AUTOMATION": "Otomasyon",
     "MACROS": "Kısayollar",
     "TEAMS": "Ekipler",
-    "BILLING": "Fatura",
+    "BILLING": "Faturaland\u0131rma",
     "CUSTOM_VIEWS_FOLDER": "Klasörler",
     "CUSTOM_VIEWS_SEGMENTS": "Segmentler",
     "ALL_CONTACTS": "Tüm Kişiler",
@@ -382,6 +382,30 @@
     },
     "DOCS": "Dokümantasyonu oku",
     "SECURITY": "Güvenlik"
+  },
+  "BILLING": {
+    "TITLE": "Faturaland\u0131rma",
+    "DESCRIPTION": "Kredi bakiyesini ve faturaland\u0131rma se\u00e7eneklerini y\u00f6netin.",
+    "CREDIT_BALANCE": "Kredi bakiyesi",
+    "ADD_CREDIT": "Bakiye Y\u00fckle",
+    "PAYMENT_METHODS": "\u00d6deme y\u00f6ntemleri",
+    "BILLING_HISTORY": "Fatura ge\u00e7mi\u015fi",
+    "PREFERENCES": "Tercihler",
+    "PRICING": "Fiyatland\u0131rma",
+    "COMING_SOON": "Yak\u0131nda",
+    "LOADING": "Bakiye y\u00fckleniyor...",
+    "TOPUP": {
+      "TITLE": "Bakiye Y\u00fckle",
+      "AMOUNT": "Tutar (USD)",
+      "AMOUNT_PLACEHOLDER": "\u00d6rn: 10.00",
+      "NOTE": "Not (opsiyonel)",
+      "NOTE_PLACEHOLDER": "Opsiyonel not",
+      "SUBMIT": "Y\u00fckle",
+      "CANCEL": "Vazge\u00e7",
+      "SUCCESS": "Bakiye ba\u015far\u0131yla g\u00fcncellendi.",
+      "ERROR": "Bakiye y\u00fcklenemedi. L\u00fctfen tekrar deneyin.",
+      "INVALID_AMOUNT": "L\u00fctfen ge\u00e7erli bir tutar girin."
+    }
   },
   "BILLING_SETTINGS": {
     "TITLE": "Fatura",

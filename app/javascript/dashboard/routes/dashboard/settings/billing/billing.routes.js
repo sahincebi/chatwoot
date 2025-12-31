@@ -1,7 +1,6 @@
 import { frontendURL } from '../../../../helper/URLHelper';
-import { INSTALLATION_TYPES } from 'dashboard/constants/installationTypes';
 import SettingsWrapper from '../SettingsWrapper.vue';
-import Index from './Index.vue';
+import BillingIndex from './BillingIndex.vue';
 
 export default {
   routes: [
@@ -9,7 +8,6 @@ export default {
       path: frontendURL('accounts/:accountId/settings/billing'),
       meta: {
         permissions: ['administrator'],
-        installationTypes: [INSTALLATION_TYPES.CLOUD],
       },
       component: SettingsWrapper,
       props: {
@@ -20,10 +18,9 @@ export default {
       children: [
         {
           path: '',
-          name: 'billing_settings_index',
-          component: Index,
+          name: 'settings_ai_billing',
+          component: BillingIndex,
           meta: {
-            installationTypes: [INSTALLATION_TYPES.CLOUD],
             permissions: ['administrator'],
           },
         },

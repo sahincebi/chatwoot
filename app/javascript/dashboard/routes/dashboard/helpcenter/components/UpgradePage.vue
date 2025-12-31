@@ -55,7 +55,7 @@ export default {
   methods: {
     openBillingPage() {
       this.$router.push({
-        name: 'billing_settings_index',
+        name: 'settings_ai_billing',
         params: { accountId: this.accountId },
       });
     },

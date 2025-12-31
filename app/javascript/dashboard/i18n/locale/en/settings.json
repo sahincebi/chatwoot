@@ -383,6 +383,30 @@
     "DOCS": "Read docs",
     "SECURITY": "Security"
   },
+  "BILLING": {
+    "TITLE": "Billing",
+    "DESCRIPTION": "Manage your account credit balance and billing options.",
+    "CREDIT_BALANCE": "Credit balance",
+    "ADD_CREDIT": "Add credit",
+    "PAYMENT_METHODS": "Payment methods",
+    "BILLING_HISTORY": "Billing history",
+    "PREFERENCES": "Preferences",
+    "PRICING": "Pricing",
+    "COMING_SOON": "Coming soon",
+    "LOADING": "Loading balance...",
+    "TOPUP": {
+      "TITLE": "Add credit",
+      "AMOUNT": "Amount (USD)",
+      "AMOUNT_PLACEHOLDER": "e.g. 10.00",
+      "NOTE": "Note (optional)",
+      "NOTE_PLACEHOLDER": "Optional note",
+      "SUBMIT": "Top up",
+      "CANCEL": "Cancel",
+      "SUCCESS": "Balance updated successfully.",
+      "ERROR": "Failed to top up. Please try again.",
+      "INVALID_AMOUNT": "Please enter a valid amount."
+    }
+  },
   "BILLING_SETTINGS": {
     "TITLE": "Billing",
     "DESCRIPTION": "Manage your subscription here, upgrade your plan and get more for your team.",

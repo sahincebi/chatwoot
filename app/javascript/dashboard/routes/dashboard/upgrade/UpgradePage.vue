@@ -97,7 +97,7 @@ const fetchLimits = () => {
 
 const routeToBilling = () => {
   router.push({
-    name: 'billing_settings_index',
+    name: 'settings_ai_billing',
     params: { accountId: accountId.value },
   });
 };

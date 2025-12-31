@@ -56,7 +56,7 @@ const i18nKey = computed(() =>
 
 const goToBillingSettings = () => {
   router.push({
-    name: 'billing_settings_index',
+    name: 'settings_ai_billing',
     params: { accountId: currentAccountId.value },
   });
 };

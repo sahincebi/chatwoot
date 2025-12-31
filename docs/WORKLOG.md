@@ -2425,3 +2425,40 @@
   - commit: d8c04410f
 - Notlar / Riskler:
   - (yok)
+## 2026-01-01 02:02
+- Tarih/Saat (TR): 2026-01-01 02:02
+- Amac: Ayarlar > Faturalandirma sayfasi ve bakiye yukleme UI eklemek.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/routes/dashboard/settings/billing/BillingIndex.vue
+  - app/javascript/dashboard/api/aiWallets.js
+  - app/javascript/dashboard/routes/dashboard/settings/billing/billing.routes.js
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/components/app/PaymentPendingBanner.vue
+  - app/javascript/dashboard/routes/dashboard/upgrade/UpgradePage.vue
+  - app/javascript/dashboard/routes/dashboard/helpcenter/components/UpgradePage.vue
+  - app/javascript/dashboard/routes/dashboard/Dashboard.vue
+  - app/javascript/dashboard/routes/dashboard/settings/customRoles/component/CustomRolePaywall.vue
+  - app/javascript/dashboard/routes/dashboard/settings/security/components/SamlPaywall.vue
+  - app/javascript/dashboard/routes/dashboard/settings/sla/Index.vue
+  - app/javascript/dashboard/components-next/captain/pageComponents/Paywall.vue
+  - app/javascript/dashboard/components-next/captain/pageComponents/document/LimitBanner.vue
+  - app/javascript/dashboard/components-next/captain/pageComponents/response/LimitBanner.vue
+  - app/javascript/dashboard/i18n/locale/en/settings.json
+  - app/javascript/dashboard/i18n/locale/tr/settings.json
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose restart vite
+- Test Sahnesi + Dogrulama:
+  - Amac: Admin ayarlarda Faturalandirma sayfasi ve bakiye yukleme akisi.
+  - Kurulum / On Sart: Admin kullanici ile dashboard; ai_wallet endpointleri aktif.
+  - Komutlar:
+    - docker compose restart vite
+  - Beklenen cikti:
+    - Ayarlar > Faturalandirma gorunur
+    - Bakiye gorunur
+    - 10.00 USD yukleme sonrasi bakiye artar
+    - Agent kullanicida menu gizli
+  - Sonuc:
+    - (manuel UI dogrulamasi gerekli)
+- Notlar / Riskler:
+  - UI dogrulama tarayici uzerinden yapilmali.
