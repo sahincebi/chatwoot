@@ -2471,3 +2471,29 @@
   - commit: d5c286d21
 - Notlar / Riskler:
   - (yok)
+## 2026-01-01 02:52
+- Tarih/Saat (TR): 2026-01-01 02:52
+- Amac: Faturalandirma UI manuel dogrulama ve temizlik.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/dashboard/components-next/sidebar/Sidebar.vue
+  - app/javascript/dashboard/routes/dashboard/settings/billing/billing.routes.js
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (yok)
+- Test Sahnesi + Dogrulama:
+  - Amac: Admin faturalandirma UI ve wallet topup dogrulama.
+  - Kurulum / On Sart: Admin kullanici ile account paneli.
+  - Komutlar:
+    - (manuel UI)
+  - Beklenen cikti:
+    - Admin /app/accounts/1/settings/billing gorunur
+    - GET /api/v1/accounts/1/ai_wallet 200
+    - POST /api/v1/accounts/1/ai_wallet/topup 200, bakiye artar
+    - Agent menusu gizli
+  - Sonuc (manuel):
+    - Admin billing sayfasi gorunuyor: EVET (/app/accounts/1/settings/billing)
+    - GET /api/v1/accounts/1/ai_wallet: 200
+    - Topup 10 USD x3: bakiye toplam +30 USD artisi goruldu
+    - Agent menusu: TEST EDILMEDI
+- Notlar / Riskler:
+  - Agent menusu ayrica kontrol edilmeli.

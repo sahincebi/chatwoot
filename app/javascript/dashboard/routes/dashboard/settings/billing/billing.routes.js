@@ -18,7 +18,7 @@ export default {
       children: [
         {
           path: '',
-          name: 'settings_ai_billing',
+          name: 'billing_settings_index',
           component: BillingIndex,
           meta: {
             permissions: ['administrator'],
