@@ -2272,7 +2272,7 @@
 - Tarih/Saat (TR): 2025-12-31 23:54
 - Amac: P0-1 icin commit hash ve dogrulama ozetini kaydetmek.
 - Yapilan Degisiklikler (dosya bazli):
-  - (commit) fc119a027
+  - (commit) fd07ad4a9
 - Calistirilan Komutlar:
   - docker compose exec -T rails bundle exec rails db:migrate
   - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
