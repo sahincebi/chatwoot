@@ -117,7 +117,7 @@ class Account < ApplicationRecord
   scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
 
   before_validation :validate_limit_keys
-  after_create_commit :notify_creation, :provision_support_inbox, :provision_ai_agent
+  after_create_commit :notify_creation, :provision_support_inbox, :provision_ai_agent, :provision_ai_wallet
   after_destroy :remove_account_sequences
 
   def agents
@@ -181,6 +181,16 @@ class Account < ApplicationRecord
 
   def provision_ai_agent
     Account::ProvisionAiAgentJob.perform_later(id)
+  end
+
+  def provision_ai_wallet
+    AiWallet.find_or_create_by!(account_id: id) do |wallet|
+      wallet.balance_cents = 0
+      wallet.currency = 'USD'
+      wallet.status = :active
+    end
+  rescue ActiveRecord::RecordNotUnique
+    AiWallet.find_by(account_id: id)
   end
 
   trigger.after(:insert).for_each(:row) do

@@ -2284,3 +2284,41 @@
     - 1 example, 0 failures
 - Notlar / Riskler:
   - RSpec run sirasinda Sidekiq testing warning ve Rails deprecation warning gorundu.
+## 2026-01-01 00:08
+- Tarih/Saat (TR): 2026-01-01 00:08
+- Amac: Yeni hesap olusunca AiWallet otomatik olussun (P0-2).
+- Sorun / Belirti: Wallet yoksa AI job skip oluyordu.
+- Kok Neden (Varsa): Account create akisi wallet olusturmuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/account.rb (after_create_commit: provision_ai_wallet)
+  - spec/models/account_ai_wallet_spec.rb
+  - docs/AI_AGENT_GUIDE.md
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "a=Account.create!(name: 'Wallet Test', domain: 'wallet-test.local', support_email: 'wallet@test.local'); puts AiWallet.find_by(account_id: a.id).present?; a.destroy!"
+  - docker compose exec -T rails bundle exec rspec spec/models/account_ai_wallet_spec.rb
+- Test Sahnesi + Dogrulama:
+  - Amac: Account create sonrasi AiWallet otomatik olusuyor mu?
+  - Kurulum / On Sart: db:migrate tamamlanmis olmali.
+  - Komutlar:
+    - runner: AiWallet varligini yazdir
+    - rspec: spec/models/account_ai_wallet_spec.rb
+  - Beklenen cikti:
+    - runner: true
+    - rspec: 1 example, 0 failures
+  - Sonuc (runner cikti):
+    - true
+  - Sonuc (rspec cikti):
+    - 1 example, 0 failures
+  - Temizlik: runner icinde account destroy edildi.
+- Notlar / Riskler:
+  - RSpec run sirasinda Sidekiq testing ve Rails deprecation uyarilari gorundu.
+## 2026-01-01 00:10
+- Tarih/Saat (TR): 2026-01-01 00:10
+- Amac: P0-2 dogrulamasi icin db:migrate tekrar calistirma.
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+- Dogrulama:
+  - Migration cikti verdi, hata olmadi.
+- Notlar / Riskler:
+  - (yok)

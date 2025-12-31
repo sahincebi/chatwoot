@@ -144,7 +144,7 @@ Amac: Codex ile adim adim ilerlerken, her degisikligin izini surmek ve “ne bit
 
 ### P0-2: **Yeni Account’ta wallet otomatik olusturulsun**
 Su an wallet backfill var; yeni account’ta wallet yoksa AI tamamen skip ediyor.
-- [ ] `Account::ProvisionAiAgentService` veya `Account` after_create_commit icinde:
+- [x] `Account::ProvisionAiAgentService` veya `Account` after_create_commit icinde:
   - `AiWallet.find_or_create_by!(account_id: account.id)`
 
 **Dogrulama:**
