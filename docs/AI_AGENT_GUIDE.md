@@ -1,22 +1,22 @@
-# AI Temsilci Platformu — Rehber ve Is Listesi (Chatwoot Fork)
+﻿# AI Temsilci Platformu — Rehber ve İş Listesi (Chatwoot Fork)
 
-Bu dokuman, Chatwoot fork’unda “AI musteri temsilcisi” mimarisinin mevcut durumunu, yapilacaklari ve gelistirme backlog’unu tek yerde toplar.
-Amac: Codex ile adim adim ilerlerken, her degisikligin izini surmek ve “ne bitti / ne kaldi”yi net tutmak.
+Bu doküman, Chatwoot fork’unda “AI müşteri temsilcisi” mimarisinin **mevcut durumunu**, **yapılacakları** ve **geliştirme backlog’unu** tek yerde toplar.
+Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve “ne bitti / ne kaldı”yı net tutmak.
 
-> Kural: Codex her task sonunda `docs/WORKLOG.md`’ye yeni bir kayit ekler (dosya/komut/dogrulama dahil).
-> Kural: Bu dokumandaki checklist’ler task tamamlandikca guncellenir.
+> Kural: Codex her task sonunda `docs/WORKLOG.md`’ye **yeni bir kayıt** ekler (dosya/komut/doğrulama dahil).
+> Kural: Bu dokümandaki checklist’ler task tamamlandıkça güncellenir.
 
 ---
 
 ## 0) Hedef Kapsam
 
-### Urun hedefi (ozet)
-- Her Account icin 1 adet AI Temsilci (User) otomatik olusur.
-- Her Account’un OpenAI tarafindaki prompt’u (prompt_id + version) ile yonetilir.
-- Yeni sohbetler default olarak AI Temsilci’ye atanir.
-- Insan temsilci sohbeti kendine atarsa AI devre disi kalir; tekrar AI Temsilci’ye atanirsa AI devam eder.
-- Token kullanimi ve maliyet loglanir; bakiye (wallet) uzerinden dusulur.
-- Super admin tek bir Account’un prompt version’ini sik sik gunceller; restart gerekmemelidir.
+### Ürün hedefi (özet)
+- Her Account için **1 adet AI Temsilci** (User) otomatik oluşur.
+- Her Account’un OpenAI tarafındaki prompt’u **(prompt_id + version)** ile yönetilir.
+- Yeni sohbetler default olarak **AI Temsilci’ye atanır**.
+- İnsan temsilci sohbeti kendine atarsa **AI devre dışı kalır**; tekrar AI Temsilci’ye atanırsa **AI devam eder**.
+- Token kullanımı ve maliyet **loglanır**; bakiye (wallet) üzerinden **düşülür**.
+- Süper admin tek bir Account’un prompt version’ını sık sık günceller; **restart gerekmemelidir**.
 
 ---
 
@@ -51,39 +51,39 @@ Amac: Codex ile adim adim ilerlerken, her degisikligin izini surmek ve “ne bit
 - `input_tokens`, `output_tokens`, `total_tokens`
 - `cost_cents`, `currency`, `meta`
 
-### 1.2 Otomasyon akisi (olay bazli)
+### 1.2 Otomasyon akışı (olay bazlı)
 1) **Account create**
 - `Account::ProvisionAiAgentJob` enqueue
-- `Account::ProvisionAiAgentService` idempotent olarak AI user olusturur ve `accounts.ai_agent_user_id` set eder.
+- `Account::ProvisionAiAgentService` idempotent olarak AI user oluşturur ve `accounts.ai_agent_user_id` set eder.
 
 2) **Conversation create**
-- `Conversation#assign_ai_agent` calisir:
-  - assignee yoksa -> `assignee_id = account.ai_agent_user_id`
+- `Conversation#assign_ai_agent` çalışır:
+  - assignee yoksa → `assignee_id = account.ai_agent_user_id`
 
 3) **Incoming Message create**
 - `Message#enqueue_ai_reply`:
-  - incoming + private degil + conversation.assignee.is_ai_agent? ise
+  - incoming + private değil + conversation.assignee.is_ai_agent? ise
   - `Ai::RespondToMessageJob.perform_later(message.id)`
 
 4) **AI cevap**
 - `Ai::RespondToMessageJob` gating:
-  - conversation AI’ya atanmıs olmali
+  - conversation **AI’ya atanmış olmalı**
   - account.ai_enabled? true
   - ai_prompt_id dolu
   - ai_wallet var ve balance > 0
-- OpenAI Responses API cagrisi:
+- OpenAI Responses API çağrısı:
   - endpoint: `AI_OPENAI_ENDPOINT` veya `OPENAI_BASE_URL` veya default `https://api.openai.com`
   - path: `/v1/responses`
   - payload:
     - `input`: (son 30 mesajdan context + latest message)
     - `prompt`: `{ id: ai_prompt_id, version: ai_prompt_version }`
     - opsiyonel `model`: ENV `AI_MODEL` varsa
-- Usage -> cost hesaplanir (ENV rate’leriyle)
-- Wallet’tan dusulur -> `AiTransaction(kind: debit)` + `AiUsageLog` yazilir
-- Outgoing mesaj conversation’a AI user adina eklenir
-- “JSON string donen cevap” normalize edilip plain text gonderilir (WORKLOG’de notlu)
+- Usage → cost hesaplanır (ENV rate’leriyle)
+- Wallet’tan düşülür → `AiTransaction(kind: debit)` + `AiUsageLog` yazılır
+- Outgoing mesaj conversation’a AI user adına eklenir
+- “JSON string dönen cevap” normalize edilip plain text gönderilir (WORKLOG’de notlu)
 
-### 1.3 Ilgili dosyalar (kisa referans)
+### 1.3 İlgili dosyalar (kısa referans)
 - Migrations:
   - `db/migrate/20251231023000_add_ai_fields_to_accounts.rb`
   - `db/migrate/20251231023010_create_ai_wallets_transactions_usage_logs.rb`
@@ -99,23 +99,23 @@ Amac: Codex ile adim adim ilerlerken, her degisikligin izini surmek ve “ne bit
 - Trigger + Job:
   - `app/models/message.rb` (enqueue_ai_reply)
   - `app/jobs/ai/respond_to_message_job.rb`
-- Yardimci gating (var, kullanim dogrulanacak):
+- Yardımcı gating (var, kullanım doğrulanacak):
   - `lib/integrations/llm_base_service.rb` (ai_allowed?)
 
 ---
 
-## 2) Yapilmislar (Checklist)
+## 2) Yapılmışlar (Checklist)
 
-### 2.1 Core altyapi (DB + akis)
-- [x] Account bazli AI alanlari eklendi (enabled, prompt_id, prompt_version, ai_agent_user_id)
-- [x] AI wallet / transaction / usage logs tablolari eklendi
+### 2.1 Core altyapı (DB + akış)
+- [x] Account bazlı AI alanları eklendi (enabled, prompt_id, prompt_version, ai_agent_user_id)
+- [x] AI wallet / transaction / usage logs tabloları eklendi
 - [x] Users tablosuna `is_ai_agent` eklendi
-- [x] Account create sonrasi AI Temsilci otomatik provision ediliyor
+- [x] Account create sonrası AI Temsilci otomatik provision ediliyor
 - [x] Yeni conversation default AI Temsilci’ye atanıyor
-- [x] Incoming message sonrasi (AI’ya atanmis ise) AI cevap job’u tetikleniyor
-- [x] OpenAI Responses API ile prompt id/version uzerinden cevap alinıyor
-- [x] Token/cost hesap -> wallet debit -> transaction + usage log yazimi yapiliyor
-- [x] AI cevabindaki JSON string normalize edilip plain text donuyor
+- [x] Incoming message sonrası (AI’ya atanmışsa) AI cevap job’u tetikleniyor
+- [x] OpenAI Responses API ile prompt id/version üzerinden cevap alınıyor
+- [x] Token/cost hesap → wallet debit → transaction + usage log yazımı yapılıyor
+- [x] AI cevabındaki JSON string normalize edilip plain text dönüyor
 
 ### 2.2 Backfill script
 - [x] Rake tasks:
@@ -124,132 +124,132 @@ Amac: Codex ile adim adim ilerlerken, her degisikligin izini surmek ve “ne bit
 
 ---
 
-## 3) Yapilacaklar (Oncelikli / P0)
+## 3) Yapılacaklar (Öncelikli / P0)
 
-> P0 = Uretim guvenligi ve dogru para/usage takibi icin sart.
+> P0 = Üretim güvenliği ve doğru para/usage takibi için şart.
 
-### P0-1: **Idempotency / Double-charge & Double-reply korumasi**
-**Sorun:** Sidekiq retry veya race condition durumunda ayni message icin ikinci kez debit/usage log yazilabilir.
-- [x] DB unique index:
-  - `ai_usage_logs` uzerinde `[:account_id, :message_id]` unique
-- [x] Job basinda dedupe:
-  - ayni `(account_id, message_id)` usage log varsa return
-- [x] Transaction dedupe:
+### P0-1: **Idempotency / Double-charge & Double-reply koruması**
+**Sorun:** Sidekiq retry veya race condition durumunda aynı message için ikinci kez debit/usage log yazılabilir.
+- [ ] DB unique index:
+  - `ai_usage_logs` üzerinde `[:account_id, :message_id]` unique
+- [ ] Job başında dedupe:
+  - aynı `(account_id, message_id)` usage log varsa **return**
+- [ ] Transaction dedupe:
   - `provider_ref` (response_id) ile gerekirse ekstra kontrol
 
-**Dogrulama:**
-- Ayni message_id icin job iki kez calistirilsa bile 1 kez debit olmali.
+**Doğrulama:**
+- Aynı message_id için job iki kez çalıştırılsa bile 1 kez debit olmalı.
 
 ---
 
-### P0-2: **Yeni Account’ta wallet otomatik olusturulsun**
-Su an wallet backfill var; yeni account’ta wallet yoksa AI tamamen skip ediyor.
-- [x] `Account::ProvisionAiAgentService` veya `Account` after_create_commit icinde:
+### P0-2: **Yeni Account’ta wallet otomatik oluşturulsun**
+Şu an wallet backfill var; yeni account’ta wallet yoksa AI tamamen skip ediyor.
+- [ ] `Account::ProvisionAiAgentService` veya `Account` after_create_commit içinde:
   - `AiWallet.find_or_create_by!(account_id: account.id)`
 
-**Dogrulama:**
-- Yeni account create -> ai_wallet otomatik var.
+**Doğrulama:**
+- Yeni account create → ai_wallet otomatik var.
 
 ---
 
-### P0-3: **Admin API: Account AI Settings guncelleme (prompt_id/version, enable/disable)**
-Super admin cok sik degisiklik yapacak; restart yok -> DB update yeterli.
-- [ ] API endpoint:
+### P0-3: **Admin API: Account AI Settings güncelleme (prompt_id/version, enable/disable)**
+Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
+- [x] API endpoint:
   - GET `/api/v1/accounts/:id/ai_settings`
   - PUT `/api/v1/accounts/:id/ai_settings`
-- [ ] Alanlar:
+- [x] Alanlar:
   - `ai_enabled`, `ai_prompt_id`, `ai_prompt_version`
-  - (opsiyonel) `currency` / `wallet` goruntuleme (read)
-- [ ] AuthZ:
+  - (opsiyonel) `currency` / `wallet` görüntüleme (read)
+- [x] AuthZ:
   - sadece super admin veya account admin
 
-**Dogrulama:**
-- Version 3->4 update sonrasi bir sonraki mesajda log’da `prompt_version=4` gorunmeli.
+**Doğrulama:**
+- Version 3→4 update sonrası bir sonraki mesajda log’da `prompt_version=4` görülmeli.
 
 ---
 
-### P0-4: **Wallet Top-up / Bakiye yonetimi (Admin)**
+### P0-4: **Wallet Top-up / Bakiye yönetimi (Admin)**
 - [ ] Top-up endpoint:
   - POST `/api/v1/accounts/:id/ai_wallet/topup` (amount_cents)
-  - `AiTransaction(kind: topup)` + wallet.balance_cents artir
-- [ ] UI sonra; once API
+  - `AiTransaction(kind: topup)` + wallet.balance_cents artır
+- [ ] UI sonra; önce API
 
-**Dogrulama:**
-- Topup sonrasi AI cevap verebilmeli.
+**Doğrulama:**
+- Topup sonrası AI cevap verebilmeli.
 
 ---
 
-### P0-5: **Observability / Debug standardi**
-- [ ] `Ai::RespondToMessageJob` log formatini standardize et:
+### P0-5: **Observability / Debug standardı**
+- [ ] `Ai::RespondToMessageJob` log formatını standardize et:
   - account, conversation, message, response_id, tokens, cost, balance_after, prompt_version
-- [ ] Hata loglarinda openai body truncate + status zaten var; bunu koru.
-- [ ] “skip reason”’lar sabit liste ve dokumante.
+- [ ] Hata loglarında openai body truncate + status zaten var; bunu koru.
+- [ ] “skip reason”’lar sabit liste ve dokümante.
 
 ---
 
-## 4) Yapilacaklar (Urun Ozellikleri / P1)
+## 4) Yapılacaklar (Ürün Özellikleri / P1)
 
-> P1 = “Satis yapabilen, randevu alabilen, not/etiket yonetebilen AI” icin sart.
+> P1 = “Satış yapabilen, randevu alabilen, not/etiket yönetebilen AI” için şart.
 
-### P1-1: **Tool-calling / Aksiyon yurutme dongusu**
-Su an AI sadece text donuyor. Tool’lar calistirilmiyor.
+### P1-1: **Tool-calling / Aksiyon yürütme döngüsü**
+Şu an AI sadece text dönüyor. Tool’lar çalıştırılmıyor.
 - [ ] OpenAI Responses tool loop:
-  - Response’da tool call varsa -> tool’u calistir -> sonucu tekrar modele ver -> final text al
-- [ ] Minimum tool set (baslangic):
+  - Response’da tool call varsa → tool’u çalıştır → sonucu tekrar modele ver → final text al
+- [ ] Minimum tool set (başlangıç):
   - `search_products`
   - `create_order`
   - `get_order_status`
   - `create_refund_request`
   - `close_conversation`
-  - (randevu icin) `calendar_query_availability`, `calendar_create_event` vb.
-- [ ] Tool execution guvenligi:
+  - (randevu için) `calendar_query_availability`, `calendar_create_event` vb.
+- [ ] Tool execution güvenliği:
   - allowlist tool isimleri
   - request validation (JSON schema)
   - timeout/retry policy
 
-**Dogrulama:**
-- AI “urun ara” dediginde tool calisir, sonucla final cevap uretir.
+**Doğrulama:**
+- AI “ürün ara” dediğinde tool çalışır, sonuçla final cevap üretir.
 
 ---
 
-### P1-2: **Etiket, not ve musteri profil yonetimi**
-- [ ] AI’nin:
+### P1-2: **Etiket, not ve müşteri profil yönetimi**
+- [ ] AI’nın:
   - conversation label/tag ekleyebilmesi
   - contact / conversation note ekleyebilmesi
-  - lead stage alanlarini yazabilmesi (custom attributes)
+  - lead stage alanlarını yazabilmesi (custom attributes)
 - [ ] Audit trail:
-  - bu aksiyonlar AI tarafindan yapildiysa meta’ya `by_ai_agent=true`
+  - bu aksiyonlar AI tarafından yapıldıysa meta’ya `by_ai_agent=true`
 
 ---
 
-### P1-3: **Randevu modulu (Google Calendar) entegrasyonu**
-- [ ] Account bazli calendar connection (credentials)
-- [ ] Uygunluk sorgusu + event yaratma + teyit mesaji
-- [ ] Ayni conversation icinde “reschedule/cancel” akislari
+### P1-3: **Randevu modülü (Google Calendar) entegrasyonu**
+- [ ] Account bazlı calendar connection (credentials)
+- [ ] Uygunluk sorgusu + event yaratma + teyit mesajı
+- [ ] Aynı conversation içinde “reschedule/cancel” akışları
 
 ---
 
-### P1-4: **Insan devralma UX’i (assignment semantics netlestirme)**
-Mevcut yaklasim dogru: “assignee = AI -> AI aktif; assignee = human -> AI pasif”.
+### P1-4: **İnsan devralma UX’i (assignment semantics netleştirme)**
+Mevcut yaklaşım doğru: “assignee = AI → AI aktif; assignee = human → AI pasif”.
 - [ ] UI/UX:
-  - hizli “AI’ye devret” / “Ben devraliyorum” aksiyonlari
+  - hızlı “AI’ye devret” / “Ben devralıyorum” aksiyonları
 - [ ] Edge case:
-  - “unassigned” olursa ne olacak? (oneri: unassigned -> AI degil)
+  - “unassigned” olursa ne olacak? (öneri: unassigned → AI değil)
 
 ---
 
-## 5) Gelistirilecekler (Iyilestirmeler / P2-P3)
+## 5) Geliştirilecekler (İyileştirmeler / P2-P3)
 
-### P2-1: Maliyet hesaplamayi model bazli hale getirme
-Su an ENV rate’leri global.
-- [ ] Rate table (model -> input/output $/1M)
-- [ ] (opsiyonel) account bazli override
+### P2-1: Maliyet hesaplamayı model bazlı hale getirme
+Şu an ENV rate’leri global.
+- [ ] Rate table (model → input/output $/1M)
+- [ ] (opsiyonel) account bazlı override
 
-### P2-2: Conversation context iyilestirme
-Su an “plain text context”.
+### P2-2: Conversation context iyileştirme
+Şu an “plain text context”.
 - [ ] Daha iyi prompt variables (structured)
-- [ ] Daha uzun memory icin:
-  - son N mesaj + onemli ozet + profile attributes
+- [ ] Daha uzun memory için:
+  - son N mesaj + önemli özet + profile attributes
 
 ### P2-3: Performans ve kuyruk optimizasyonu
 - [ ] Batching / debounce (15 sn buffer gibi)
@@ -257,14 +257,14 @@ Su an “plain text context”.
 - [ ] Job timeout + circuit breaker
 
 ### P3-1: Dashboard metrikleri
-- [ ] Gunluk/haftalik token, cost, bakiye grafikleri
+- [ ] Günlük/haftalık token, cost, bakiye grafikleri
 - [ ] “AI resolved conversations”, “handover rate”, “conversion rate” gibi KPI’lar
 
 ---
 
-## 6) Operasyon Notlari (Build/Assets)
+## 6) Operasyon Notları (Build/Assets)
 
-Bazi UI degisiklikleri ancak asagidaki komutlardan sonra gorunuyorsa, prod-benzeri asset pipeline kullaniliyor olabilir:
+Bazı UI değişiklikleri ancak aşağıdaki komutlardan sonra görünüyorsa, prod-benzeri asset pipeline kullanılıyor olabilir:
 
 ```bash
 docker compose exec -T rails bundle exec rails assets:clobber
@@ -272,29 +272,29 @@ docker compose exec -T rails bundle exec rails assets:precompile
 docker compose restart rails sidekiq
 ```
 
-Hedef: Dev ortaminda mumkunse HMR/Vite uzerinden calisip bu ihtiyaci azaltmak.
+Hedef: Dev ortamında mümkünse HMR/Vite üzerinden çalışıp bu ihtiyacı azaltmak.
 Ancak prod deployment’da precompile normaldir.
 
-Codex Calisma Standardi
-Her task icin beklenen cikti
+Codex Çalışma Standardı
+Her task için beklenen çıktı
 
-Kod degisikligi
+Kod değişikliği
 
-Minimum test/dogrulama komutu
+Minimum test/doğrulama komutu
 
-docs/WORKLOG.md’ye yeni kayit:
+docs/WORKLOG.md’ye yeni kayıt:
 
-Amac
+Amaç
 
-Dosya bazli degisiklik listesi
+Dosya bazlı değişiklik listesi
 
-Calistirilan komutlar
+Çalıştırılan komutlar
 
-Dogrulama adimlari
+Doğrulama adımları
 
 Risk/Not
 
-WORKLOG kayit sablonu
+WORKLOG kayıt şablonu
 
 ## YYYY-MM-DD HH:MM
 - Tarih/Saat (TR): YYYY-MM-DD HH:MM

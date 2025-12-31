@@ -2329,4 +2329,51 @@
   - (commit) 78c302dbd
 - Dogrulama:
   - Runner: true
-  - RSpec: 1 example, 0 failures
+  - RSpec: 1 example, 0 failures## 2026-01-01 00:25
+- Tarih/Saat (TR): 2026-01-01 00:25
+- Amac: AI temsilci rehberini tek kaynak olarak eklemek ve dokuman bozulmalarini duzeltmek.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/AI_AGENT_GUIDE.md
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - (yok)
+- Notlar / Riskler:
+  - Rehber UTF-8 olarak kaydedildi; WORKLOG mevcut encoding ile korundu.
+## 2026-01-01 01:00
+- Tarih/Saat (TR): 2026-01-01 01:00
+- Amac: P0-3 hesap bazli AI settings API + tool policy + google calendar integration.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20260101004159_add_ai_tool_policy_to_accounts.rb
+  - db/migrate/20260101004200_create_ai_integrations.rb
+  - app/models/ai_integration.rb
+  - app/models/account.rb
+  - app/controllers/api/v1/accounts/ai_settings_controller.rb
+  - app/controllers/api/v1/accounts/ai_integrations/google_calendars_controller.rb
+  - config/routes.rb
+  - spec/requests/api/v1/accounts/ai_settings_spec.rb
+  - docs/AI_AGENT_GUIDE.md
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails sh -lc "bundle exec rails routes | grep -E 'ai_settings|ai_integrations'"
+  - docker compose exec -T rails bundle exec rails runner "a=Account.first; a.update!(ai_tool_policy: { 'enabled' => true, 'allowed_tools' => { 'calendar' => true }, 'limits' => { 'max_tools_per_turn' => 3, 'max_total_steps' => 8 } }); i=a.ai_integrations.find_or_create_by!(provider: 'google_calendar') { |r| r.enabled=true; r.settings={ 'calendar_id' => 'primary', 'timezone' => 'Europe/Istanbul' }; r.refresh_token='token-1234567890' }; a.reload; i.reload; puts({tool_calling_enabled: a.tool_calling_enabled?, calendar_allowed: a.tool_allowed?('calendar'), has_refresh_token: i.refresh_token.present?}.inspect)"
+  - docker compose exec -T rails bundle exec rspec spec/requests/api/v1/accounts/ai_settings_spec.rb
+- Test Sahnesi + Dogrulama:
+  - Amac: AI settings endpointleri ve secret masking dogrulansin.
+  - Kurulum / On Sart: db:migrate tamamlanmis olmali.
+  - Komutlar:
+    - routes grep (ai_settings + ai_integrations)
+    - runner (tool policy + integration)
+    - rspec (ai_settings_spec)
+  - Beklenen cikti:
+    - routes: ai_settings + ai_integrations path'leri gorunur
+    - runner: tool_calling_enabled true, calendar_allowed true, has_refresh_token true
+    - rspec: 5 examples, 0 failures
+  - Sonuc (runner cikti):
+    - {tool_calling_enabled: true, calendar_allowed: true, has_refresh_token: true}
+  - Sonuc (rspec cikti):
+    - 5 examples, 0 failures
+- Notlar / Riskler:
+  - refresh_token GET response'ta masklenir; sadece has_refresh_token true/false doner.

@@ -153,6 +153,10 @@ Rails.application.routes.draw do
           resources :support_tickets, only: [:index, :create, :show] do
             post :messages, on: :member
           end
+          resource :ai_settings, only: [:show, :update]
+          namespace :ai_integrations do
+            resource :google_calendar, only: [:update]
+          end
 
           resources :search, only: [:index] do
             collection do

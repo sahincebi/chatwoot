@@ -51,6 +51,14 @@ class Account < ApplicationRecord
     flag_query_mode: :bit_operator,
     check_for_column: false
   }.freeze
+  DEFAULT_AI_TOOL_POLICY = {
+    'enabled' => false,
+    'allowed_tools' => {},
+    'limits' => {
+      'max_tools_per_turn' => 3,
+      'max_total_steps' => 8
+    }
+  }.freeze
 
   validates :name, presence: true
   validates :domain, length: { maximum: 100 }
@@ -96,6 +104,7 @@ class Account < ApplicationRecord
   has_many :sms_channels, dependent: :destroy_async, class_name: '::Channel::Sms'
   has_many :support_tickets, dependent: :destroy_async
   has_one :ai_wallet, dependent: :destroy
+  has_many :ai_integrations, dependent: :destroy
   has_many :ai_transactions, dependent: :destroy
   has_many :ai_usage_logs, dependent: :destroy
   has_many :teams, dependent: :destroy_async
@@ -152,6 +161,41 @@ class Account < ApplicationRecord
 
   def support_email
     super.presence || BrandingConfig.mailer_support_email || BrandingConfig.mailer_sender_email
+  end
+
+  def ai_tool_policy_with_defaults
+    policy = ai_tool_policy.is_a?(Hash) ? ai_tool_policy.deep_stringify_keys : {}
+    defaults = DEFAULT_AI_TOOL_POLICY.deep_dup
+    defaults['enabled'] = policy.key?('enabled') ? policy['enabled'] : defaults['enabled']
+    defaults['allowed_tools'].merge!(policy['allowed_tools'] || {})
+    defaults['limits'].merge!(policy['limits'] || {})
+    defaults
+  end
+
+  def ai_tool_policy_hash
+    ai_tool_policy_with_defaults
+  end
+
+  def ai_integrations_hash
+    ai_integrations.each_with_object({}) do |integration, hash|
+      hash[integration.provider] = integration.settings
+    end
+  end
+
+  def tool_calling_enabled?
+    ai_tool_policy_with_defaults['enabled'] == true
+  end
+
+  def tool_allowed?(tool_name)
+    ai_tool_policy_with_defaults['allowed_tools'][tool_name.to_s] == true
+  end
+
+  def google_calendar_integration
+    ai_integrations.find_by(provider: 'google_calendar')
+  end
+
+  def google_calendar_has_refresh_token?
+    google_calendar_integration&.refresh_token.present?
   end
 
   def usage_limits

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2025_12_31_190000) do
+ActiveRecord::Schema[7.1].define(version: 2026_01_01_004200) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -77,6 +77,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_31_190000) do
     t.string "ai_prompt_id"
     t.integer "ai_prompt_version", default: 1, null: false
     t.bigint "ai_agent_user_id"
+    t.jsonb "ai_tool_policy", default: {"limits" => {"max_total_steps" => 8, "max_tools_per_turn" => 3}, "enabled" => false, "allowed_tools" => {}}, null: false
     t.index ["ai_agent_user_id"], name: "index_accounts_on_ai_agent_user_id"
     t.index ["status"], name: "index_accounts_on_status"
   end
@@ -147,6 +148,19 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_31_190000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_agent_capacity_policies_on_account_id"
+  end
+
+  create_table "ai_integrations", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.string "provider", null: false
+    t.boolean "enabled", default: false, null: false
+    t.jsonb "settings", default: {}, null: false
+    t.text "refresh_token"
+    t.text "access_token"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "provider"], name: "index_ai_integrations_on_account_id_and_provider", unique: true
   end
 
   create_table "ai_transactions", force: :cascade do |t|
@@ -1357,6 +1371,7 @@ ActiveRecord::Schema[7.1].define(version: 2025_12_31_190000) do
   add_foreign_key "accounts", "users", column: "ai_agent_user_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "ai_integrations", "accounts"
   add_foreign_key "ai_transactions", "accounts"
   add_foreign_key "ai_usage_logs", "accounts"
   add_foreign_key "ai_wallets", "accounts"
