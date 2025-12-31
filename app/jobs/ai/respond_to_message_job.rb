@@ -1,0 +1,213 @@
+require 'net/http'
+
+class Ai::RespondToMessageJob < ApplicationJob
+  queue_as :default
+
+  def perform(message_id)
+    message = Message.find_by(id: message_id)
+    return unless message
+    return unless message.incoming? && !message.private?
+
+    conversation = message.conversation
+    account = Account.find_by(id: message.account_id)
+    return unless conversation && account
+
+    account = Account.find(account.id)
+    conversation = Conversation.find(conversation.id)
+
+    ai_user = account.ai_agent
+    return log_skip(account, conversation, message, 'ai_agent_missing') unless ai_user&.is_ai_agent?
+    return log_skip(account, conversation, message, 'not_assigned_to_ai') unless conversation.assignee_id == ai_user.id
+    return log_skip(account, conversation, message, 'ai_disabled') unless account.ai_enabled?
+    return log_skip(account, conversation, message, 'prompt_missing') if account.ai_prompt_id.blank?
+
+    wallet = account.ai_wallet
+    return log_skip(account, conversation, message, 'wallet_missing') unless wallet
+    return log_skip(account, conversation, message, 'insufficient_balance') unless wallet.balance_cents.to_i.positive?
+
+    response_payload = fetch_ai_response(account, conversation, message)
+    return log_skip(account, conversation, message, 'ai_response_empty') unless response_payload[:text].present?
+
+    usage = response_payload[:usage] || {}
+    input_tokens = usage['input_tokens'].to_i
+    output_tokens = usage['output_tokens'].to_i
+    total_tokens = usage['total_tokens'].to_i
+    total_tokens = input_tokens + output_tokens if total_tokens.zero?
+    cost_cents = calculate_cost_cents(input_tokens, output_tokens)
+
+    balance_after = nil
+    wallet.with_lock do
+      wallet.reload
+      if wallet.balance_cents.to_i < cost_cents
+        return log_skip(account, conversation, message, 'insufficient_balance')
+      end
+
+      if cost_cents.positive?
+        wallet.update!(balance_cents: wallet.balance_cents - cost_cents)
+        AiTransaction.create!(
+          account: account,
+          kind: :debit,
+          amount_cents: cost_cents,
+          currency: wallet.currency,
+          provider: 'openai',
+          provider_ref: response_payload[:response_id],
+          meta: { prompt_id: account.ai_prompt_id, prompt_version: account.ai_prompt_version }
+        )
+      end
+
+      AiUsageLog.create!(
+        account: account,
+        conversation_id: conversation.id,
+        message_id: message.id,
+        prompt_id: account.ai_prompt_id,
+        prompt_version: account.ai_prompt_version,
+        model: response_payload[:model],
+        input_tokens: input_tokens,
+        output_tokens: output_tokens,
+        total_tokens: total_tokens,
+        cost_cents: cost_cents,
+        currency: wallet.currency,
+        meta: {
+          provider: 'openai',
+          response_id: response_payload[:response_id],
+          raw_response: response_payload[:raw_response]
+        }
+      )
+
+      balance_after = wallet.balance_cents
+    end
+
+    normalized_text = normalize_ai_text(response_payload[:text])
+    params = ActionController::Parameters.new(
+      content: normalized_text,
+      message_type: 'outgoing',
+      private: false
+    )
+    Messages::MessageBuilder.new(ai_user, conversation, params).perform
+
+    Rails.logger.info(
+      "[AI_REPLY] account=#{account.id} conversation=#{conversation.id} message=#{message.id} " \
+      "prompt_version=#{account.ai_prompt_version} tokens=#{total_tokens} cost_cents=#{cost_cents} " \
+      "balance_after=#{balance_after}"
+    )
+  end
+
+  private
+
+  def fetch_ai_response(account, conversation, message)
+    api_key = ENV['OPENAI_API_KEY']
+    return { text: nil } if api_key.blank?
+
+    endpoint = ENV['AI_OPENAI_ENDPOINT'] || ENV['OPENAI_BASE_URL'] || 'https://api.openai.com'
+    uri = URI.join(endpoint.chomp('/'), '/v1/responses')
+
+    context_messages = conversation.messages
+                                   .where(message_type: [:incoming, :outgoing], private: false)
+                                   .order(:created_at)
+                                   .last(30)
+    context = context_messages.map do |msg|
+      label = msg.incoming? ? 'Customer' : 'Agent'
+      "#{label}: #{msg.content_for_llm}"
+    end.join("\n")
+
+    input_text = <<~TEXT
+      Conversation:
+      #{context}
+
+      Latest customer message:
+      #{message.content_for_llm}
+    TEXT
+
+    payload = {
+      input: input_text
+    }
+    if ENV['AI_MODEL'].present?
+      payload[:model] = ENV['AI_MODEL']
+    end
+    if account.ai_prompt_id.present?
+      prompt_obj = { id: account.ai_prompt_id }
+      if account.ai_prompt_version.present?
+        prompt_obj[:version] = account.ai_prompt_version.to_s
+      end
+      payload[:prompt] = prompt_obj
+    end
+
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.scheme == 'https'
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request['Authorization'] = "Bearer #{api_key}"
+    request['Content-Type'] = 'application/json'
+    request.body = payload.to_json
+    response = http.request(request)
+
+    if response.code.to_i >= 400
+      Rails.logger.info("[AI_REPLY] openai_error status=#{response.code} body=#{response.body.to_s.truncate(400)}")
+    end
+    parsed = JSON.parse(response.body) rescue {}
+    parsed['_http_status'] = response.code.to_i
+    {
+      text: extract_text(parsed),
+      usage: parsed['usage'],
+      model: parsed['model'],
+      response_id: parsed['id'],
+      raw_response: parsed
+    }
+  end
+
+  def extract_text(parsed)
+    return parsed['output_text'] if parsed['output_text'].present?
+
+    outputs = parsed['output'] || []
+    outputs.each do |output|
+      contents = output['content'] || []
+      contents.each do |content|
+        text = content['text'] || content.dig('text', 'value')
+        return text if text.present?
+      end
+    end
+
+    parsed.dig('choices', 0, 'message', 'content')
+  end
+
+  def calculate_cost_cents(input_tokens, output_tokens)
+    input_rate = ENV.fetch('AI_INPUT_COST_PER_1M', '0').to_f
+    output_rate = ENV.fetch('AI_OUTPUT_COST_PER_1M', '0').to_f
+    cost = (input_tokens * input_rate + output_tokens * output_rate) / 1_000_000.0
+    (cost * 100).round
+  end
+
+  def normalize_ai_text(raw_text)
+    return raw_text unless raw_text.is_a?(String)
+
+    json_candidate = extract_json_candidate(raw_text)
+    return raw_text if json_candidate.blank?
+
+    parsed = JSON.parse(json_candidate)
+    extracted = parsed.dig('data', 'message') || parsed['message'] || parsed.dig('data', 'text') || parsed.dig('data', 'content')
+    extracted.presence || raw_text
+  rescue JSON::ParserError => e
+    Rails.logger.info("[AI_REPLY] normalize_error=#{e.class}: #{e.message.to_s.truncate(200)}")
+    raw_text
+  end
+
+  def extract_json_candidate(raw_text)
+    stripped = raw_text.strip
+    return stripped if stripped.start_with?('{') && stripped.end_with?('}')
+
+    fenced_match = stripped.match(/```json\s*(\{.*?\})\s*```/m) || stripped.match(/```\s*(\{.*?\})\s*```/m)
+    return fenced_match[1] if fenced_match
+
+    start_idx = stripped.index('{')
+    end_idx = stripped.rindex('}')
+    return nil unless start_idx && end_idx && end_idx > start_idx
+
+    stripped[start_idx..end_idx]
+  end
+
+  def log_skip(account, conversation, message, reason)
+    Rails.logger.info(
+      "[AI_REPLY] skip reason=#{reason} account=#{account&.id} conversation=#{conversation&.id} message=#{message&.id}"
+    )
+    nil
+  end
+end

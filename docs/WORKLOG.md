@@ -1,5 +1,69 @@
 # Worklog
 
+## 2025-12-31 04:06
+- Tarih/Saat (TR): 2025-12-31 04:06
+- Amac: AI Temsilci icin otomatik cevap pipeline'i ve runtime gating eklemek.
+- Sorun / Belirti: AI assignee secili olsa bile incoming mesajlara otomatik yanit yoktu.
+- Kok Neden (Varsa): Incoming mesajdan sonra AI job tetiklenmiyor ve gating yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/models/message.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - Widget uzerinden yeni incoming mesaj -> AI Temsilci atanmis ise otomatik yanit gelmeli.
+  - docker compose logs --tail=200 sidekiq | Select-String -Pattern "AI_REPLY"
+  - docker compose exec -T rails bundle exec rails runner "Account.find(1).update!(ai_prompt_version: 4)"
+  - Yeni mesaj -> log'da prompt_version=4 gorunmeli.
+- Notlar / Riskler:
+  - API key yoksa AI cevap uretilmez; loglarda AI_REPLY skip gorunur.
+
+## 2025-12-31 14:51
+- Tarih/Saat (TR): 2025-12-31 14:51
+- Amac: AI auto-reply pipeline'ini ENV tabanli OpenAI Responses API ile calistirmak.
+- Sorun / Belirti: CAPTAIN_* InstallationConfig bagimliligi istenmiyordu; prompt payload formatini guncelleme gerekliydi.
+- Kok Neden (Varsa): Job icinde CAPTAIN_* endpoint/key okunuyordu ve prompt formati pmpt_ kullanimi icin uygun degildi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - OPENAI_API_KEY ve AI_OPENAI_ENDPOINT/OPENAI_BASE_URL set et.
+  - docker compose logs --tail=200 sidekiq | Select-String -Pattern "AI_REPLY"
+  - AI gelen mesajdan sonra outgoing mesaj olusmali.
+- Notlar / Riskler:
+  - pmpt_ promptlari icin variables: conversation/latest_message ile gonderilir.
+
+## 2025-12-31 15:11
+- Tarih/Saat (TR): 2025-12-31 15:11
+- Amac: OpenAI Responses API payload'ini prompt id formatina uydurmak ve 400 hatasini gidermek.
+- Sorun / Belirti: Sidekiq log'unda "Missing required parameter: 'prompt.id'." hatasi.
+- Kok Neden (Varsa): prompt alaninin string gonderilmesi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - Widget'ten incoming mesaj -> AI Temsilci outgoing mesaj olusturmali.
+  - docker compose logs --tail=200 sidekiq | Select-String -Pattern "AI_REPLY"
+- Notlar / Riskler:
+  - prompt.version varsa string olarak gonderilir; model yalnizca AI_MODEL ENV varsa eklenir.
+
+## 2025-12-31 15:45
+- Tarih/Saat (TR): 2025-12-31 15:45
+- Amac: AI cevabindan JSON icerigi ayiklayip kullaniciya yalnizca mesaj metnini gondermek.
+- Sorun / Belirti: AI response text JSON string dondugunde widget'ta JSON gorunuyordu.
+- Kok Neden (Varsa): Response text normalize edilmiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+- Calistirilan Komutlar:
+  - (calistirilmedi)
+- Dogrulama:
+  - Widget'tan mesaj -> AI cevabi yalnizca duz metin gosterilmeli.
+  - JSON parse hatasi olursa log: [AI_REPLY] normalize_error=...
+- Notlar / Riskler:
+  - JSON parse edilemezse ham metin kullanilir.
+
 ## 2025-12-31 03:00
 - Tarih/Saat (TR): 2025-12-31 03:00
 - Amac: Account bazli AI konfigurasyonu, bakiye ve kullanim loglari icin veri modeli eklemek.

@@ -315,10 +315,19 @@ class Message < ApplicationRecord
     send_reply
     execute_message_template_hooks
     update_contact_activity
+    enqueue_ai_reply
   end
 
   def update_contact_activity
     sender.update(last_activity_at: DateTime.now) if sender.is_a?(Contact)
+  end
+
+  def enqueue_ai_reply
+    return unless incoming?
+    return if private?
+    return unless conversation&.assignee&.is_ai_agent?
+
+    Ai::RespondToMessageJob.perform_later(id)
   end
 
   def update_waiting_since
