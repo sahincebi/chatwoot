@@ -612,13 +612,15 @@ class Ai::RespondToMessageJob < ApplicationJob
   end
 
   def tool_payload_for(tool_name, result)
-    if result[:error].present?
+    error_code = result[:error].presence || result[:error_code].presence
+    if error_code.present?
       {
         status: 'error',
         tool: tool_name,
-        error: result[:error],
-        message: result[:error_message]
-      }
+        error_code: error_code,
+        message: result[:message].presence || result[:error_message],
+        details: result[:details]
+      }.compact
     else
       content = result[:content]
       return content if content.is_a?(Hash)

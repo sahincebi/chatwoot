@@ -2783,3 +2783,28 @@
     - 7 examples, 0 failures
 - Notlar / Riskler:
   - UI'da JSON gorulmesi durumunda sidekiq restart gerekiyor olabilir.
+## 2026-01-01 20:31
+- Tarih/Saat (TR): 2026-01-01 20:31
+- Amac: create_demo_appointment araci ile Google Calendar event olusturmak ve tool_result kanit alanlarini zenginlestirmek.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/tools/create_demo_appointment.rb
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/services/ai/tools/create_demo_appointment_spec.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb spec/services/ai/tools/create_demo_appointment_spec.rb
+  - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+- Test Sahnesi + Dogrulama:
+  - Amac: create_demo_appointment tool_result JSON kanit alanlari (event_id/html_link/meet_link) ve hata kodlari.
+  - Kurulum / On Sart: google_calendar integration enabled + refresh_token, GOOGLE_OAUTH_CLIENT_ID/SECRET env set.
+  - Komutlar:
+    - rspec (job + tool spec)
+  - Beklenen cikti:
+    - tool_result valid JSON
+    - event_id/html_link/meet_link doner
+    - rspec 0 failures
+  - Sonuc (rspec):
+    - 10 examples, 0 failures
+- Notlar / Riskler:
+  - Token/secret loglanmaz; hata mesajlari maskeli ve kisa tutulur.
