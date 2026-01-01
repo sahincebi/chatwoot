@@ -49,12 +49,13 @@ module Ai
         tool_name = tool_call[:name].to_s
         config = TOOL_CONFIG[tool_name]
         category = config&.fetch(:category, nil)
-        return { error: 'tool_not_allowed', tool: tool_name, category: category } unless config
-        return { error: 'tool_not_allowed', tool: tool_name, category: category } unless allowed_by_policy?(account, tool_name, category)
+        return { error: 'tool_not_allowed', error_class: 'policy', tool: tool_name, category: category } unless config
+        return { error: 'tool_not_allowed', error_class: 'policy', tool: tool_name, category: category } unless allowed_by_policy?(account, tool_name, category)
 
         if config[:requires_calendar] && !google_calendar_configured?(account)
           return {
             error: 'calendar_not_configured',
+            error_class: 'integration',
             error_message: 'calendar_integration_missing',
             tool: tool_name,
             category: category
@@ -65,6 +66,7 @@ module Ai
         if args[:error].present?
           return {
             error: args[:error],
+            error_class: 'invalid_arguments',
             error_message: args[:parse_error],
             tool: tool_name,
             category: category,
@@ -76,6 +78,7 @@ module Ai
         if result.is_a?(Hash) && result[:error].present?
           return {
             error: result[:error],
+            error_class: 'tool_error',
             error_message: result[:message],
             tool: tool_name,
             category: category,

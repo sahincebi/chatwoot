@@ -1,5 +1,23 @@
 # Worklog
 
+## 2026-01-01 14:24
+- Tarih/Saat (TR): 2026-01-01 14:24
+- Amac: Responses API function_call outputlarini tool loop ile islemek.
+- Sorun / Belirti: function_call-only response ai_response_empty olarak skip ediliyordu.
+- Kok Neden (Varsa): Tool call parser sadece tool_call tipini goruyordu; function_call outputlarina donus yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/services/ai/tools/tool_registry.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "id=18; log=AiUsageLog.where(message_id:id).order(id: :desc).first; types=(log&.meta&.dig('raw_response','output')||[]).map{|o| o['type']}; puts({message_id:id, response_id: log&.meta&.dig('response_id'), output_types: types}.inspect)"
+- Dogrulama:
+  - rspec: 4 examples, 0 failures
+  - function_call-only response takip cagrisinda final text uretiyor.
+- Notlar / Riskler:
+  - tool_loop_failed ve output_types debug loglari eklendi.
+
 ## 2026-01-01 04:29
 - Tarih/Saat (TR): 2026-01-01 04:29
 - Amac: Demo tool set + kategori bazli policy + tool loop smoke test sahnesi eklemek.
@@ -2593,6 +2611,8 @@
     - [AI_REPLY] {"event":"success","prompt_id":"pmpt_...","response_id":"resp_...","input_tokens":3592,"output_tokens":250,"total_tokens":3842,"cost_cents":0,"balance_before":13234,"balance_after":13234}
 - Notlar / Riskler:
   - Skip reason seti: already_processed, ai_agent_missing, not_assigned_to_ai, ai_disabled, missing_prompt, missing_wallet, insufficient_balance, ai_response_empty, tool_policy_disabled.
+
+
 
 
 

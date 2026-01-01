@@ -12,6 +12,7 @@ class Ai::RespondToMessageJob < ApplicationJob
     missing_wallet: 'missing_wallet',
     insufficient_balance: 'insufficient_balance',
     ai_response_empty: 'ai_response_empty',
+    tool_loop_failed: 'tool_loop_failed',
     tool_policy_disabled: 'tool_policy_disabled'
   }.freeze
 
@@ -50,7 +51,22 @@ class Ai::RespondToMessageJob < ApplicationJob
     return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents) unless wallet.balance_cents.to_i.positive?
 
     response_payload = fetch_ai_response(account, conversation, message)
-    return log_skip(account, conversation, message, SKIP_REASONS[:ai_response_empty]) unless response_payload[:text].present?
+    unless response_payload[:text].present?
+      reason = response_payload[:output_types].present? ? SKIP_REASONS[:tool_loop_failed] : SKIP_REASONS[:ai_response_empty]
+      log_event(
+        event: 'error',
+        account: account,
+        conversation: conversation,
+        message: message,
+        prompt_id: account.ai_prompt_id,
+        prompt_version: account.ai_prompt_version,
+        response_id: response_payload[:response_id],
+        reason: reason,
+        output_types: response_payload[:output_types],
+        first_tool_name: response_payload[:first_tool_name]
+      )
+      return log_skip(account, conversation, message, reason)
+    end
 
     usage = response_payload[:usage] || {}
     input_tokens = usage['input_tokens'].to_i
@@ -194,10 +210,13 @@ class Ai::RespondToMessageJob < ApplicationJob
   def extract_tool_calls(parsed)
     outputs = parsed['output'] || []
     outputs.filter_map do |output|
-      next unless output['type'] == 'tool_call'
+      type = output['type']
+      next unless %w[tool_call function_call].include?(type)
 
       {
         id: output['id'] || output['call_id'],
+        call_id: output['call_id'] || output['id'],
+        type: type,
         name: output['name'],
         arguments: output['arguments']
       }
@@ -289,11 +308,20 @@ class Ai::RespondToMessageJob < ApplicationJob
           )
         end
 
-        tool_results << {
-          type: 'tool_result',
-          tool_call_id: tool_call[:id],
-          content: (result[:content] || { error: result[:error], message: result[:error_message], tool: tool_name }).to_json
-        }
+        tool_result_payload = (result[:content] || { error: result[:error], message: result[:error_message], tool: tool_name })
+        if tool_call[:type] == 'function_call'
+          tool_results << {
+            type: 'function_call_output',
+            call_id: tool_call[:call_id] || tool_call[:id],
+            output: tool_result_payload.to_json
+          }
+        else
+          tool_results << {
+            type: 'tool_result',
+            tool_call_id: tool_call[:id],
+            content: tool_result_payload.to_json
+          }
+        end
       end
 
       if tool_calls.size > max_tools_per_turn
@@ -310,11 +338,20 @@ class Ai::RespondToMessageJob < ApplicationJob
             step: steps,
             reason: 'tool_limit_exceeded'
           )
-          tool_results << {
-            type: 'tool_result',
-            tool_call_id: tool_call[:id],
-            content: { error: 'tool_limit_exceeded' }.to_json
-          }
+          tool_result_payload = { error: 'tool_limit_exceeded' }.to_json
+          if tool_call[:type] == 'function_call'
+            tool_results << {
+              type: 'function_call_output',
+              call_id: tool_call[:call_id] || tool_call[:id],
+              output: tool_result_payload
+            }
+          else
+            tool_results << {
+              type: 'tool_result',
+              tool_call_id: tool_call[:id],
+              content: tool_result_payload
+            }
+          end
         end
       end
 
@@ -357,6 +394,9 @@ class Ai::RespondToMessageJob < ApplicationJob
     response = http.request(request)
 
     parsed = JSON.parse(response.body) rescue {}
+    output_items = parsed['output'] || []
+    output_types = output_items.map { |item| item['type'] }.compact
+    first_tool_name = output_items.find { |item| %w[function_call tool_call].include?(item['type']) }&.fetch('name', nil)
     http_status = response.code.to_i
     parsed['_http_status'] = http_status
     if http_status >= 400
@@ -380,7 +420,9 @@ class Ai::RespondToMessageJob < ApplicationJob
       model: parsed['model'],
       response_id: parsed['id'],
       raw_response: parsed,
-      http_status: http_status
+      http_status: http_status,
+      output_types: output_types,
+      first_tool_name: first_tool_name
     }
   end
 
@@ -457,7 +499,9 @@ class Ai::RespondToMessageJob < ApplicationJob
     step: nil,
     duration_ms: nil,
     error_class: nil,
-    error_message: nil
+    error_message: nil,
+    output_types: nil,
+    first_tool_name: nil
   )
     payload = {
       event: event,
@@ -483,7 +527,9 @@ class Ai::RespondToMessageJob < ApplicationJob
       step: step,
       duration_ms: duration_ms,
       error_class: error_class,
-      error_message: error_message
+      error_message: error_message,
+      output_types: output_types,
+      first_tool_name: first_tool_name
     }.compact
     Rails.logger.info("[AI_REPLY] #{payload.to_json}")
   end

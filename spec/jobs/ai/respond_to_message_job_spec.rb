@@ -155,4 +155,63 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(outgoing.count).to eq(1)
     expect(outgoing.last.content).to include('final answer')
   end
+
+  it 'handles function_call only responses and returns final text' do
+    account.update!(
+      ai_tool_policy: {
+        'enabled' => true,
+        'allowed_tools' => { 'demo' => true },
+        'limits' => { 'max_tools_per_turn' => 3, 'max_total_steps' => 3 }
+      }
+    )
+    account.ai_integrations.create!(
+      provider: 'google_calendar',
+      enabled: true,
+      refresh_token: 'refresh-token',
+      settings: {}
+    )
+
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        {
+          status: 200,
+          body: {
+            'id' => 'resp_fc_1',
+            'output' => [
+              {
+                'type' => 'function_call',
+                'call_id' => 'call_1',
+                'name' => 'check_demo_availability',
+                'arguments' => {
+                  date: (Time.find_zone('Europe/Istanbul').today + 1).strftime('%F'),
+                  tz: 'Europe/Istanbul'
+                }.to_json
+              }
+            ],
+            'model' => 'gpt-test',
+            'usage' => { 'input_tokens' => 10, 'output_tokens' => 0, 'total_tokens' => 10 }
+          }.to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        },
+        {
+          status: 200,
+          body: {
+            'id' => 'resp_fc_final',
+            'output_text' => 'final from function_call',
+            'model' => 'gpt-test',
+            'usage' => { 'input_tokens' => 5, 'output_tokens' => 5, 'total_tokens' => 10 }
+          }.to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        }
+      )
+
+    expect(Ai::Tools::CheckDemoAvailability).to receive(:call).once.and_call_original
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false)
+    expect(outgoing.count).to eq(1)
+    expect(outgoing.last.content).to include('final from function_call')
+  end
 end
