@@ -17,14 +17,14 @@ module Ai
         {}
       end
 
-      def self.call(account:, args:)
+      def self.call(account:, args:, **context)
         validation = validate_args(args)
         return validation if validation[:error].present?
 
-        execute(account: account, args: args)
+        execute(account: account, args: args, **context)
       end
 
-      def self.execute(account:, args:)
+      def self.execute(account:, args:, **_context)
         raise NotImplementedError
       end
 

@@ -77,8 +77,8 @@ RSpec.describe Ai::RespondToMessageJob do
             {
               'type' => 'tool_call',
               'id' => 'call_1',
-              'name' => 'calendar_query_availability',
-              'arguments' => { start_time: '2025-01-01T10:00:00Z' }.to_json
+              'name' => 'check_demo_availability',
+              'arguments' => { date: '2025-01-02', tz: 'Europe/Istanbul' }.to_json
             }
           ],
           'output_text' => 'ok',
@@ -88,7 +88,7 @@ RSpec.describe Ai::RespondToMessageJob do
         headers: { 'Content-Type' => 'application/json' }
       )
 
-    expect(Ai::Tools::CalendarQueryAvailability).not_to receive(:call)
+    expect(Ai::Tools::CheckDemoAvailability).not_to receive(:call)
     with_modified_env('OPENAI_API_KEY' => 'test') do
       described_class.perform_now(message.id)
     end
@@ -101,7 +101,7 @@ RSpec.describe Ai::RespondToMessageJob do
     account.update!(
       ai_tool_policy: {
         'enabled' => true,
-        'allowed_tools' => { 'calendar_query_availability' => true },
+        'allowed_tools' => { 'demo' => true },
         'limits' => { 'max_tools_per_turn' => 3, 'max_total_steps' => 3 }
       }
     )
@@ -122,11 +122,10 @@ RSpec.describe Ai::RespondToMessageJob do
               {
                 'type' => 'tool_call',
                 'id' => 'call_1',
-                'name' => 'calendar_query_availability',
+                'name' => 'check_demo_availability',
                 'arguments' => {
-                  start_time: '2025-01-01T10:00:00Z',
-                  end_time: '2025-01-01T11:00:00Z',
-                  timezone: 'Europe/Istanbul'
+                  date: (Time.find_zone('Europe/Istanbul').today + 1).strftime('%F'),
+                  tz: 'Europe/Istanbul'
                 }.to_json
               }
             ],
@@ -147,7 +146,7 @@ RSpec.describe Ai::RespondToMessageJob do
         }
       )
 
-    expect(Ai::Tools::CalendarQueryAvailability).to receive(:call).once.and_call_original
+    expect(Ai::Tools::CheckDemoAvailability).to receive(:call).once.and_call_original
     with_modified_env('OPENAI_API_KEY' => 'test') do
       described_class.perform_now(message.id)
     end

@@ -1,5 +1,30 @@
 # Worklog
 
+## 2026-01-01 04:29
+- Tarih/Saat (TR): 2026-01-01 04:29
+- Amac: Demo tool set + kategori bazli policy + tool loop smoke test sahnesi eklemek.
+- Sorun / Belirti: Prompt tool isimleri desteklenmiyor, policy kategori bazli degildi.
+- Kok Neden (Varsa): Tool registry ve job allowlist sadece eski tool isimlerini biliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/services/ai/tools/tool_registry.rb
+  - app/services/ai/tools/check_demo_availability.rb
+  - app/services/ai/tools/create_demo_appointment.rb
+  - app/services/ai/tools/send_demo_email.rb
+  - app/services/ai/tools/close_conversation_log.rb
+  - app/services/ai/tools/base_tool.rb
+  - app/services/ai/tools/calendar_query_availability.rb
+  - app/services/ai/tools/calendar_create_event.rb
+  - app/mailers/ai_demo_mailer.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+- Dogrulama:
+  - rspec: 3 examples, 0 failures
+  - Beklenen loglar: [AI_REPLY] tool_call/tool_result/tool_error
+- Notlar / Riskler:
+  - Demo tool'lar dummy cevap doner; calendar entegrasyonu mevcutsa real implementasyon baglanacak.
+
 ## 2026-01-01 03:54
 - Tarih/Saat (TR): 2026-01-01 03:54
 - Amac: AI tool loop icin smoke test sahnesi tanimlamak.
@@ -2568,6 +2593,8 @@
     - [AI_REPLY] {"event":"success","prompt_id":"pmpt_...","response_id":"resp_...","input_tokens":3592,"output_tokens":250,"total_tokens":3842,"cost_cents":0,"balance_before":13234,"balance_after":13234}
 - Notlar / Riskler:
   - Skip reason seti: already_processed, ai_agent_missing, not_assigned_to_ai, ai_disabled, missing_prompt, missing_wallet, insufficient_balance, ai_response_empty, tool_policy_disabled.
+
+
 
 
 

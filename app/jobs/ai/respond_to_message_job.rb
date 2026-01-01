@@ -236,6 +236,12 @@ class Ai::RespondToMessageJob < ApplicationJob
 
       tool_calls.first(max_tools_per_turn).each do |tool_call|
         tool_name = tool_call[:name]
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        result = Ai::Tools::ToolRegistry.execute(account: account, tool_call: tool_call, conversation: conversation, message: message)
+        duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+        category = result[:category]
+        args = result[:args].presence
+
         log_event(
           event: 'tool_call',
           account: account,
@@ -244,12 +250,10 @@ class Ai::RespondToMessageJob < ApplicationJob
           prompt_id: account.ai_prompt_id,
           prompt_version: account.ai_prompt_version,
           tool_name: tool_name,
+          tool_category: category,
+          tool_args: args,
           step: steps
         )
-
-        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        result = Ai::Tools::ToolRegistry.execute(account: account, tool_call: tool_call)
-        duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
 
         if result[:error].present?
           log_event(
@@ -260,9 +264,13 @@ class Ai::RespondToMessageJob < ApplicationJob
             prompt_id: account.ai_prompt_id,
             prompt_version: account.ai_prompt_version,
             tool_name: tool_name,
+            tool_category: category,
+            tool_args: args,
             step: steps,
             duration_ms: duration_ms,
-            reason: result[:error]
+            reason: result[:error],
+            error_class: result[:error_class],
+            error_message: result[:error_message]
           )
         else
           log_event(
@@ -273,6 +281,9 @@ class Ai::RespondToMessageJob < ApplicationJob
             prompt_id: account.ai_prompt_id,
             prompt_version: account.ai_prompt_version,
             tool_name: tool_name,
+            tool_category: category,
+            tool_args: args,
+            tool_result: result[:content].to_s.truncate(200),
             step: steps,
             duration_ms: duration_ms
           )
@@ -281,7 +292,7 @@ class Ai::RespondToMessageJob < ApplicationJob
         tool_results << {
           type: 'tool_result',
           tool_call_id: tool_call[:id],
-          content: result.to_json
+          content: (result[:content] || { error: result[:error], message: result[:error_message], tool: tool_name }).to_json
         }
       end
 
@@ -440,8 +451,13 @@ class Ai::RespondToMessageJob < ApplicationJob
     reason: nil,
     http_status: nil,
     tool_name: nil,
+    tool_category: nil,
+    tool_args: nil,
+    tool_result: nil,
     step: nil,
-    duration_ms: nil
+    duration_ms: nil,
+    error_class: nil,
+    error_message: nil
   )
     payload = {
       event: event,
@@ -461,8 +477,13 @@ class Ai::RespondToMessageJob < ApplicationJob
       balance_after: balance_after,
       http_status: http_status,
       tool_name: tool_name,
+      tool_category: tool_category,
+      tool_args: tool_args,
+      tool_result: tool_result,
       step: step,
-      duration_ms: duration_ms
+      duration_ms: duration_ms,
+      error_class: error_class,
+      error_message: error_message
     }.compact
     Rails.logger.info("[AI_REPLY] #{payload.to_json}")
   end

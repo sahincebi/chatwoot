@@ -37,7 +37,7 @@ module Ai
         }
       end
 
-      def self.execute(account:, args:)
+      def self.execute(account:, args:, **_context)
         {
           status: 'ok',
           tool: tool_name,
