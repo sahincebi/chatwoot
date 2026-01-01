@@ -311,11 +311,41 @@ RSpec.describe Ai::RespondToMessageJob do
     end
 
     outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
-    expect(outgoing.content).to eq("Merhaba\nNasil yardim edebilirim?")
+    expect(outgoing.content).to eq('Merhaba')
     expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
     expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
     expect(outgoing.content_attributes['ai_state']).to eq('collect')
     expect(Rails.logger).to have_received(:info).with(include('"event":"normalized_reply"')).at_least(:once)
+  end
+
+  it 'normalizes meta message output to plain text' do
+    raw_json = {
+      'action' => 'chat.reply',
+      'state' => 'scheduled',
+      'meta' => { 'message' => 'Randevu olusturuldu.' }
+    }.to_json
+
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_meta',
+          'output_text' => raw_json,
+          'model' => 'gpt-test',
+          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
+    expect(outgoing.content).to eq('Randevu olusturuldu.')
+    expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
+    expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
+    expect(outgoing.content_attributes['ai_state']).to eq('scheduled')
   end
 
   it 'passes through plain text output and stores raw text' do

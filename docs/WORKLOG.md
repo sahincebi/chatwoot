@@ -2663,6 +2663,9 @@
   - Sonuc (runner ciktisi):
     - {ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1, ai_tool_policy: {"enabled" => true, "allowed_tools" => {"demo" => true, "email" => true, "conversation" => true, "calendar" => true}, "limits" => {"max_tools_per_turn" => 3, "max_total_steps" => 6}}}
   - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
     - 6 examples, 0 failures
 - Notlar / Riskler:
   - rspec sirasinda deprecation warning mevcut; test sonucu basarili.
@@ -2687,6 +2690,9 @@
     - tools[].parameters.additionalProperties false
     - rspec 0 failures
   - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
     - 7 examples, 0 failures
 - Notlar / Riskler:
   - sidekiq restart yapildi; openai_error 400 beklenmiyor.
@@ -2709,6 +2715,9 @@
     - request payload'da tools olmamali
     - rspec 0 failures
   - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
     - 5 examples, 0 failures
 - Notlar / Riskler:
   - [AI_REPLY] loglarina tools_source=prompt eklendi.
@@ -2733,6 +2742,9 @@
     - payload'da model present
     - rspec 0 failures
   - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
     - 5 examples, 0 failures
 - Notlar / Riskler:
   - Canli test: "Yarin demo ayarla" mesaji sonrasi tool_call -> tool_result -> success beklenir.
@@ -2756,6 +2768,9 @@
     - [AI_REPLY] phase=initial ve phase=followup loglari
     - rspec 0 failures
   - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
     - 5 examples, 0 failures
 - Notlar / Riskler:
   - Canli test: "Yarin demo ayarla" mesaji sonrasi tool_call -> tool_result -> followup -> success.
@@ -2780,6 +2795,9 @@
     - ai_raw + ai_action + ai_state content_attributes icinde
     - rspec 0 failures
   - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
     - 7 examples, 0 failures
 - Notlar / Riskler:
   - UI'da JSON gorulmesi durumunda sidekiq restart gerekiyor olabilir.
@@ -2794,6 +2812,7 @@
   - docs/WORKLOG.md
 - Calistirilan Komutlar:
   - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb spec/services/ai/tools/create_demo_appointment_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "a=Account.find(1); puts({account_id:a.id, ai_prompt_id: a.ai_prompt_id.to_s, ai_prompt_version: a.ai_prompt_version.to_i}.inspect)"
   - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
 - Test Sahnesi + Dogrulama:
   - Amac: create_demo_appointment tool_result JSON kanit alanlari (event_id/html_link/meet_link) ve hata kodlari.
@@ -2805,6 +2824,40 @@
     - event_id/html_link/meet_link doner
     - rspec 0 failures
   - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
     - 10 examples, 0 failures
 - Notlar / Riskler:
   - Token/secret loglanmaz; hata mesajlari maskeli ve kisa tutulur.
+## 2026-01-01 21:57
+- Tarih/Saat (TR): 2026-01-01 21:57
+- Amac: Google OAuth credential fallback ve AI reply normalize onceligi (meta.message) guncelleme.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/tools/create_demo_appointment.rb
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/services/ai/tools/create_demo_appointment_spec.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb spec/services/ai/tools/create_demo_appointment_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "a=Account.find(1); puts({account_id:a.id, ai_prompt_id: a.ai_prompt_id.to_s, ai_prompt_version: a.ai_prompt_version.to_i}.inspect)"
+  - docker compose exec -T rails env | egrep "GOOGLE_OAUTH_CLIENT_ID|GOOGLE_OAUTH_CLIENT_SECRET"
+  - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+- Test Sahnesi + Dogrulama:
+  - Amac: JSON wrapper -> duz metin (meta.message), OAuth client env veya settings fallback.
+  - Kurulum / On Sart: ai_prompt_id/version mevcut, google_calendar integration set.
+  - Komutlar:
+    - rspec (job + tool spec)
+  - Beklenen cikti:
+    - meta.message plain text
+    - oauth_client_missing / refresh_token_missing dogru error_code
+    - rspec 0 failures
+  - Sonuc (rspec):
+    - 13 examples, 0 failures
+  - Sonuc (runner):
+    - {account_id: 1, ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1}
+    - 13 examples, 0 failures
+- Notlar / Riskler:
+  - ENV yoksa settings fallback kullanilir; token/secret loglanmaz.
+

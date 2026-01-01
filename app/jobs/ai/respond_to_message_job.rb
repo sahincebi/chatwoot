@@ -484,17 +484,21 @@ class Ai::RespondToMessageJob < ApplicationJob
 
     parsed = JSON.parse(json_candidate)
     messages = parsed['messages']
-    extracted = if messages.is_a?(Array)
-                  texts = messages.filter_map do |item|
-                    next unless item.is_a?(Hash)
-                    next unless item['type'] == 'text'
+    extracted = nil
+    if messages.is_a?(Array)
+      texts = messages.filter_map do |item|
+        next unless item.is_a?(Hash)
+        next unless item['type'] == 'text'
 
-                    item['text']
-                  end
-                  texts.join("\n")
-                else
-                  parsed.dig('data', 'message') || parsed['message'] || parsed.dig('data', 'text') || parsed.dig('data', 'content')
-                end
+        item['text']
+      end
+      extracted = texts.first
+    end
+    extracted ||= parsed.dig('data', 'message') ||
+      parsed.dig('meta', 'message') ||
+      parsed['message'] ||
+      parsed.dig('data', 'text') ||
+      parsed.dig('data', 'content')
 
     {
       text: extracted.presence || raw_string,

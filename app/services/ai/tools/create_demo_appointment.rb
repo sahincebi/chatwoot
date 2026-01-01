@@ -46,14 +46,14 @@ module Ai
       end
 
       def self.execute(account:, args:, **_context)
-        integration = account.google_calendar_integration
+        integration = account.ai_integrations.find_by(provider: 'google_calendar')
         return error_payload('calendar_integration_missing', 'calendar_integration_missing') unless integration&.enabled?
         return error_payload('refresh_token_missing', 'refresh_token_missing') if integration.refresh_token.blank?
 
-        client_id = ENV['GOOGLE_OAUTH_CLIENT_ID']
-        client_secret = ENV['GOOGLE_OAUTH_CLIENT_SECRET']
+        client_id = ENV['GOOGLE_OAUTH_CLIENT_ID'].presence || integration.settings['client_id'].presence
+        client_secret = ENV['GOOGLE_OAUTH_CLIENT_SECRET'].presence || integration.settings['client_secret'].presence
         if client_id.blank? || client_secret.blank?
-          return error_payload('validation_error', 'google_oauth_credentials_missing')
+          return error_payload('oauth_client_missing', 'google_oauth_credentials_missing')
         end
 
         calendar_id = integration.settings['calendar_id'].presence || 'primary'
@@ -69,7 +69,7 @@ module Ai
         end_time = start_time + 1.hour
 
         access = fetch_access_token(integration.refresh_token, client_id, client_secret, integration)
-        return error_payload('google_api_error', access[:message], details: access[:details]) unless access[:access_token].present?
+        return error_payload(access[:error_code], access[:message], details: access[:details]) unless access[:access_token].present?
 
         event = build_event_payload(args, start_time, end_time, timezone)
         response = insert_event(access[:access_token], calendar_id, event)
@@ -112,7 +112,9 @@ module Ai
         response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |http| http.request(request) }
         parsed = JSON.parse(response.body) rescue {}
         if response.code.to_i >= 400
+          error_code = parsed['error'] == 'invalid_grant' ? 'google_api_error' : 'google_api_error'
           return {
+            error_code: error_code,
             message: parsed['error_description'] || parsed['error'] || 'google_oauth_error',
             details: { http_status: response.code.to_i }
           }
@@ -129,7 +131,7 @@ module Ai
 
         { access_token: access_token, expires_in: expires_in }
       rescue StandardError => e
-        { message: 'google_oauth_error', details: { error_class: e.class.name } }
+        { error_code: 'google_api_error', message: 'google_oauth_error', details: { error_class: e.class.name } }
       end
 
       def self.build_event_payload(args, start_time, end_time, timezone)

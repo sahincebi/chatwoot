@@ -75,6 +75,53 @@ RSpec.describe Ai::Tools::CreateDemoAppointment do
     end
   end
 
+  it 'uses integration settings when env credentials are missing' do
+    integration.update!(
+      settings: {
+        'calendar_id' => 'primary',
+        'timezone' => 'Europe/Istanbul',
+        'client_id' => 'settings-client',
+        'client_secret' => 'settings-secret'
+      }
+    )
+
+    stub_request(:post, 'https://oauth2.googleapis.com/token')
+      .to_return(
+        status: 200,
+        body: { access_token: 'access-token', expires_in: 3600 }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    stub_request(:post, 'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1')
+      .to_return(
+        status: 200,
+        body: {
+          id: 'evt_settings',
+          htmlLink: 'https://calendar.google.com/event?eid=settings',
+          hangoutLink: 'https://meet.google.com/settings-meet'
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    with_modified_env('GOOGLE_OAUTH_CLIENT_ID' => nil, 'GOOGLE_OAUTH_CLIENT_SECRET' => nil) do
+      result = described_class.call(account: account, args: args)
+      expect(result[:status]).to eq('ok')
+      expect(result[:event_id]).to eq('evt_settings')
+      expect(result[:meet_link]).to eq('https://meet.google.com/settings-meet')
+    end
+  end
+
+  it 'returns oauth_client_missing when credentials are missing' do
+    integration.update!(settings: { 'calendar_id' => 'primary', 'timezone' => 'Europe/Istanbul' })
+
+    with_modified_env('GOOGLE_OAUTH_CLIENT_ID' => nil, 'GOOGLE_OAUTH_CLIENT_SECRET' => nil) do
+      result = described_class.call(account: account, args: args)
+      expect(result[:status]).to eq('error')
+      expect(result[:error_code]).to eq('oauth_client_missing')
+      expect(WebMock).not_to have_requested(:post, 'https://oauth2.googleapis.com/token')
+    end
+  end
+
   it 'returns google_api_error when calendar insert fails' do
     integration
     stub_request(:post, 'https://oauth2.googleapis.com/token')
