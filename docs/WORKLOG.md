@@ -2666,3 +2666,27 @@
     - 6 examples, 0 failures
 - Notlar / Riskler:
   - rspec sirasinda deprecation warning mevcut; test sonucu basarili.
+## 2026-01-01 16:26
+- Tarih/Saat (TR): 2026-01-01 16:26
+- Amac: Tools schema icin additionalProperties zorunlulugunu saglamak ve 400 hatasini gidermek.
+- Sorun / Belirti:
+  - OpenAI 400: Invalid schema for function ... additionalProperties is required to be supplied and to be false.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/tools/tool_registry.rb
+  - spec/services/ai/tools/tool_registry_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb spec/services/ai/tools/tool_registry_spec.rb
+  - docker compose restart sidekiq
+- Test Sahnesi + Dogrulama:
+  - Amac: Tum tool schema'larda parameters.additionalProperties=false oldugunu dogrulamak.
+  - Kurulum / On Sart: Account tool policy enabled.
+  - Komutlar:
+    - rspec (tool registry + job specs)
+  - Beklenen cikti:
+    - tools[].parameters.additionalProperties false
+    - rspec 0 failures
+  - Sonuc (rspec):
+    - 7 examples, 0 failures
+- Notlar / Riskler:
+  - sidekiq restart yapildi; openai_error 400 beklenmiyor.

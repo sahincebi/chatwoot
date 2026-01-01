@@ -44,11 +44,16 @@ module Ai
           schema = config[:klass].tool_schema
           name = schema[:name] || schema['name']
           unless name.present?
-            Rails.logger.info("[AI_REPLY] invalid_tool_schema tool=#{tool_name} reason=missing_name")
+            Rails.logger.info(
+              "[AI_REPLY] {\"event\":\"tool_error\",\"reason\":\"invalid_tool_schema\",\"tool_name\":\"#{tool_name}\",\"details\":\"missing_name\"}"
+            )
             next
           end
 
-          schema
+          normalized = normalize_schema(schema, tool_name)
+          next unless normalized
+
+          normalized
         end
       end
 
@@ -125,6 +130,22 @@ module Ai
         JSON.parse(raw_arguments.to_s).deep_stringify_keys
       rescue JSON::ParserError => e
         { error: 'invalid_tool_arguments', parse_error: e.message.to_s.truncate(200) }
+      end
+
+      def self.normalize_schema(schema, tool_name)
+        parameters = schema[:parameters] || schema['parameters']
+        unless parameters.is_a?(Hash)
+          Rails.logger.info(
+            "[AI_REPLY] {\"event\":\"tool_error\",\"reason\":\"invalid_tool_schema\",\"tool_name\":\"#{tool_name}\",\"details\":\"missing_parameters\"}"
+          )
+          return nil
+        end
+
+        normalized = schema.deep_stringify_keys
+        params = parameters.deep_stringify_keys
+        params['additionalProperties'] = false
+        normalized['parameters'] = params
+        normalized
       end
     end
   end
