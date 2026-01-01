@@ -37,7 +37,8 @@ class Ai::RespondToMessageJob < ApplicationJob
       message: message,
       prompt_id: account.ai_prompt_id,
       prompt_version: account.ai_prompt_version,
-      model: ai_model
+      model: ai_model,
+      phase: 'initial'
     )
     if AiUsageLog.exists?(account_id: account.id, message_id: message.id)
       return log_skip(account, conversation, message, SKIP_REASONS[:already_processed])
@@ -268,6 +269,9 @@ class Ai::RespondToMessageJob < ApplicationJob
           step: steps
         )
 
+        tool_payload = tool_payload_for(tool_name, result)
+        tool_result_json = JSON.generate(tool_payload)
+
         if result[:error].present?
           log_event(
             event: 'tool_error',
@@ -283,7 +287,8 @@ class Ai::RespondToMessageJob < ApplicationJob
             duration_ms: duration_ms,
             reason: result[:error],
             error_class: result[:error_class],
-            error_message: result[:error_message]
+            error_message: result[:error_message],
+            tool_result: tool_result_json
           )
         else
           log_event(
@@ -296,43 +301,48 @@ class Ai::RespondToMessageJob < ApplicationJob
             tool_name: tool_name,
             tool_category: category,
             tool_args: args,
-            tool_result: result[:content].to_s.truncate(200),
+            tool_result: tool_result_json,
             step: steps,
             duration_ms: duration_ms
           )
         end
 
-        tool_result_payload = (result[:content] || { error: result[:error], message: result[:error_message], tool: tool_name })
         if tool_call[:type] == 'function_call'
           tool_results << {
             type: 'function_call_output',
             call_id: tool_call[:call_id] || tool_call[:id],
-            output: tool_result_payload.to_json
+            output: tool_result_json
           }
         else
           tool_results << {
             type: 'tool_result',
             tool_call_id: tool_call[:id],
-            content: tool_result_payload.to_json
+            content: tool_result_json
           }
         end
       end
 
-      if tool_calls.size > max_tools_per_turn
-        tool_calls.drop(max_tools_per_turn).each do |tool_call|
-          tool_name = tool_call[:name]
-          log_event(
-            event: 'tool_error',
+        if tool_calls.size > max_tools_per_turn
+          tool_calls.drop(max_tools_per_turn).each do |tool_call|
+            tool_name = tool_call[:name]
+            log_event(
+              event: 'tool_error',
             account: account,
             conversation: conversation,
             message: message,
             prompt_id: account.ai_prompt_id,
             prompt_version: account.ai_prompt_version,
-            tool_name: tool_name,
-            step: steps,
-            reason: 'tool_limit_exceeded'
+              tool_name: tool_name,
+              step: steps,
+              reason: 'tool_limit_exceeded'
+            )
+          tool_result_payload = JSON.generate(
+            {
+              status: 'error',
+              tool: tool_name,
+              error: 'tool_limit_exceeded'
+            }
           )
-          tool_result_payload = { error: 'tool_limit_exceeded' }.to_json
           if tool_call[:type] == 'function_call'
             tool_results << {
               type: 'function_call_output',
@@ -350,6 +360,18 @@ class Ai::RespondToMessageJob < ApplicationJob
       end
 
       break if tool_results.empty?
+
+      log_event(
+        event: 'tool_followup_start',
+        account: account,
+        conversation: conversation,
+        message: message,
+        prompt_id: account.ai_prompt_id,
+        prompt_version: account.ai_prompt_version,
+        model: ai_model,
+        phase: 'followup',
+        step: steps
+      )
 
       followup_payload = {
         input: tool_results,
@@ -475,7 +497,8 @@ class Ai::RespondToMessageJob < ApplicationJob
       prompt_version: account&.ai_prompt_version,
       model: ai_model,
       balance_before: balance_before,
-      reason: reason
+      reason: reason,
+      phase: 'initial'
     )
     nil
   end
@@ -507,12 +530,14 @@ class Ai::RespondToMessageJob < ApplicationJob
     error_message: nil,
     output_types: nil,
     first_tool_name: nil,
-    tools_source: 'prompt'
+    tools_source: 'prompt',
+    phase: nil
   )
     payload = {
       event: event,
       reason: reason,
       tools_source: tools_source,
+      phase: phase,
       account_id: account&.id,
       conversation_id: conversation&.id,
       message_id: message&.id,
@@ -543,5 +568,25 @@ class Ai::RespondToMessageJob < ApplicationJob
 
   def ai_model
     ENV['AI_MODEL'].presence || ENV['OPENAI_MODEL'].presence || 'gpt-5.1-2025-11-13'
+  end
+
+  def tool_payload_for(tool_name, result)
+    if result[:error].present?
+      {
+        status: 'error',
+        tool: tool_name,
+        error: result[:error],
+        message: result[:error_message]
+      }
+    else
+      content = result[:content]
+      return content if content.is_a?(Hash)
+
+      if content.present?
+        { status: 'ok', tool: tool_name, result: content }
+      else
+        { status: 'ok', tool: tool_name }
+      end
+    end
   end
 end

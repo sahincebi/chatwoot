@@ -123,6 +123,7 @@ RSpec.describe Ai::RespondToMessageJob do
     )
 
     request_count = 0
+    allow(Rails.logger).to receive(:info)
     stub_request(:post, 'https://api.openai.com/v1/responses')
       .with do |req|
         request_count += 1
@@ -135,6 +136,9 @@ RSpec.describe Ai::RespondToMessageJob do
         else
           expect(body['previous_response_id']).to be_present
           expect(body['input']).to be_an(Array)
+          tool_item = body['input'].first
+          output = tool_item['output'] || tool_item['content']
+          expect { JSON.parse(output) }.not_to raise_error
         end
         true
       end
@@ -179,6 +183,8 @@ RSpec.describe Ai::RespondToMessageJob do
     outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false)
     expect(outgoing.count).to eq(1)
     expect(outgoing.last.content).to include('final answer')
+    expect(Rails.logger).to have_received(:info).with(include('"phase":"initial"')).at_least(:once)
+    expect(Rails.logger).to have_received(:info).with(include('"phase":"followup"')).at_least(:once)
   end
 
   it 'returns early on openai 400 without replying' do

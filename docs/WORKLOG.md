@@ -2736,3 +2736,26 @@
     - 5 examples, 0 failures
 - Notlar / Riskler:
   - Canli test: "Yarin demo ayarla" mesaji sonrasi tool_call -> tool_result -> success beklenir.
+## 2026-01-01 17:36
+- Tarih/Saat (TR): 2026-01-01 17:36
+- Amac: Tool loop ciktilarini JSON formatinda standartlastirmak ve follow-up phase loglarini ayirmak.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+- Test Sahnesi + Dogrulama:
+  - Amac: tool_result payload'in valid JSON olmasi ve follow-up phase loglari.
+  - Kurulum / On Sart: ai_prompt_id/version + ai_tool_policy.enabled.
+  - Komutlar:
+    - rspec (job spec)
+  - Beklenen cikti:
+    - tool_result JSON.parse edilebilir
+    - [AI_REPLY] phase=initial ve phase=followup loglari
+    - rspec 0 failures
+  - Sonuc (rspec):
+    - 5 examples, 0 failures
+- Notlar / Riskler:
+  - Canli test: "Yarin demo ayarla" mesaji sonrasi tool_call -> tool_result -> followup -> success.
