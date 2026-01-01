@@ -123,11 +123,29 @@ class Ai::RespondToMessageJob < ApplicationJob
       balance_after = wallet.balance_cents
     end
 
-    normalized_text = normalize_ai_text(response_payload[:text])
+    normalized = normalize_ai_output(response_payload[:text])
+    normalized_text = normalized[:text]
+    log_event(
+      event: 'normalized_reply',
+      account: account,
+      conversation: conversation,
+      message: message,
+      prompt_id: account.ai_prompt_id,
+      prompt_version: account.ai_prompt_version,
+      model: response_payload[:model],
+      raw_is_json: normalized[:raw_is_json],
+      ai_action: normalized[:action],
+      ai_state: normalized[:state]
+    )
     params = ActionController::Parameters.new(
       content: normalized_text,
       message_type: 'outgoing',
-      private: false
+      private: false,
+      content_attributes: {
+        ai_raw: normalized[:raw],
+        ai_action: normalized[:action],
+        ai_state: normalized[:state]
+      }.compact
     )
     Messages::MessageBuilder.new(ai_user, conversation, params).perform
 
@@ -459,18 +477,35 @@ class Ai::RespondToMessageJob < ApplicationJob
     (cost * 100).round
   end
 
-  def normalize_ai_text(raw_text)
-    return raw_text unless raw_text.is_a?(String)
-
-    json_candidate = extract_json_candidate(raw_text)
-    return raw_text if json_candidate.blank?
+  def normalize_ai_output(raw_text)
+    raw_string = raw_text.is_a?(String) ? raw_text : raw_text.to_s
+    json_candidate = extract_json_candidate(raw_string)
+    return { text: raw_string, raw: raw_string, raw_is_json: false } if json_candidate.blank?
 
     parsed = JSON.parse(json_candidate)
-    extracted = parsed.dig('data', 'message') || parsed['message'] || parsed.dig('data', 'text') || parsed.dig('data', 'content')
-    extracted.presence || raw_text
+    messages = parsed['messages']
+    extracted = if messages.is_a?(Array)
+                  texts = messages.filter_map do |item|
+                    next unless item.is_a?(Hash)
+                    next unless item['type'] == 'text'
+
+                    item['text']
+                  end
+                  texts.join("\n")
+                else
+                  parsed.dig('data', 'message') || parsed['message'] || parsed.dig('data', 'text') || parsed.dig('data', 'content')
+                end
+
+    {
+      text: extracted.presence || raw_string,
+      raw: raw_string,
+      raw_is_json: true,
+      action: parsed['action'],
+      state: parsed['state']
+    }
   rescue JSON::ParserError => e
     Rails.logger.info("[AI_REPLY] normalize_error=#{e.class}: #{e.message.to_s.truncate(200)}")
-    raw_text
+    { text: raw_string, raw: raw_string, raw_is_json: false }
   end
 
   def extract_json_candidate(raw_text)
@@ -531,13 +566,19 @@ class Ai::RespondToMessageJob < ApplicationJob
     output_types: nil,
     first_tool_name: nil,
     tools_source: 'prompt',
-    phase: nil
+    phase: nil,
+    raw_is_json: nil,
+    ai_action: nil,
+    ai_state: nil
   )
     payload = {
       event: event,
       reason: reason,
       tools_source: tools_source,
       phase: phase,
+      raw_is_json: raw_is_json,
+      ai_action: ai_action,
+      ai_state: ai_state,
       account_id: account&.id,
       conversation_id: conversation&.id,
       message_id: message&.id,

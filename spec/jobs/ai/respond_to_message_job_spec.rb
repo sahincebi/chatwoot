@@ -283,4 +283,63 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(outgoing.last.content).to include('final from function_call')
   end
 
+  it 'normalizes structured JSON output to plain text and stores raw payload' do
+    raw_json = {
+      'action' => 'chat.reply',
+      'state' => 'collect',
+      'messages' => [
+        { 'type' => 'text', 'text' => 'Merhaba' },
+        { 'type' => 'text', 'text' => 'Nasil yardim edebilirim?' }
+      ]
+    }.to_json
+
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_json',
+          'output_text' => raw_json,
+          'model' => 'gpt-test',
+          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    allow(Rails.logger).to receive(:info)
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
+    expect(outgoing.content).to eq("Merhaba\nNasil yardim edebilirim?")
+    expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
+    expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
+    expect(outgoing.content_attributes['ai_state']).to eq('collect')
+    expect(Rails.logger).to have_received(:info).with(include('"event":"normalized_reply"')).at_least(:once)
+  end
+
+  it 'passes through plain text output and stores raw text' do
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_plain',
+          'output_text' => 'plain reply',
+          'model' => 'gpt-test',
+          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
+    expect(outgoing.content).to eq('plain reply')
+    expect(outgoing.content_attributes['ai_raw']).to eq('plain reply')
+    expect(outgoing.content_attributes['ai_action']).to be_nil
+    expect(outgoing.content_attributes['ai_state']).to be_nil
+  end
+
 end

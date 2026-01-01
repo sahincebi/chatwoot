@@ -2759,3 +2759,27 @@
     - 5 examples, 0 failures
 - Notlar / Riskler:
   - Canli test: "Yarin demo ayarla" mesaji sonrasi tool_call -> tool_result -> followup -> success.
+## 2026-01-01 17:56
+- Tarih/Saat (TR): 2026-01-01 17:56
+- Amac: AI cevaplarinda JSON wrapper'i normalize edip kullaniciya yalnizca duz metin gostermek.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose restart sidekiq
+  - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+- Test Sahnesi + Dogrulama:
+  - Amac: JSON wrapper'in UI'da gorunmemesi, ai_raw/ai_action/ai_state kaydi.
+  - Kurulum / On Sart: ai_prompt_id/version mevcut.
+  - Komutlar:
+    - rspec (job spec)
+  - Beklenen cikti:
+    - JSON wrapper -> duz metin
+    - ai_raw + ai_action + ai_state content_attributes icinde
+    - rspec 0 failures
+  - Sonuc (rspec):
+    - 7 examples, 0 failures
+- Notlar / Riskler:
+  - UI'da JSON gorulmesi durumunda sidekiq restart gerekiyor olabilir.
