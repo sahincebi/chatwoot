@@ -1,5 +1,26 @@
 # Worklog
 
+## 2026-01-01 03:41
+- Tarih/Saat (TR): 2026-01-01 03:41
+- Amac: AI tool-calling loop + calendar tools + policy enforcement eklemek.
+- Sorun / Belirti: Tool call ciktilari islenmiyor, loop yoktu.
+- Kok Neden (Varsa): RespondToMessageJob tool call/allowlist/policy adimlarini icermiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/services/ai/tools/base_tool.rb
+  - app/services/ai/tools/calendar_query_availability.rb
+  - app/services/ai/tools/calendar_create_event.rb
+  - app/services/ai/tools/tool_registry.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "a=Account.new; puts a.ai_tool_policy_with_defaults.inspect"
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+- Dogrulama:
+  - runner output: {"enabled"=>false, "allowed_tools"=>{}, "limits"=>{"max_tools_per_turn"=>3, "max_total_steps"=>8}}
+  - rspec: 3 examples, 0 failures
+- Notlar / Riskler:
+  - Ornek loglar: [AI_REPLY] {"event":"tool_call",...} ve [AI_REPLY] {"event":"tool_error",...}
+
 ## 2025-12-31 16:28
 - Tarih/Saat (TR): 2025-12-31 16:28
 - Amac: AI auto-reply cevabini JSON yerine duz metne normaliz etmek.
@@ -2531,3 +2552,5 @@
     - [AI_REPLY] {"event":"success","prompt_id":"pmpt_...","response_id":"resp_...","input_tokens":3592,"output_tokens":250,"total_tokens":3842,"cost_cents":0,"balance_before":13234,"balance_after":13234}
 - Notlar / Riskler:
   - Skip reason seti: already_processed, ai_agent_missing, not_assigned_to_ai, ai_disabled, missing_prompt, missing_wallet, insufficient_balance, ai_response_empty, tool_policy_disabled.
+
+

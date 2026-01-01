@@ -156,9 +156,7 @@ class Ai::RespondToMessageJob < ApplicationJob
       #{message.content_for_llm}
     TEXT
 
-    payload = {
-      input: input_text
-    }
+    payload = { input: input_text }
     if ENV['AI_MODEL'].present?
       payload[:model] = ENV['AI_MODEL']
     end
@@ -169,7 +167,176 @@ class Ai::RespondToMessageJob < ApplicationJob
       end
       payload[:prompt] = prompt_obj
     end
+    tool_schemas = Ai::Tools::ToolRegistry.tool_schemas_for(account)
+    payload[:tools] = tool_schemas if tool_schemas.any?
 
+    response_payload = call_openai(account, conversation, message, uri, api_key, payload)
+    return response_payload unless tool_schemas.any?
+
+    run_tool_loop(account, conversation, message, uri, api_key, response_payload, tool_schemas)
+  end
+
+  def extract_text(parsed)
+    return parsed['output_text'] if parsed['output_text'].present?
+
+    outputs = parsed['output'] || []
+    outputs.each do |output|
+      contents = output['content'] || []
+      contents.each do |content|
+        text = content['text'] || content.dig('text', 'value')
+        return text if text.present?
+      end
+    end
+
+    parsed.dig('choices', 0, 'message', 'content')
+  end
+
+  def extract_tool_calls(parsed)
+    outputs = parsed['output'] || []
+    outputs.filter_map do |output|
+      next unless output['type'] == 'tool_call'
+
+      {
+        id: output['id'] || output['call_id'],
+        name: output['name'],
+        arguments: output['arguments']
+      }
+    end
+  end
+
+  def run_tool_loop(account, conversation, message, uri, api_key, response_payload, tool_schemas)
+    policy = account.ai_tool_policy_with_defaults
+    limits = policy['limits'] || {}
+    max_tools_per_turn = limits['max_tools_per_turn'].to_i
+    max_total_steps = limits['max_total_steps'].to_i
+    max_tools_per_turn = 3 if max_tools_per_turn <= 0
+    max_total_steps = 6 if max_total_steps <= 0
+
+    tool_calls = extract_tool_calls(response_payload[:raw_response])
+    return response_payload if tool_calls.empty?
+
+    unless account.tool_calling_enabled? && tool_schemas.any?
+      log_event(
+        event: 'tool_error',
+        account: account,
+        conversation: conversation,
+        message: message,
+        prompt_id: account.ai_prompt_id,
+        prompt_version: account.ai_prompt_version,
+        reason: SKIP_REASONS[:tool_policy_disabled],
+        step: 1
+      )
+      return response_payload
+    end
+
+    steps = 0
+    while tool_calls.any? && steps < max_total_steps
+      steps += 1
+      tool_results = []
+
+      tool_calls.first(max_tools_per_turn).each do |tool_call|
+        tool_name = tool_call[:name]
+        log_event(
+          event: 'tool_call',
+          account: account,
+          conversation: conversation,
+          message: message,
+          prompt_id: account.ai_prompt_id,
+          prompt_version: account.ai_prompt_version,
+          tool_name: tool_name,
+          step: steps
+        )
+
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        result = Ai::Tools::ToolRegistry.execute(account: account, tool_call: tool_call)
+        duration_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+
+        if result[:error].present?
+          log_event(
+            event: 'tool_error',
+            account: account,
+            conversation: conversation,
+            message: message,
+            prompt_id: account.ai_prompt_id,
+            prompt_version: account.ai_prompt_version,
+            tool_name: tool_name,
+            step: steps,
+            duration_ms: duration_ms,
+            reason: result[:error]
+          )
+        else
+          log_event(
+            event: 'tool_result',
+            account: account,
+            conversation: conversation,
+            message: message,
+            prompt_id: account.ai_prompt_id,
+            prompt_version: account.ai_prompt_version,
+            tool_name: tool_name,
+            step: steps,
+            duration_ms: duration_ms
+          )
+        end
+
+        tool_results << {
+          type: 'tool_result',
+          tool_call_id: tool_call[:id],
+          content: result.to_json
+        }
+      end
+
+      if tool_calls.size > max_tools_per_turn
+        tool_calls.drop(max_tools_per_turn).each do |tool_call|
+          tool_name = tool_call[:name]
+          log_event(
+            event: 'tool_error',
+            account: account,
+            conversation: conversation,
+            message: message,
+            prompt_id: account.ai_prompt_id,
+            prompt_version: account.ai_prompt_version,
+            tool_name: tool_name,
+            step: steps,
+            reason: 'tool_limit_exceeded'
+          )
+          tool_results << {
+            type: 'tool_result',
+            tool_call_id: tool_call[:id],
+            content: { error: 'tool_limit_exceeded' }.to_json
+          }
+        end
+      end
+
+      break if tool_results.empty?
+
+      followup_payload = {
+        input: tool_results,
+        previous_response_id: response_payload[:response_id]
+      }
+      followup_payload[:model] = ENV['AI_MODEL'] if ENV['AI_MODEL'].present?
+      followup_payload[:tools] = tool_schemas if tool_schemas.any?
+
+      response_payload = call_openai(account, conversation, message, uri, api_key, followup_payload)
+      tool_calls = extract_tool_calls(response_payload[:raw_response])
+    end
+
+    if tool_calls.any?
+      log_event(
+        event: 'tool_error',
+        account: account,
+        conversation: conversation,
+        message: message,
+        prompt_id: account.ai_prompt_id,
+        prompt_version: account.ai_prompt_version,
+        reason: 'tool_max_steps_exceeded',
+        step: steps
+      )
+    end
+
+    response_payload
+  end
+
+  def call_openai(account, conversation, message, uri, api_key, payload)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = uri.scheme == 'https'
     request = Net::HTTP::Post.new(uri.request_uri)
@@ -204,21 +371,6 @@ class Ai::RespondToMessageJob < ApplicationJob
       raw_response: parsed,
       http_status: http_status
     }
-  end
-
-  def extract_text(parsed)
-    return parsed['output_text'] if parsed['output_text'].present?
-
-    outputs = parsed['output'] || []
-    outputs.each do |output|
-      contents = output['content'] || []
-      contents.each do |content|
-        text = content['text'] || content.dig('text', 'value')
-        return text if text.present?
-      end
-    end
-
-    parsed.dig('choices', 0, 'message', 'content')
   end
 
   def calculate_cost_cents(input_tokens, output_tokens)
@@ -286,7 +438,10 @@ class Ai::RespondToMessageJob < ApplicationJob
     balance_before: nil,
     balance_after: nil,
     reason: nil,
-    http_status: nil
+    http_status: nil,
+    tool_name: nil,
+    step: nil,
+    duration_ms: nil
   )
     payload = {
       event: event,
@@ -304,7 +459,10 @@ class Ai::RespondToMessageJob < ApplicationJob
       cost_cents: cost_cents,
       balance_before: balance_before,
       balance_after: balance_after,
-      http_status: http_status
+      http_status: http_status,
+      tool_name: tool_name,
+      step: step,
+      duration_ms: duration_ms
     }.compact
     Rails.logger.info("[AI_REPLY] #{payload.to_json}")
   end
