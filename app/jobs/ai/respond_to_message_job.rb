@@ -36,7 +36,8 @@ class Ai::RespondToMessageJob < ApplicationJob
       conversation: conversation,
       message: message,
       prompt_id: account.ai_prompt_id,
-      prompt_version: account.ai_prompt_version
+      prompt_version: account.ai_prompt_version,
+      model: ai_model
     )
     if AiUsageLog.exists?(account_id: account.id, message_id: message.id)
       return log_skip(account, conversation, message, SKIP_REASONS[:already_processed])
@@ -173,10 +174,7 @@ class Ai::RespondToMessageJob < ApplicationJob
       #{message.content_for_llm}
     TEXT
 
-    payload = { input: input_text }
-    if ENV['AI_MODEL'].present?
-      payload[:model] = ENV['AI_MODEL']
-    end
+    payload = { input: input_text, model: ai_model }
     if account.ai_prompt_id.present?
       prompt_obj = { id: account.ai_prompt_id }
       if account.ai_prompt_version.present?
@@ -355,9 +353,9 @@ class Ai::RespondToMessageJob < ApplicationJob
 
       followup_payload = {
         input: tool_results,
-        previous_response_id: response_payload[:response_id]
+        previous_response_id: response_payload[:response_id],
+        model: ai_model
       }
-      followup_payload[:model] = ENV['AI_MODEL'] if ENV['AI_MODEL'].present?
 
       response_payload = call_openai(account, conversation, message, uri, api_key, followup_payload)
       tool_calls = extract_tool_calls(response_payload[:raw_response])
@@ -404,7 +402,7 @@ class Ai::RespondToMessageJob < ApplicationJob
         message: message,
         prompt_id: account.ai_prompt_id,
         prompt_version: account.ai_prompt_version,
-        model: parsed['model'],
+        model: payload[:model] || parsed['model'],
         response_id: parsed['id'],
         reason: 'openai_error',
         http_status: http_status,
@@ -415,7 +413,7 @@ class Ai::RespondToMessageJob < ApplicationJob
     {
       text: http_status >= 400 ? nil : extract_text(parsed),
       usage: parsed['usage'],
-      model: parsed['model'],
+      model: parsed['model'] || payload[:model],
       response_id: parsed['id'],
       raw_response: parsed,
       http_status: http_status,
@@ -475,6 +473,7 @@ class Ai::RespondToMessageJob < ApplicationJob
       message: message,
       prompt_id: account&.ai_prompt_id,
       prompt_version: account&.ai_prompt_version,
+      model: ai_model,
       balance_before: balance_before,
       reason: reason
     )
@@ -540,5 +539,9 @@ class Ai::RespondToMessageJob < ApplicationJob
       first_tool_name: first_tool_name
     }.compact
     Rails.logger.info("[AI_REPLY] #{payload.to_json}")
+  end
+
+  def ai_model
+    ENV['AI_MODEL'].presence || ENV['OPENAI_MODEL'].presence || 'gpt-5.1-2025-11-13'
   end
 end

@@ -2712,3 +2712,27 @@
     - 5 examples, 0 failures
 - Notlar / Riskler:
   - [AI_REPLY] loglarina tools_source=prompt eklendi.
+## 2026-01-01 17:18
+- Tarih/Saat (TR): 2026-01-01 17:18
+- Amac: OpenAI responses call'larinda model parametresini zorunlu yapmak (initial + follow-up).
+- Sorun / Belirti:
+  - openai_error 400: Missing required parameter: 'model'.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+- Test Sahnesi + Dogrulama:
+  - Amac: initial ve follow-up responses.create payload'inda model gonderildigini dogrulamak.
+  - Kurulum / On Sart: AI_MODEL yoksa OPENAI_MODEL, o da yoksa fallback gpt-5.1-2025-11-13.
+  - Komutlar:
+    - rspec (job spec)
+  - Beklenen cikti:
+    - payload'da model present
+    - rspec 0 failures
+  - Sonuc (rspec):
+    - 5 examples, 0 failures
+- Notlar / Riskler:
+  - Canli test: "Yarin demo ayarla" mesaji sonrasi tool_call -> tool_result -> success beklenir.

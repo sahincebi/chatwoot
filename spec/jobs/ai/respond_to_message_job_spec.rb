@@ -36,6 +36,11 @@ RSpec.describe Ai::RespondToMessageJob do
 
   it 'dedupes usage, debit, and outgoing message for the same message id' do
     stub_request(:post, 'https://api.openai.com/v1/responses')
+      .with do |req|
+        body = JSON.parse(req.body)
+        expect(body['model']).to be_present
+        true
+      end
       .to_return(
         status: 200,
         body: {
@@ -69,6 +74,11 @@ RSpec.describe Ai::RespondToMessageJob do
 
   it 'skips tool loop when policy is disabled' do
     stub_request(:post, 'https://api.openai.com/v1/responses')
+      .with do |req|
+        body = JSON.parse(req.body)
+        expect(body['model']).to be_present
+        true
+      end
       .to_return(
         status: 200,
         body: {
@@ -117,10 +127,14 @@ RSpec.describe Ai::RespondToMessageJob do
       .with do |req|
         request_count += 1
         body = JSON.parse(req.body)
+        expect(body['model']).to be_present
         expect(body).not_to have_key('tools')
         if request_count == 1
           expect(body.dig('prompt', 'id')).to eq('pmpt_test')
           expect(body.dig('prompt', 'version')).to eq('1')
+        else
+          expect(body['previous_response_id']).to be_present
+          expect(body['input']).to be_an(Array)
         end
         true
       end
@@ -169,6 +183,11 @@ RSpec.describe Ai::RespondToMessageJob do
 
   it 'returns early on openai 400 without replying' do
     stub_request(:post, 'https://api.openai.com/v1/responses')
+      .with do |req|
+        body = JSON.parse(req.body)
+        expect(body['model']).to be_present
+        true
+      end
       .to_return(
         status: 400,
         body: { error: { message: "Missing required parameter: 'prompt.id'." } }.to_json,
@@ -202,7 +221,19 @@ RSpec.describe Ai::RespondToMessageJob do
       settings: {}
     )
 
+    request_count = 0
     stub_request(:post, 'https://api.openai.com/v1/responses')
+      .with do |req|
+        request_count += 1
+        body = JSON.parse(req.body)
+        expect(body['model']).to be_present
+        expect(body).not_to have_key('tools')
+        if request_count == 2
+          expect(body['previous_response_id']).to be_present
+          expect(body['input']).to be_an(Array)
+        end
+        true
+      end
       .to_return(
         {
           status: 200,
