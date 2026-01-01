@@ -1,5 +1,21 @@
 # Worklog
 
+## 2026-01-01 03:54
+- Tarih/Saat (TR): 2026-01-01 03:54
+- Amac: AI tool loop icin smoke test sahnesi tanimlamak.
+- Sorun / Belirti: Gercek tool_call akisi gozlemi icin adimlar eksikti.
+- Kok Neden (Varsa): Yok.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose logs -f --tail=200 rails | egrep "\[AI_REPLY\]"
+  - docker compose exec -T rails bundle exec rails runner "account=Account.find(1); account.update!(ai_enabled:true, ai_tool_policy:{'enabled'=>true, 'allowed_tools'=>{'calendar_query_availability'=>true,'calendar_create_event'=>true}, 'limits'=>{'max_tools_per_turn'=>3,'max_total_steps'=>6}}); AiIntegration.find_or_initialize_by(account_id: account.id, provider: 'google_calendar').update!(enabled:true, refresh_token:'dummy', settings:{'calendar_id'=>'primary','timezone'=>'Europe/Istanbul'}); AiWallet.find_or_create_by!(account_id: account.id).update!(balance_cents: 50000)"
+- Dogrulama:
+  - Beklenen log sirasi: tool_call -> tool_result -> tool_call -> tool_result -> success
+  - Beklenen UI: randevu onayi veya uygunluk mesaji
+- Notlar / Riskler:
+  - Dummy token ile tool_error gorunebilir; job crash etmemeli.
+
 ## 2026-01-01 03:41
 - Tarih/Saat (TR): 2026-01-01 03:41
 - Amac: AI tool-calling loop + calendar tools + policy enforcement eklemek.
@@ -2552,5 +2568,7 @@
     - [AI_REPLY] {"event":"success","prompt_id":"pmpt_...","response_id":"resp_...","input_tokens":3592,"output_tokens":250,"total_tokens":3842,"cost_cents":0,"balance_before":13234,"balance_after":13234}
 - Notlar / Riskler:
   - Skip reason seti: already_processed, ai_agent_missing, not_assigned_to_ai, ai_disabled, missing_prompt, missing_wallet, insufficient_balance, ai_response_empty, tool_policy_disabled.
+
+
 
 
