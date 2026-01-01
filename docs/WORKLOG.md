@@ -2690,3 +2690,25 @@
     - 7 examples, 0 failures
 - Notlar / Riskler:
   - sidekiq restart yapildi; openai_error 400 beklenmiyor.
+## 2026-01-01 17:06
+- Tarih/Saat (TR): 2026-01-01 17:06
+- Amac: OpenAI Responses isteginden tools schema gonderimini kaldirmak; tool loopu prompt tarafindan tetiklenen function_call ile calistirmak.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+- Test Sahnesi + Dogrulama:
+  - Amac: tools gonderilmeden prompt + input ile cevap alinmasi ve tool loop davranisi.
+  - Kurulum / On Sart: ai_prompt_id/version ve ai_tool_policy.enabled.
+  - Komutlar:
+    - rspec (job spec)
+  - Beklenen cikti:
+    - request payload'da tools olmamali
+    - rspec 0 failures
+  - Sonuc (rspec):
+    - 5 examples, 0 failures
+- Notlar / Riskler:
+  - [AI_REPLY] loglarina tools_source=prompt eklendi.

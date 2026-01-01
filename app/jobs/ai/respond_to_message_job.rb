@@ -184,13 +184,8 @@ class Ai::RespondToMessageJob < ApplicationJob
       end
       payload[:prompt] = prompt_obj
     end
-    tool_schemas = Ai::Tools::ToolRegistry.tool_schemas_for(account)
-    payload[:tools] = tool_schemas if tool_schemas.any?
-
     response_payload = call_openai(account, conversation, message, uri, api_key, payload)
-    return response_payload unless tool_schemas.any?
-
-    run_tool_loop(account, conversation, message, uri, api_key, response_payload, tool_schemas)
+    run_tool_loop(account, conversation, message, uri, api_key, response_payload)
   end
 
   def extract_text(parsed)
@@ -224,7 +219,7 @@ class Ai::RespondToMessageJob < ApplicationJob
     end
   end
 
-  def run_tool_loop(account, conversation, message, uri, api_key, response_payload, tool_schemas)
+  def run_tool_loop(account, conversation, message, uri, api_key, response_payload)
     policy = account.ai_tool_policy_with_defaults
     limits = policy['limits'] || {}
     max_tools_per_turn = limits['max_tools_per_turn'].to_i
@@ -235,7 +230,7 @@ class Ai::RespondToMessageJob < ApplicationJob
     tool_calls = extract_tool_calls(response_payload[:raw_response])
     return response_payload if tool_calls.empty?
 
-    unless account.tool_calling_enabled? && tool_schemas.any?
+    unless account.tool_calling_enabled?
       log_event(
         event: 'tool_error',
         account: account,
@@ -363,7 +358,6 @@ class Ai::RespondToMessageJob < ApplicationJob
         previous_response_id: response_payload[:response_id]
       }
       followup_payload[:model] = ENV['AI_MODEL'] if ENV['AI_MODEL'].present?
-      followup_payload[:tools] = tool_schemas if tool_schemas.any?
 
       response_payload = call_openai(account, conversation, message, uri, api_key, followup_payload)
       tool_calls = extract_tool_calls(response_payload[:raw_response])
@@ -513,11 +507,13 @@ class Ai::RespondToMessageJob < ApplicationJob
     error_class: nil,
     error_message: nil,
     output_types: nil,
-    first_tool_name: nil
+    first_tool_name: nil,
+    tools_source: 'prompt'
   )
     payload = {
       event: event,
       reason: reason,
+      tools_source: tools_source,
       account_id: account&.id,
       conversation_id: conversation&.id,
       message_id: message&.id,

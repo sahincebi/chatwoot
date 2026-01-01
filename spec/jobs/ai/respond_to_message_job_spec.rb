@@ -117,13 +117,10 @@ RSpec.describe Ai::RespondToMessageJob do
       .with do |req|
         request_count += 1
         body = JSON.parse(req.body)
+        expect(body).not_to have_key('tools')
         if request_count == 1
           expect(body.dig('prompt', 'id')).to eq('pmpt_test')
           expect(body.dig('prompt', 'version')).to eq('1')
-          tools = body['tools'] || []
-          expect(tools.first['type']).to eq('function')
-          expect(tools.first['name']).to be_present
-          expect(tools.first).not_to have_key('function')
         end
         true
       end
@@ -249,59 +246,4 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(outgoing.last.content).to include('final from function_call')
   end
 
-  it 'filters tools with missing name from the payload' do
-    account.update!(
-      ai_tool_policy: {
-        'enabled' => true,
-        'allowed_tools' => { 'demo' => true },
-        'limits' => { 'max_tools_per_turn' => 3, 'max_total_steps' => 3 }
-      }
-    )
-    account.ai_integrations.create!(
-      provider: 'google_calendar',
-      enabled: true,
-      refresh_token: 'refresh-token',
-      settings: {}
-    )
-
-    original_config = Ai::Tools::ToolRegistry::TOOL_CONFIG
-    invalid_tool = Class.new do
-      def self.tool_schema
-        { type: 'function', name: nil, description: 'invalid', parameters: {} }
-      end
-    end
-
-    stub_const(
-      'Ai::Tools::ToolRegistry::TOOL_CONFIG',
-      original_config.merge(
-        'invalid_tool' => { klass: invalid_tool, category: 'demo', requires_calendar: false }
-      )
-    )
-
-    stub_request(:post, 'https://api.openai.com/v1/responses')
-      .with do |req|
-        body = JSON.parse(req.body)
-        tools = body['tools'] || []
-        expect(tools).to all(include('name'))
-        expect(tools.map { |tool| tool['name'] }).to all(be_present)
-        true
-      end
-      .to_return(
-        status: 200,
-        body: {
-          'id' => 'resp_tool_schema',
-          'output_text' => 'ok',
-          'model' => 'gpt-test',
-          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
-        }.to_json,
-        headers: { 'Content-Type' => 'application/json' }
-      )
-
-    with_modified_env('OPENAI_API_KEY' => 'test') do
-      described_class.perform_now(message.id)
-    end
-
-    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false)
-    expect(outgoing.count).to eq(1)
-  end
 end
