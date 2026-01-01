@@ -41,7 +41,14 @@ module Ai
           config = TOOL_CONFIG[tool_name]
           next unless allowed_by_policy?(account, tool_name, config[:category])
 
-          config[:klass].tool_schema
+          schema = config[:klass].tool_schema
+          name = schema[:name] || schema['name']
+          unless name.present?
+            Rails.logger.info("[AI_REPLY] invalid_tool_schema tool=#{tool_name} reason=missing_name")
+            next
+          end
+
+          schema
         end
       end
 

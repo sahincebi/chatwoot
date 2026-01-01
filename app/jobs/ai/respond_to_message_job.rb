@@ -178,7 +178,7 @@ class Ai::RespondToMessageJob < ApplicationJob
       payload[:model] = ENV['AI_MODEL']
     end
     if account.ai_prompt_id.present?
-      prompt_obj = { prompt_id: account.ai_prompt_id }
+      prompt_obj = { id: account.ai_prompt_id }
       if account.ai_prompt_version.present?
         prompt_obj[:version] = account.ai_prompt_version.to_s
       end

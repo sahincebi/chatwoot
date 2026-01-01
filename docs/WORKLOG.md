@@ -2638,3 +2638,31 @@
 
 
 
+## 2026-01-01 16:10
+- Tarih/Saat (TR): 2026-01-01 16:10
+- Amac: OpenAI Responses payload formatini duzeltmek (prompt.id + tools name) ve tool schema guard eklemek.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/services/ai/tools/tool_registry.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "a=Account.find(1); a.update!(ai_prompt_id: a.ai_prompt_id.presence || 'pmpt_test', ai_prompt_version: a.ai_prompt_version.presence || 1, ai_tool_policy: {'enabled'=>true,'allowed_tools'=>{'demo'=>true,'email'=>true,'conversation'=>true,'calendar'=>true},'limits'=>{'max_tools_per_turn'=>3,'max_total_steps'=>6}}); puts({ai_prompt_id:a.ai_prompt_id, ai_prompt_version:a.ai_prompt_version, ai_tool_policy:a.ai_tool_policy}.inspect)"
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+- Test Sahnesi + Dogrulama:
+  - Amac: Responses API prompt/tools payload ve tool name guard regresyon testi.
+  - Kurulum / On Sart: Account 1 icin ai_prompt_id/version ve ai_tool_policy enabled.
+  - Komutlar:
+    - runner (Account 1 guncelleme)
+    - rspec (job spec)
+  - Beklenen cikti:
+    - prompt.id set
+    - tools[].name present
+    - rspec 0 failures
+  - Sonuc (runner ciktisi):
+    - {ai_prompt_id: "pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142", ai_prompt_version: 1, ai_tool_policy: {"enabled" => true, "allowed_tools" => {"demo" => true, "email" => true, "conversation" => true, "calendar" => true}, "limits" => {"max_tools_per_turn" => 3, "max_total_steps" => 6}}}
+  - Sonuc (rspec):
+    - 6 examples, 0 failures
+- Notlar / Riskler:
+  - rspec sirasinda deprecation warning mevcut; test sonucu basarili.
