@@ -2860,4 +2860,6 @@
     - 13 examples, 0 failures
 - Notlar / Riskler:
   - ENV yoksa settings fallback kullanilir; token/secret loglanmaz.
+  - Commit: 15d8160b1
+
 
