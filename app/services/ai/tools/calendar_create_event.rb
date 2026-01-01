@@ -8,22 +8,21 @@ module Ai
       def self.tool_schema
         {
           type: 'function',
-          function: {
-            name: tool_name,
-            description: 'Create a calendar event.',
-            parameters: {
-              type: 'object',
-              properties: {
-                start_time: { type: 'string', description: 'ISO8601 start time' },
-                end_time: { type: 'string', description: 'ISO8601 end time' },
-                timezone: { type: 'string', description: 'IANA timezone' },
-                summary: { type: 'string', description: 'Event title' },
-                description: { type: 'string', description: 'Event description' },
-                calendar_id: { type: 'string', description: 'Calendar id' }
-              },
-              required: %w[start_time end_time summary timezone]
-            }
-          }
+          name: tool_name,
+          description: 'Create a calendar event.',
+          parameters: {
+            type: 'object',
+            properties: {
+              start_time: { type: 'string', description: 'ISO8601 start time' },
+              end_time: { type: 'string', description: 'ISO8601 end time' },
+              timezone: { type: 'string', description: 'IANA timezone' },
+              summary: { type: 'string', description: 'Event title' },
+              description: { type: 'string', description: 'Event description' },
+              calendar_id: { type: 'string', description: 'Calendar id' }
+            },
+            required: %w[start_time end_time summary timezone]
+          },
+          strict: false
         }
       end
 

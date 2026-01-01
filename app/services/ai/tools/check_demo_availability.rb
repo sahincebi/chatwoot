@@ -8,18 +8,17 @@ module Ai
       def self.tool_schema
         {
           type: 'function',
-          function: {
-            name: tool_name,
-            description: 'Check demo availability for a given date.',
-            parameters: {
-              type: 'object',
-              properties: {
-                date: { type: 'string', description: 'Date in YYYY-MM-DD' },
-                tz: { type: 'string', description: 'IANA timezone' }
-              },
-              required: %w[date tz]
-            }
-          }
+          name: tool_name,
+          description: 'Check demo availability for a given date.',
+          parameters: {
+            type: 'object',
+            properties: {
+              date: { type: 'string', description: 'Date in YYYY-MM-DD' },
+              tz: { type: 'string', description: 'IANA timezone' }
+            },
+            required: %w[date tz]
+          },
+          strict: true
         }
       end
 

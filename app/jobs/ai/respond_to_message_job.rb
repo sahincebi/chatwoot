@@ -51,6 +51,7 @@ class Ai::RespondToMessageJob < ApplicationJob
     return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents) unless wallet.balance_cents.to_i.positive?
 
     response_payload = fetch_ai_response(account, conversation, message)
+    return if response_payload[:error] == 'openai_error'
     unless response_payload[:text].present?
       reason = response_payload[:output_types].present? ? SKIP_REASONS[:tool_loop_failed] : SKIP_REASONS[:ai_response_empty]
       log_event(
@@ -177,7 +178,7 @@ class Ai::RespondToMessageJob < ApplicationJob
       payload[:model] = ENV['AI_MODEL']
     end
     if account.ai_prompt_id.present?
-      prompt_obj = { id: account.ai_prompt_id }
+      prompt_obj = { prompt_id: account.ai_prompt_id }
       if account.ai_prompt_version.present?
         prompt_obj[:version] = account.ai_prompt_version.to_s
       end
@@ -399,7 +400,9 @@ class Ai::RespondToMessageJob < ApplicationJob
     first_tool_name = output_items.find { |item| %w[function_call tool_call].include?(item['type']) }&.fetch('name', nil)
     http_status = response.code.to_i
     parsed['_http_status'] = http_status
+    error_message = nil
     if http_status >= 400
+      error_message = extract_error_message(response.body, parsed)
       log_event(
         event: 'error',
         account: account,
@@ -410,20 +413,29 @@ class Ai::RespondToMessageJob < ApplicationJob
         model: parsed['model'],
         response_id: parsed['id'],
         reason: 'openai_error',
-        http_status: http_status
+        http_status: http_status,
+        error_message: error_message
       )
-      Rails.logger.info("[AI_REPLY] openai_error status=#{response.code} body=#{response.body.to_s.truncate(400)}")
+      Rails.logger.info("[AI_REPLY] openai_error status=#{response.code} message=#{error_message}")
     end
     {
-      text: extract_text(parsed),
+      text: http_status >= 400 ? nil : extract_text(parsed),
       usage: parsed['usage'],
       model: parsed['model'],
       response_id: parsed['id'],
       raw_response: parsed,
       http_status: http_status,
       output_types: output_types,
-      first_tool_name: first_tool_name
+      first_tool_name: first_tool_name,
+      error: (http_status >= 400 ? 'openai_error' : nil),
+      error_message: error_message
     }
+  end
+
+  def extract_error_message(raw_body, parsed)
+    message = parsed.dig('error', 'message') || parsed['message'] || raw_body.to_s
+    message = message.to_s
+    message.length > 3000 ? message[0, 3000] : message
   end
 
   def calculate_cost_cents(input_tokens, output_tokens)

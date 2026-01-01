@@ -112,7 +112,20 @@ RSpec.describe Ai::RespondToMessageJob do
       settings: {}
     )
 
+    request_count = 0
     stub_request(:post, 'https://api.openai.com/v1/responses')
+      .with do |req|
+        request_count += 1
+        body = JSON.parse(req.body)
+        if request_count == 1
+          expect(body.dig('prompt', 'prompt_id')).to eq('pmpt_test')
+          expect(body.dig('prompt', 'version')).to eq('1')
+          tools = body['tools'] || []
+          expect(tools.first['type']).to eq('function')
+          expect(tools.first).not_to have_key('function')
+        end
+        true
+      end
       .to_return(
         {
           status: 200,
@@ -154,6 +167,26 @@ RSpec.describe Ai::RespondToMessageJob do
     outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false)
     expect(outgoing.count).to eq(1)
     expect(outgoing.last.content).to include('final answer')
+  end
+
+  it 'returns early on openai 400 without replying' do
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 400,
+        body: { error: { message: "Missing required parameter: 'prompt.prompt_id'." } }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    allow(Rails.logger).to receive(:info)
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    expect(
+      Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).count
+    ).to eq(0)
+    expect(AiUsageLog.where(account_id: account.id, message_id: message.id)).to be_empty
+    expect(Rails.logger).to have_received(:info).with(include("openai_error status=400 message=Missing required parameter"))
   end
 
   it 'handles function_call only responses and returns final text' do

@@ -1,5 +1,22 @@
 # Worklog
 
+## 2026-01-01 15:21
+- Tarih/Saat (TR): 2026-01-01 15:21
+- Amac: Responses API 400 hatasini ve function_call outputlarini dogru islemek.
+- Sorun / Belirti: 400 ile openai_error geliyor ve ai_response_empty skip oluyordu; function_call yakalanmiyordu.
+- Kok Neden (Varsa): prompt/payload format uyumsuzdu ve tool parser sadece tool_call tipini aliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/services/ai/tools/* (tool_schema format duzeltme)
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+- Dogrulama:
+  - rspec: 5 examples, 0 failures
+  - 400 cevapta reply uretilmiyor, log message=... yaziliyor
+- Notlar / Riskler:
+  - Log izleme: docker compose logs -f --tail=300 sidekiq | Select-String "\[AI_REPLY\]"
+
 ## 2026-01-01 14:24
 - Tarih/Saat (TR): 2026-01-01 14:24
 - Amac: Responses API function_call outputlarini tool loop ile islemek.
@@ -2611,6 +2628,8 @@
     - [AI_REPLY] {"event":"success","prompt_id":"pmpt_...","response_id":"resp_...","input_tokens":3592,"output_tokens":250,"total_tokens":3842,"cost_cents":0,"balance_before":13234,"balance_after":13234}
 - Notlar / Riskler:
   - Skip reason seti: already_processed, ai_agent_missing, not_assigned_to_ai, ai_disabled, missing_prompt, missing_wallet, insufficient_balance, ai_response_empty, tool_policy_disabled.
+
+
 
 
 

@@ -8,20 +8,19 @@ module Ai
       def self.tool_schema
         {
           type: 'function',
-          function: {
-            name: tool_name,
-            description: 'Query calendar availability for a time range.',
-            parameters: {
-              type: 'object',
-              properties: {
-                start_time: { type: 'string', description: 'ISO8601 start time' },
-                end_time: { type: 'string', description: 'ISO8601 end time' },
-                timezone: { type: 'string', description: 'IANA timezone' },
-                calendar_id: { type: 'string', description: 'Calendar id' }
-              },
-              required: %w[start_time end_time timezone]
-            }
-          }
+          name: tool_name,
+          description: 'Query calendar availability for a time range.',
+          parameters: {
+            type: 'object',
+            properties: {
+              start_time: { type: 'string', description: 'ISO8601 start time' },
+              end_time: { type: 'string', description: 'ISO8601 end time' },
+              timezone: { type: 'string', description: 'IANA timezone' },
+              calendar_id: { type: 'string', description: 'Calendar id' }
+            },
+            required: %w[start_time end_time timezone]
+          },
+          strict: false
         }
       end
 

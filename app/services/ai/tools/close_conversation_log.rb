@@ -8,18 +8,17 @@ module Ai
       def self.tool_schema
         {
           type: 'function',
-          function: {
-            name: tool_name,
-            description: 'Log a close conversation request and optionally resolve it.',
-            parameters: {
-              type: 'object',
-              properties: {
-                reason: { type: 'string', description: 'Reason for closing' },
-                thread_id: { type: 'string', description: 'Optional thread id' }
-              },
-              required: %w[reason]
-            }
-          }
+          name: tool_name,
+          description: 'Log a close conversation request and optionally resolve it.',
+          parameters: {
+            type: 'object',
+            properties: {
+              reason: { type: 'string', description: 'Reason for closing' },
+              thread_id: { type: 'string', description: 'Optional thread id' }
+            },
+            required: %w[reason]
+          },
+          strict: true
         }
       end
 

@@ -8,22 +8,21 @@ module Ai
       def self.tool_schema
         {
           type: 'function',
-          function: {
-            name: tool_name,
-            description: 'Create a demo appointment and return a meeting link.',
-            parameters: {
-              type: 'object',
-              properties: {
-                date: { type: 'string', description: 'Date in YYYY-MM-DD' },
-                time: { type: 'string', description: 'Time in HH:MM' },
-                name: { type: 'string', description: 'Full name' },
-                phone: { type: 'string', description: 'Phone number' },
-                email: { type: 'string', description: 'Email address' },
-                tz: { type: 'string', description: 'IANA timezone' }
-              },
-              required: %w[date time name phone email tz]
-            }
-          }
+          name: tool_name,
+          description: 'Create a demo appointment and return a meeting link.',
+          parameters: {
+            type: 'object',
+            properties: {
+              date: { type: 'string', description: 'Date in YYYY-MM-DD' },
+              time: { type: 'string', description: 'Time in HH:MM' },
+              name: { type: 'string', description: 'Full name' },
+              phone: { type: 'string', description: 'Phone number' },
+              email: { type: 'string', description: 'Email address' },
+              tz: { type: 'string', description: 'IANA timezone' }
+            },
+            required: %w[date time name phone email tz]
+          },
+          strict: true
         }
       end
 
