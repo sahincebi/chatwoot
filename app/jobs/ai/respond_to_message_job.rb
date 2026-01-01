@@ -3,6 +3,18 @@ require 'net/http'
 class Ai::RespondToMessageJob < ApplicationJob
   queue_as :default
 
+  SKIP_REASONS = {
+    already_processed: 'already_processed',
+    ai_agent_missing: 'ai_agent_missing',
+    not_assigned_to_ai: 'not_assigned_to_ai',
+    ai_disabled: 'ai_disabled',
+    missing_prompt: 'missing_prompt',
+    missing_wallet: 'missing_wallet',
+    insufficient_balance: 'insufficient_balance',
+    ai_response_empty: 'ai_response_empty',
+    tool_policy_disabled: 'tool_policy_disabled'
+  }.freeze
+
   def perform(message_id)
     message = Message.find_by(id: message_id)
     return unless message
@@ -16,20 +28,29 @@ class Ai::RespondToMessageJob < ApplicationJob
     conversation = Conversation.find(conversation.id)
 
     ai_user = account.ai_agent
+
+    log_event(
+      event: 'start',
+      account: account,
+      conversation: conversation,
+      message: message,
+      prompt_id: account.ai_prompt_id,
+      prompt_version: account.ai_prompt_version
+    )
     if AiUsageLog.exists?(account_id: account.id, message_id: message.id)
-      return log_skip(account, conversation, message, 'already_processed')
+      return log_skip(account, conversation, message, SKIP_REASONS[:already_processed])
     end
-    return log_skip(account, conversation, message, 'ai_agent_missing') unless ai_user&.is_ai_agent?
-    return log_skip(account, conversation, message, 'not_assigned_to_ai') unless conversation.assignee_id == ai_user.id
-    return log_skip(account, conversation, message, 'ai_disabled') unless account.ai_enabled?
-    return log_skip(account, conversation, message, 'prompt_missing') if account.ai_prompt_id.blank?
+    return log_skip(account, conversation, message, SKIP_REASONS[:ai_agent_missing]) unless ai_user&.is_ai_agent?
+    return log_skip(account, conversation, message, SKIP_REASONS[:not_assigned_to_ai]) unless conversation.assignee_id == ai_user.id
+    return log_skip(account, conversation, message, SKIP_REASONS[:ai_disabled]) unless account.ai_enabled?
+    return log_skip(account, conversation, message, SKIP_REASONS[:missing_prompt]) if account.ai_prompt_id.blank?
 
     wallet = account.ai_wallet
-    return log_skip(account, conversation, message, 'wallet_missing') unless wallet
-    return log_skip(account, conversation, message, 'insufficient_balance') unless wallet.balance_cents.to_i.positive?
+    return log_skip(account, conversation, message, SKIP_REASONS[:missing_wallet]) unless wallet
+    return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents) unless wallet.balance_cents.to_i.positive?
 
     response_payload = fetch_ai_response(account, conversation, message)
-    return log_skip(account, conversation, message, 'ai_response_empty') unless response_payload[:text].present?
+    return log_skip(account, conversation, message, SKIP_REASONS[:ai_response_empty]) unless response_payload[:text].present?
 
     usage = response_payload[:usage] || {}
     input_tokens = usage['input_tokens'].to_i
@@ -39,11 +60,13 @@ class Ai::RespondToMessageJob < ApplicationJob
     cost_cents = calculate_cost_cents(input_tokens, output_tokens)
 
     balance_after = nil
+    balance_before = nil
     response_id = response_payload[:response_id]
     wallet.with_lock do
       wallet.reload
+      balance_before = wallet.balance_cents
       if wallet.balance_cents.to_i < cost_cents
-        return log_skip(account, conversation, message, 'insufficient_balance')
+        return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents)
       end
 
       if cost_cents.positive?
@@ -89,10 +112,21 @@ class Ai::RespondToMessageJob < ApplicationJob
     )
     Messages::MessageBuilder.new(ai_user, conversation, params).perform
 
-    Rails.logger.info(
-      "[AI_REPLY] account=#{account.id} conversation=#{conversation.id} message=#{message.id} " \
-      "prompt_version=#{account.ai_prompt_version} tokens=#{total_tokens} cost_cents=#{cost_cents} " \
-      "balance_after=#{balance_after} response_id=#{response_id}"
+    log_event(
+      event: 'success',
+      account: account,
+      conversation: conversation,
+      message: message,
+      prompt_id: account.ai_prompt_id,
+      prompt_version: account.ai_prompt_version,
+      model: response_payload[:model],
+      response_id: response_id,
+      input_tokens: input_tokens,
+      output_tokens: output_tokens,
+      total_tokens: total_tokens,
+      cost_cents: cost_cents,
+      balance_before: balance_before,
+      balance_after: balance_after
     )
   end
 
@@ -144,17 +178,31 @@ class Ai::RespondToMessageJob < ApplicationJob
     request.body = payload.to_json
     response = http.request(request)
 
-    if response.code.to_i >= 400
+    parsed = JSON.parse(response.body) rescue {}
+    http_status = response.code.to_i
+    parsed['_http_status'] = http_status
+    if http_status >= 400
+      log_event(
+        event: 'error',
+        account: account,
+        conversation: conversation,
+        message: message,
+        prompt_id: account.ai_prompt_id,
+        prompt_version: account.ai_prompt_version,
+        model: parsed['model'],
+        response_id: parsed['id'],
+        reason: 'openai_error',
+        http_status: http_status
+      )
       Rails.logger.info("[AI_REPLY] openai_error status=#{response.code} body=#{response.body.to_s.truncate(400)}")
     end
-    parsed = JSON.parse(response.body) rescue {}
-    parsed['_http_status'] = response.code.to_i
     {
       text: extract_text(parsed),
       usage: parsed['usage'],
       model: parsed['model'],
       response_id: parsed['id'],
-      raw_response: parsed
+      raw_response: parsed,
+      http_status: http_status
     }
   end
 
@@ -208,10 +256,56 @@ class Ai::RespondToMessageJob < ApplicationJob
     stripped[start_idx..end_idx]
   end
 
-  def log_skip(account, conversation, message, reason)
-    Rails.logger.info(
-      "[AI_REPLY] skip reason=#{reason} account=#{account&.id} conversation=#{conversation&.id} message=#{message&.id}"
+  def log_skip(account, conversation, message, reason, balance_before: nil)
+    log_event(
+      event: 'skip',
+      account: account,
+      conversation: conversation,
+      message: message,
+      prompt_id: account&.ai_prompt_id,
+      prompt_version: account&.ai_prompt_version,
+      balance_before: balance_before,
+      reason: reason
     )
     nil
+  end
+
+  def log_event(
+    event:,
+    account:,
+    conversation:,
+    message:,
+    prompt_id: nil,
+    prompt_version: nil,
+    model: nil,
+    response_id: nil,
+    input_tokens: nil,
+    output_tokens: nil,
+    total_tokens: nil,
+    cost_cents: nil,
+    balance_before: nil,
+    balance_after: nil,
+    reason: nil,
+    http_status: nil
+  )
+    payload = {
+      event: event,
+      reason: reason,
+      account_id: account&.id,
+      conversation_id: conversation&.id,
+      message_id: message&.id,
+      prompt_id: prompt_id,
+      prompt_version: prompt_version,
+      model: model,
+      response_id: response_id,
+      input_tokens: input_tokens,
+      output_tokens: output_tokens,
+      total_tokens: total_tokens,
+      cost_cents: cost_cents,
+      balance_before: balance_before,
+      balance_after: balance_after,
+      http_status: http_status
+    }.compact
+    Rails.logger.info("[AI_REPLY] #{payload.to_json}")
   end
 end

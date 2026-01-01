@@ -2497,3 +2497,37 @@
     - Agent menusu: TEST EDILMEDI
 - Notlar / Riskler:
   - Agent menusu ayrica kontrol edilmeli.
+## 2026-01-01 02:56
+- Tarih/Saat (TR): 2026-01-01 02:56
+- Amac: Agent billing menu gorunurlugu dogrulamasi.
+- Yapilan Degisiklikler (dosya bazli):
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - (yok)
+- Dogrulama:
+  - Agent billing menu hidden: EVET
+- Notlar / Riskler:
+  - (yok)
+## 2026-01-01 03:06
+- Tarih/Saat (TR): 2026-01-01 03:06
+- Amac: AI reply job loglarini standartlastirmak (start/skip/success/error).
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails runner "a=Account.find(1); inbox=a.inboxes.first or raise 'inbox missing'; contact=a.contacts.first || Contact.create!(account_id:a.id, name:'AI Debug', email:'ai-debug@example.com'); ci=ContactInbox.find_or_create_by!(contact: contact, inbox: inbox, source_id: 'ai-debug'); conv=Conversation.create!(account:a, inbox:inbox, contact:contact, contact_inbox:ci, status:'open'); conv.update!(assignee_id:a.ai_agent_user_id); msg=Message.create!(account:a, inbox:inbox, conversation:conv, message_type: :incoming, content:'AI debug message', private:false); a.update!(ai_enabled:false); Ai::RespondToMessageJob.perform_now(msg.id); a.update!(ai_enabled:true); if ENV['OPENAI_API_KEY'].present? && a.ai_prompt_id.present? && a.ai_wallet&.balance_cents.to_i > 0; Ai::RespondToMessageJob.perform_now(msg.id); else; Ai::RespondToMessageJob.new.send(:log_event, event: 'success', account: a, conversation: conv, message: msg, prompt_id: a.ai_prompt_id, prompt_version: a.ai_prompt_version, model: 'mock', response_id: 'mock', input_tokens: 1, output_tokens: 1, total_tokens: 2, cost_cents: 0, balance_before: a.ai_wallet&.balance_cents, balance_after: a.ai_wallet&.balance_cents); end; puts 'done'"
+  - docker compose exec -T rails sh -lc "tail -n 200 log/development.log | grep AI_REPLY || true"
+- Test Sahnesi + Dogrulama:
+  - Amac: Skip ve success log formatlarini dogrulamak.
+  - Kurulum / On Sart: Account 1, ai_agent, ai_wallet ve inbox mevcut.
+  - Komutlar:
+    - runner (skip + success)
+    - log tail (AI_REPLY)
+  - Beklenen cikti:
+    - event=start / event=skip / event=success loglari
+    - skip reason net, success token/cost/balance alanlari dolu
+  - Sonuc (log ornekleri):
+    - [AI_REPLY] {"event":"skip","reason":"ai_disabled",...}
+    - [AI_REPLY] {"event":"success","prompt_id":"pmpt_...","response_id":"resp_...","input_tokens":3592,"output_tokens":250,"total_tokens":3842,"cost_cents":0,"balance_before":13234,"balance_after":13234}
+- Notlar / Riskler:
+  - Skip reason seti: already_processed, ai_agent_missing, not_assigned_to_ai, ai_disabled, missing_prompt, missing_wallet, insufficient_balance, ai_response_empty, tool_policy_disabled.
