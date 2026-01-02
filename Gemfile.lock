@@ -355,6 +355,8 @@ GEM
       activesupport (>= 6.1)
     gmail_xoauth (0.4.3)
       oauth (>= 0.3.6)
+    google-apis-calendar_v3 (0.51.0)
+      google-apis-core (>= 0.15.0, < 2.a)
     google-apis-core (0.15.1)
       addressable (~> 2.5, >= 2.5.1)
       googleauth (~> 1.9)
@@ -1059,9 +1061,11 @@ DEPENDENCIES
   foreman
   geocoder
   gmail_xoauth
+  google-apis-calendar_v3
   google-cloud-dialogflow-v2 (>= 0.24.0)
   google-cloud-storage (>= 1.48.0)
   google-cloud-translate-v3 (>= 0.7.0)
+  googleauth
   groupdate
   grpc
   haikunator
@@ -1165,4 +1169,4 @@ RUBY VERSION
    ruby 3.4.4p34
 
 BUNDLED WITH
-   2.5.16
+   2.5.11

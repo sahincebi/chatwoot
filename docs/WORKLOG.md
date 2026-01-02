@@ -2863,3 +2863,18 @@
   - Commit: 15d8160b1
 
 
+## 2026-01-02 14:24
+- Tarih/Saat (TR): 2026-01-02 14:24
+- Amac: Google Calendar gem eksikligi (LoadError) icin Gemfile ve lock guncellemesi.
+- Sorun / Belirti: require "google/apis/calendar_v3" LoadError.
+- Yapilan Degisiklikler (dosya bazli):
+  - Gemfile
+  - Gemfile.lock
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails sh -lc "cd /app && bundle install"
+  - docker compose exec -T rails bundle exec rails runner "require 'google/apis/calendar_v3'; puts 'OK calendar gem loaded'"
+- Dogrulama:
+  - OK calendar gem loaded
+- Notlar / Riskler:
+  - bundle install uyarilari (docker-compose version, fiddle) gorundu; islevi etkilemez.
