@@ -2878,3 +2878,24 @@
   - OK calendar gem loaded
 - Notlar / Riskler:
   - bundle install uyarilari (docker-compose version, fiddle) gorundu; islevi etkilemez.
+## 2026-01-02 15:05
+- Tarih/Saat (TR): 2026-01-02 15:05
+- Amac: AI tarafindan gonderilen saat araliklarini parse edip event_start/end uretmek ve half-open overlap kuralini dogrulamak.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/tools/create_demo_appointment.rb
+  - app/services/ai/tools/check_demo_availability.rb
+  - spec/services/ai/tools/create_demo_appointment_spec.rb
+  - spec/services/ai/tools/check_demo_availability_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/tools/create_demo_appointment_spec.rb spec/services/ai/tools/check_demo_availability_spec.rb
+- Dogrulama:
+  - time "15-16" => start 15:00 end 16:00
+  - time "15:00-15:30" => start 15:00 end 15:30
+  - time "15:00" + duration 30 => end 15:30
+  - overlap half-open: event 15:00-16:00 vs slot 16:00-17:00 => false
+- Sonuc (rspec):
+  - 9 examples, 0 failures
+- Notlar / Riskler:
+  - Backend slot uretimi minimal; busy interval gelirse half-open overlap ile filtrelenir.
+

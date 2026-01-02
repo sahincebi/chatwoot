@@ -19,6 +19,7 @@ module Ai
             properties: {
               date: { type: 'string', description: 'Date in YYYY-MM-DD' },
               time: { type: 'string', description: 'Time in HH:MM' },
+              duration_minutes: { type: 'integer', description: 'Optional duration in minutes' },
               name: { type: 'string', description: 'Full name' },
               phone: { type: 'string', description: 'Phone number' },
               email: { type: 'string', description: 'Email address' },
@@ -41,7 +42,8 @@ module Ai
           'name' => String,
           'phone' => String,
           'email' => String,
-          'tz' => String
+          'tz' => String,
+          'duration_minutes' => Integer
         }
       end
 
@@ -61,12 +63,22 @@ module Ai
         date = args['date']
         time = args['time']
         return error_payload('validation_error', 'date_missing') if date.blank?
-        return error_payload('validation_error', 'time_format_invalid') unless time.match?(/\A\d{2}:\d{2}\z/)
+        return error_payload('validation_error', 'time_missing') if time.blank?
+
+        time_info = parse_time_range(time, args['duration_minutes'])
+        return error_payload('validation_error', 'time_format_invalid') if time_info.nil?
 
         zone = ActiveSupport::TimeZone[timezone] || Time.zone
-        start_time = zone.parse("#{date} #{time}")
+        start_time = zone.parse("#{date} #{time_info[:start]}")
         return error_payload('validation_error', 'datetime_parse_failed') unless start_time
-        end_time = start_time + 1.hour
+        end_time = if time_info[:end].present?
+                     zone.parse("#{date} #{time_info[:end]}")
+                   else
+                     start_time + time_info[:duration_minutes].minutes
+                   end
+        return error_payload('validation_error', 'datetime_parse_failed') unless end_time
+        return error_payload('validation_error', 'time_range_invalid') unless end_time > start_time
+        duration_minutes = ((end_time - start_time) / 60).to_i
 
         access = fetch_access_token(integration.refresh_token, client_id, client_secret, integration)
         return error_payload(access[:error_code], access[:message], details: access[:details]) unless access[:access_token].present?
@@ -81,6 +93,9 @@ module Ai
           date: date,
           time: "#{start_time.strftime('%H:%M')}-#{end_time.strftime('%H:%M')}",
           timezone: timezone,
+          start_time: start_time.iso8601,
+          end_time: end_time.iso8601,
+          duration_minutes: duration_minutes,
           event_id: response[:event_id],
           html_link: response[:html_link],
           meet_link: response[:meet_link],
@@ -199,6 +214,40 @@ module Ai
         entry_points = parsed.dig('conferenceData', 'entryPoints') || []
         video = entry_points.find { |entry| entry['entryPointType'] == 'video' }
         video&.dig('uri') || parsed['hangoutLink']
+      end
+
+      def self.parse_time_range(raw_time, duration_minutes = nil)
+        normalized = raw_time.to_s.strip.tr('–—', '-').gsub(/\s+/, '')
+        return nil if normalized.blank?
+
+        if normalized.include?('-')
+          start_part, end_part = normalized.split('-', 2)
+          start_time = parse_time_component(start_part)
+          end_time = parse_time_component(end_part)
+          return nil if start_time.nil? || end_time.nil?
+
+          { start: start_time, end: end_time, duration_minutes: nil }
+        else
+          start_time = parse_time_component(normalized)
+          return nil if start_time.nil?
+
+          duration = duration_minutes.to_i
+          duration = 60 if duration <= 0
+          { start: start_time, end: nil, duration_minutes: duration }
+        end
+      end
+
+      def self.parse_time_component(value)
+        return nil if value.blank?
+
+        match = value.match(/\A(\d{1,2})(?::(\d{2}))?\z/)
+        return nil unless match
+
+        hour = match[1].to_i
+        minute = match[2].present? ? match[2].to_i : 0
+        return nil unless hour.between?(0, 23) && minute.between?(0, 59)
+
+        format('%02d:%02d', hour, minute)
       end
     end
   end

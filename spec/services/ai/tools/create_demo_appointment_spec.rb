@@ -23,8 +23,7 @@ RSpec.describe Ai::Tools::CreateDemoAppointment do
     }
   end
 
-  it 'creates a calendar event and returns proof fields' do
-    integration
+  def stub_google_success(event_id: 'evt_1', meet_link: 'https://meet.google.com/abc-defg-hij')
     stub_request(:post, 'https://oauth2.googleapis.com/token')
       .to_return(
         status: 200,
@@ -36,16 +35,21 @@ RSpec.describe Ai::Tools::CreateDemoAppointment do
       .to_return(
         status: 200,
         body: {
-          id: 'evt_1',
-          htmlLink: 'https://calendar.google.com/event?eid=1',
+          id: event_id,
+          htmlLink: "https://calendar.google.com/event?eid=#{event_id}",
           conferenceData: {
             entryPoints: [
-              { entryPointType: 'video', uri: 'https://meet.google.com/abc-defg-hij' }
+              { entryPointType: 'video', uri: meet_link }
             ]
           }
         }.to_json,
         headers: { 'Content-Type' => 'application/json' }
       )
+  end
+
+  it 'creates a calendar event and returns proof fields' do
+    integration
+    stub_google_success(event_id: 'evt_1', meet_link: 'https://meet.google.com/abc-defg-hij')
 
     with_modified_env(
       'GOOGLE_OAUTH_CLIENT_ID' => 'client-id',
@@ -54,10 +58,61 @@ RSpec.describe Ai::Tools::CreateDemoAppointment do
       result = described_class.call(account: account, args: args)
       expect(result[:status]).to eq('ok')
       expect(result[:event_id]).to eq('evt_1')
-      expect(result[:html_link]).to eq('https://calendar.google.com/event?eid=1')
+      expect(result[:html_link]).to eq('https://calendar.google.com/event?eid=evt_1')
       expect(result[:meet_link]).to eq('https://meet.google.com/abc-defg-hij')
       expect(result[:calendar_id]).to eq('primary')
       expect(result[:timezone]).to eq('Europe/Istanbul')
+    end
+  end
+
+  it 'parses time range without duration' do
+    integration
+    stub_google_success(event_id: 'evt_range', meet_link: 'https://meet.google.com/range')
+
+    range_args = args.merge('time' => '15-16')
+    with_modified_env(
+      'GOOGLE_OAUTH_CLIENT_ID' => 'client-id',
+      'GOOGLE_OAUTH_CLIENT_SECRET' => 'client-secret'
+    ) do
+      result = described_class.call(account: account, args: range_args)
+      zone = Time.find_zone('Europe/Istanbul')
+      expect(result[:start_time]).to eq(zone.parse('2026-01-02 15:00').iso8601)
+      expect(result[:end_time]).to eq(zone.parse('2026-01-02 16:00').iso8601)
+      expect(result[:duration_minutes]).to eq(60)
+    end
+  end
+
+  it 'parses time range with minutes' do
+    integration
+    stub_google_success(event_id: 'evt_short', meet_link: 'https://meet.google.com/short')
+
+    range_args = args.merge('time' => '15:00-15:30')
+    with_modified_env(
+      'GOOGLE_OAUTH_CLIENT_ID' => 'client-id',
+      'GOOGLE_OAUTH_CLIENT_SECRET' => 'client-secret'
+    ) do
+      result = described_class.call(account: account, args: range_args)
+      zone = Time.find_zone('Europe/Istanbul')
+      expect(result[:start_time]).to eq(zone.parse('2026-01-02 15:00').iso8601)
+      expect(result[:end_time]).to eq(zone.parse('2026-01-02 15:30').iso8601)
+      expect(result[:duration_minutes]).to eq(30)
+    end
+  end
+
+  it 'uses duration_minutes when only start time is provided' do
+    integration
+    stub_google_success(event_id: 'evt_duration', meet_link: 'https://meet.google.com/duration')
+
+    duration_args = args.merge('time' => '15:00', 'duration_minutes' => 30)
+    with_modified_env(
+      'GOOGLE_OAUTH_CLIENT_ID' => 'client-id',
+      'GOOGLE_OAUTH_CLIENT_SECRET' => 'client-secret'
+    ) do
+      result = described_class.call(account: account, args: duration_args)
+      zone = Time.find_zone('Europe/Istanbul')
+      expect(result[:start_time]).to eq(zone.parse('2026-01-02 15:00').iso8601)
+      expect(result[:end_time]).to eq(zone.parse('2026-01-02 15:30').iso8601)
+      expect(result[:duration_minutes]).to eq(30)
     end
   end
 
