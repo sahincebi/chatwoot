@@ -2898,4 +2898,7 @@
   - 9 examples, 0 failures
 - Notlar / Riskler:
   - Backend slot uretimi minimal; busy interval gelirse half-open overlap ile filtrelenir.
+  - Commit: 61cd60f5a
+
+
 
