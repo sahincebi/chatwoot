@@ -2902,3 +2902,26 @@
 
 
 
+## 2026-02-14 02:11
+- Tarih/Saat (TR): 2026-02-14 02:11
+- Amac: OpenAI'nin gonderdigi randevu saat araliklarini backendde parse etmek ve conflict check'i half-open overlap ile netlestirmek.
+- Sorun / Belirti:
+  - Tool tarafinda sadece belirli saat formatlariyla calisma riski vardi.
+  - Adjacent slot (16:00 baslangic) durumunda overlap davranisi netlestirilmeliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/tools/create_demo_appointment.rb
+  - app/services/ai/tools/check_demo_availability.rb
+  - spec/services/ai/tools/create_demo_appointment_spec.rb
+  - spec/services/ai/tools/check_demo_availability_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/tools/create_demo_appointment_spec.rb spec/services/ai/tools/check_demo_availability_spec.rb
+- Dogrulama:
+  - time="15-16" -> start 15:00 end 16:00
+  - time="15:00-15:30" -> start 15:00 end 15:30
+  - time="15:00" + duration=30 -> end 15:30
+  - overlap half-open kuralinda event 15:00-16:00 iken slot 16:00-17:00 cakisma vermiyor
+  - rspec sonucu: 11 examples, 0 failures
+- Notlar / Riskler:
+  - Token/secret loglanmiyor.
+  - check_demo_availability halen MVP slot listesi donduruyor; busy interval verilirse half-open overlap ile filtreliyor.
