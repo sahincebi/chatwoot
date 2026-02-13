@@ -35,8 +35,8 @@ module Ai
 
       def self.execute(account:, args:, **_context)
         zone = ActiveSupport::TimeZone[args['tz']] || Time.zone
-        requested_date = parse_requested_date(args['date'], zone)
-        return { error: 'validation_error', message: 'invalid_date', tool: tool_name } unless requested_date
+        tomorrow = zone.today + 1
+        return { error: 'date_not_allowed', message: 'only_tomorrow', tool: tool_name } if args['date'] != tomorrow.strftime('%F')
 
         # TODO: Replace with real Google Calendar availability lookup.
         # If busy intervals are provided, filter slots with half-open overlap.
@@ -44,11 +44,11 @@ module Ai
         {
           status: 'ok',
           tool: tool_name,
-          date: requested_date.strftime('%F'),
-          timezone: zone.tzinfo.name,
+          date: args['date'],
+          timezone: args['tz'],
           slots: filter_slots(
             slots: ['15:00-16:00', '16:00-17:00'],
-            date: requested_date.strftime('%F'),
+            date: args['date'],
             zone: zone,
             busy: busy
           )
@@ -73,7 +73,7 @@ module Ai
       end
 
       def self.parse_slot_range(date, zone, slot)
-        range = slot.to_s.strip.gsub(/\u2013|\u2014/, '-').split('-', 2)
+        range = slot.to_s.strip.tr('–—', '-').split('-', 2)
         return [nil, nil] if range.size != 2
 
         start_str = range[0].strip
@@ -96,15 +96,6 @@ module Ai
 
       def self.overlap?(slot_start, slot_end, event_start, event_end)
         slot_start < event_end && slot_end > event_start
-      end
-
-      def self.parse_requested_date(value, zone)
-        return nil if value.blank?
-
-        parsed = zone.parse(value.to_s)
-        parsed&.to_date
-      rescue StandardError
-        nil
       end
     end
   end
