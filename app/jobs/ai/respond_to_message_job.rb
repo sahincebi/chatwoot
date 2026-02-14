@@ -2,6 +2,7 @@ require 'net/http'
 
 class Ai::RespondToMessageJob < ApplicationJob
   queue_as :default
+  MIN_BALANCE_CENTS = 10
 
   SKIP_REASONS = {
     already_processed: 'already_processed',
@@ -50,7 +51,9 @@ class Ai::RespondToMessageJob < ApplicationJob
 
     wallet = account.ai_wallet
     return log_skip(account, conversation, message, SKIP_REASONS[:missing_wallet]) unless wallet
-    return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents) unless wallet.balance_cents.to_i.positive?
+    if wallet.balance_cents.to_i < MIN_BALANCE_CENTS
+      return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents)
+    end
 
     response_payload = fetch_ai_response(account, conversation, message)
     return if response_payload[:error] == 'openai_error'
@@ -76,7 +79,16 @@ class Ai::RespondToMessageJob < ApplicationJob
     output_tokens = usage['output_tokens'].to_i
     total_tokens = usage['total_tokens'].to_i
     total_tokens = input_tokens + output_tokens if total_tokens.zero?
-    cost_cents = calculate_cost_cents(input_tokens, output_tokens)
+    model_for_pricing = response_payload[:model].presence || ai_model
+    pricing_config = Ai::PricingConfig.current(model: model_for_pricing)
+    cached_input_tokens, uncached_input_tokens = token_breakdown(input_tokens, usage)
+    provider_cost_cents = calculate_provider_cost_cents(
+      uncached_input_tokens: uncached_input_tokens,
+      cached_input_tokens: cached_input_tokens,
+      output_tokens: output_tokens,
+      pricing_config: pricing_config
+    )
+    billed_cost_cents = calculate_billed_cost_cents(provider_cost_cents, pricing_config)
 
     balance_after = nil
     balance_before = nil
@@ -84,20 +96,28 @@ class Ai::RespondToMessageJob < ApplicationJob
     wallet.with_lock do
       wallet.reload
       balance_before = wallet.balance_cents
-      if wallet.balance_cents.to_i < cost_cents
+      if wallet.balance_cents.to_i < billed_cost_cents
         return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents)
       end
 
-      if cost_cents.positive?
-        wallet.update!(balance_cents: wallet.balance_cents - cost_cents)
+      if billed_cost_cents.positive?
+        wallet.update!(balance_cents: wallet.balance_cents - billed_cost_cents)
         AiTransaction.create!(
           account: account,
           kind: :debit,
-          amount_cents: cost_cents,
+          amount_cents: billed_cost_cents,
           currency: wallet.currency,
           provider: 'openai',
           provider_ref: response_id,
-          meta: { prompt_id: account.ai_prompt_id, prompt_version: account.ai_prompt_version }
+          meta: {
+            prompt_id: account.ai_prompt_id,
+            prompt_version: account.ai_prompt_version,
+            provider_cost_cents: provider_cost_cents,
+            billed_cost_cents: billed_cost_cents,
+            billing_multiplier: pricing_config.billing_multiplier,
+            cached_input_tokens: cached_input_tokens,
+            uncached_input_tokens: uncached_input_tokens
+          }
         )
       end
 
@@ -111,12 +131,18 @@ class Ai::RespondToMessageJob < ApplicationJob
         input_tokens: input_tokens,
         output_tokens: output_tokens,
         total_tokens: total_tokens,
-        cost_cents: cost_cents,
+        cost_cents: billed_cost_cents,
+        provider_cost_cents: provider_cost_cents,
+        billed_cost_cents: billed_cost_cents,
+        billing_multiplier: pricing_config.billing_multiplier,
         currency: wallet.currency,
         meta: {
           provider: 'openai',
           response_id: response_payload[:response_id],
-          raw_response: response_payload[:raw_response]
+          raw_response: response_payload[:raw_response],
+          cached_input_tokens: cached_input_tokens,
+          uncached_input_tokens: uncached_input_tokens,
+          pricing_source: pricing_config.source
         }
       )
 
@@ -159,9 +185,18 @@ class Ai::RespondToMessageJob < ApplicationJob
       model: response_payload[:model],
       response_id: response_id,
       input_tokens: input_tokens,
+      cached_input_tokens: cached_input_tokens,
+      uncached_input_tokens: uncached_input_tokens,
       output_tokens: output_tokens,
       total_tokens: total_tokens,
-      cost_cents: cost_cents,
+      cost_cents: billed_cost_cents,
+      provider_cost_cents: provider_cost_cents,
+      billed_cost_cents: billed_cost_cents,
+      billing_multiplier: pricing_config.billing_multiplier,
+      input_cost_per_1m: pricing_config.input_cost_per_1m,
+      cached_input_cost_per_1m: pricing_config.cached_input_cost_per_1m,
+      output_cost_per_1m: pricing_config.output_cost_per_1m,
+      pricing_source: pricing_config.source,
       balance_before: balance_before,
       balance_after: balance_after
     )
@@ -470,11 +505,29 @@ class Ai::RespondToMessageJob < ApplicationJob
     message.length > 3000 ? message[0, 3000] : message
   end
 
-  def calculate_cost_cents(input_tokens, output_tokens)
-    input_rate = ENV.fetch('AI_INPUT_COST_PER_1M', '0').to_f
-    output_rate = ENV.fetch('AI_OUTPUT_COST_PER_1M', '0').to_f
-    cost = (input_tokens * input_rate + output_tokens * output_rate) / 1_000_000.0
-    (cost * 100).round
+  def token_breakdown(input_tokens, usage)
+    cached = usage.dig('input_tokens_details', 'cached_tokens').to_i
+    cached = 0 if cached.negative?
+    cached = [cached, input_tokens].min
+    [cached, input_tokens - cached]
+  end
+
+  def calculate_provider_cost_cents(uncached_input_tokens:, cached_input_tokens:, output_tokens:, pricing_config:)
+    input_rate = pricing_config.input_cost_per_1m
+    output_rate = pricing_config.output_cost_per_1m
+    cached_input_rate = pricing_config.cached_input_cost_per_1m
+    cost = ((uncached_input_tokens * input_rate) + (cached_input_tokens * cached_input_rate) + (output_tokens * output_rate)) / 1_000_000.0
+    cents = cost * 100
+    return 0 if cents <= 0
+
+    cents.ceil
+  end
+
+  def calculate_billed_cost_cents(provider_cost_cents, pricing_config)
+    return 0 if provider_cost_cents.to_i <= 0
+
+    billed_cents = provider_cost_cents.to_f * pricing_config.billing_multiplier
+    billed_cents.ceil
   end
 
   def normalize_ai_output(raw_text)
@@ -552,9 +605,18 @@ class Ai::RespondToMessageJob < ApplicationJob
     model: nil,
     response_id: nil,
     input_tokens: nil,
+    cached_input_tokens: nil,
+    uncached_input_tokens: nil,
     output_tokens: nil,
     total_tokens: nil,
     cost_cents: nil,
+    provider_cost_cents: nil,
+    billed_cost_cents: nil,
+    billing_multiplier: nil,
+    input_cost_per_1m: nil,
+    cached_input_cost_per_1m: nil,
+    output_cost_per_1m: nil,
+    pricing_source: nil,
     balance_before: nil,
     balance_after: nil,
     reason: nil,
@@ -591,9 +653,18 @@ class Ai::RespondToMessageJob < ApplicationJob
       model: model,
       response_id: response_id,
       input_tokens: input_tokens,
+      cached_input_tokens: cached_input_tokens,
+      uncached_input_tokens: uncached_input_tokens,
       output_tokens: output_tokens,
       total_tokens: total_tokens,
       cost_cents: cost_cents,
+      provider_cost_cents: provider_cost_cents,
+      billed_cost_cents: billed_cost_cents,
+      billing_multiplier: billing_multiplier,
+      input_cost_per_1m: input_cost_per_1m,
+      cached_input_cost_per_1m: cached_input_cost_per_1m,
+      output_cost_per_1m: output_cost_per_1m,
+      pricing_source: pricing_source,
       balance_before: balance_before,
       balance_after: balance_after,
       http_status: http_status,

@@ -2902,3 +2902,103 @@
 
 
 
+## 2026-02-14 06:00
+- Tarih/Saat (TR): 2026-02-14 06:00
+- Amac: AI maliyet dusumunu gelir modeline uygun hale getirmek ve Super Admin tarafinda hesap bazli billing gorunurlugu saglamak.
+- Sorun / Belirti:
+  - AI cevaplari usage log'a yaziliyor ancak cost_cents=0 oldugu icin wallet bakiyesinden dusum olmuyordu.
+  - Super Admin panelinde tum hesaplarin bakiye/fatura/kar-maliyet ozetini tek ekranda izleme yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - db/migrate/20260214021000_add_cost_breakdown_to_ai_usage_logs.rb
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/models/ai_usage_log.rb
+  - app/controllers/super_admin/ai_billings_controller.rb
+  - app/views/super_admin/ai_billings/index.html.erb
+  - app/views/super_admin/ai_billings/show.html.erb
+  - app/views/super_admin/application/_navigation.html.erb
+  - config/routes.rb
+  - db/schema.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T rails bundle exec rails zeitwerk:check
+  - docker compose exec -T rails bundle exec rails routes | Select-String ai_billings
+  - docker compose exec -T rails bundle exec rails runner "a=Account.find(1); w=AiWallet.find_by(account_id:a.id); usage=AiUsageLog.where(account_id:a.id); puts({wallet_balance_cents:w&.balance_cents,provider_cost_sum:usage.sum(:provider_cost_cents),billed_cost_sum:usage.sum(:billed_cost_cents),profit_sum:usage.sum(:billed_cost_cents)-usage.sum(:provider_cost_cents)}.inspect)"
+  - docker compose exec -T rails bundle exec rails runner "puts({AI_INPUT_COST_PER_1M:ENV['AI_INPUT_COST_PER_1M'],AI_OUTPUT_COST_PER_1M:ENV['AI_OUTPUT_COST_PER_1M'],AI_BILLING_MULTIPLIER:ENV['AI_BILLING_MULTIPLIER']}.inspect)"
+- Dogrulama:
+  - AddCostBreakdownToAiUsageLogs migration basarili calisti.
+  - spec/jobs/ai/respond_to_message_job_spec.rb -> 8 examples, 0 failures.
+  - zeitwerk:check -> All is good.
+  - Super Admin route'lari olustu:
+    - GET /super_admin/ai_billings
+    - GET /super_admin/ai_billings/:account_id
+    - POST /super_admin/ai_billings/:account_id/topup
+- Notlar / Riskler:
+  - Maliyet dusumu artik provider_cost_cents ve billed_cost_cents ayrik tutuluyor; wallet'tan billed_cost_cents dusuluyor.
+  - Ortamda AI_INPUT_COST_PER_1M ve AI_OUTPUT_COST_PER_1M hala bos ise maliyet 0 kalir; bu degerler prod env'de tanimlanmali.
+  - AI_BILLING_MULTIPLIER tanimlanirsa faturalanan tutar (kar marji) bu carpanla hesaplanir (varsayilan 1.0).
+
+## 2026-02-14 06:20
+- Tarih/Saat (TR): 2026-02-14 06:20
+- Amac: AI maliyet dusumunu sifir maliyet sorununun onune gecerek aktif hale getirmek ve Super Admin tarafinda global fiyatlandirma yonetimi eklemek.
+- Sorun / Belirti:
+  - ENV maliyet degerleri bos oldugunda provider_cost=0 oldugu icin wallet dusumu olmuyordu.
+  - Super Admin tarafinda input/output token maliyeti ve billing multiplier ayarlama ekrani yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/pricing_config.rb
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/controllers/super_admin/ai_billings_controller.rb
+  - app/views/super_admin/ai_billings/index.html.erb
+  - app/views/super_admin/ai_billings/show.html.erb
+  - config/routes.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T rails bundle exec rails zeitwerk:check
+  - docker compose exec -T rails bundle exec rails routes | Select-String "ai_billings|update_pricing"
+  - docker compose exec -T rails bundle exec rails runner "cfg=Ai::PricingConfig.current; puts cfg.as_h.inspect"
+  - docker compose exec -T rails bundle exec rails runner "a=Account.find(1); InstallationConfig.set_value('AI_INPUT_COST_PER_1M', 1.0, locked: false); InstallationConfig.set_value('AI_OUTPUT_COST_PER_1M', 1.0, locked: false); InstallationConfig.set_value('AI_BILLING_MULTIPLIER', 4.0, locked: false); c=Conversation.find(86); c.update!(assignee_id: a.ai_agent_user_id) unless c.assignee_id == a.ai_agent_user_id; w=a.ai_wallet || AiWallet.create!(account:a,balance_cents:0,currency:'USD',status: :active); before=w.balance_cents; m=Message.create!(account:a,inbox:c.inbox,conversation:c,message_type: :incoming,private:false,content:'wallet_deduction_smoke_test',sender:c.contact); Ai::RespondToMessageJob.perform_now(m.id); w.reload; u=AiUsageLog.find_by(account_id:a.id,message_id:m.id); t=AiTransaction.where(account_id:a.id,kind: :debit).order(id: :desc).first; puts({message_id:m.id,before:before,after:w.balance_cents,diff:before-w.balance_cents,usage:u&.slice('provider_cost_cents','billed_cost_cents','billing_multiplier','total_tokens'),txn:t&.slice('id','amount_cents','provider','provider_ref')}.inspect)"
+- Dogrulama:
+  - Rspec: 8 examples, 0 failures.
+  - Zeitwerk: All is good.
+  - Routes:
+    - GET /super_admin/ai_billings
+    - GET /super_admin/ai_billings/:account_id
+    - POST /super_admin/ai_billings/:account_id/topup
+    - POST /super_admin/ai_billings/update_pricing
+  - Canli smoke sonucu:
+    - wallet before: 51000
+    - wallet after: 50996
+    - diff: 4
+    - usage.provider_cost_cents: 1
+    - usage.billed_cost_cents: 4
+    - usage.billing_multiplier: 4.0
+- Notlar / Riskler:
+  - Pricing kaynak onceligi: ENV > InstallationConfig > default (input=1.0, output=1.0, multiplier=4.0).
+  - Global fiyatlandirma Super Admin AI Billing ekranindan degistirilebilir.
+
+## 2026-02-14 21:36
+- Tarih/Saat (TR): 2026-02-14 21:36
+- Amac: OpenAI token usage maliyetini model bazli (official list price) ve cached token farkini dikkate alarak daha dogru hesaplamak.
+- Sorun / Belirti:
+  - Mevcut formul input/output tek fiyat uzerinden gidiyordu; model farki ve cached input token indirimini ayirt etmiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/pricing_config.rb
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/services/ai/pricing_config_spec.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/pricing_config_spec.rb
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+- Dogrulama:
+  - pricing_config spec: 2 examples, 0 failures
+  - respond_to_message_job spec: 9 examples, 0 failures
+  - Yeni test: cached input token kullanildiginda provider_cost_cents dogru hesaplanip (gpt-5 ornegi) billed_cost_cents carpanla yansiyor.
+- Notlar / Riskler:
+  - Kaynak onceligi korunuyor: ENV > InstallationConfig > OpenAI model katalogu > default.
+  - Billing multiplier aynen calismaya devam ediyor; sadece provider maliyeti artik cached token ve model oranini hesaba katiyor.
+- Runtime Config Notu:
+  - InstallationConfig uzerindeki AI_INPUT_COST_PER_1M ve AI_OUTPUT_COST_PER_1M override degerleri temizlendi (nil).
+  - Kontrol: Ai::PricingConfig.current(model:'gpt-5.1-2025-11-13') artik input=1.25, output=10.0, cached_input=0.125 (source=openai_model_catalog).

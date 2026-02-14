@@ -72,6 +72,45 @@ RSpec.describe Ai::RespondToMessageJob do
     ).to eq(1)
   end
 
+  it 'applies cached input token pricing when usage includes cached tokens' do
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_cached',
+          'output_text' => 'ok',
+          'model' => 'gpt-5',
+          'usage' => {
+            'input_tokens' => 1_000_000,
+            'output_tokens' => 0,
+            'total_tokens' => 1_000_000,
+            'input_tokens_details' => { 'cached_tokens' => 500_000 }
+          }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    allow(InstallationConfig).to receive(:get_value).with('AI_INPUT_COST_PER_1M').and_return(nil)
+    allow(InstallationConfig).to receive(:get_value).with('AI_OUTPUT_COST_PER_1M').and_return(nil)
+    allow(InstallationConfig).to receive(:get_value).with('AI_CACHED_INPUT_COST_PER_1M').and_return(nil)
+    allow(InstallationConfig).to receive(:get_value).with('AI_BILLING_MULTIPLIER').and_return(nil)
+
+    with_modified_env(
+      'OPENAI_API_KEY' => 'test',
+      'AI_INPUT_COST_PER_1M' => nil,
+      'AI_OUTPUT_COST_PER_1M' => nil,
+      'AI_CACHED_INPUT_COST_PER_1M' => nil,
+      'AI_BILLING_MULTIPLIER' => nil
+    ) do
+      described_class.perform_now(message.id)
+    end
+
+    usage = AiUsageLog.find_by!(account_id: account.id, message_id: message.id)
+    # 500k uncached @1.25 + 500k cached @0.125 => $0.6875 => 69 cents
+    expect(usage.provider_cost_cents).to eq(69)
+    expect(usage.billed_cost_cents).to eq(276)
+  end
+
   it 'skips tool loop when policy is disabled' do
     stub_request(:post, 'https://api.openai.com/v1/responses')
       .with do |req|
