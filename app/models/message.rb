@@ -327,7 +327,12 @@ class Message < ApplicationRecord
     return if private?
     return unless conversation&.assignee&.is_ai_agent?
 
-    Ai::RespondToMessageJob.perform_later(id)
+    debounce_seconds = ENV.fetch('AI_REPLY_DEBOUNCE_SECONDS', 2).to_i
+    if debounce_seconds.positive?
+      Ai::RespondToMessageJob.set(wait: debounce_seconds.seconds).perform_later(id)
+    else
+      Ai::RespondToMessageJob.perform_later(id)
+    end
   end
 
   def update_waiting_since

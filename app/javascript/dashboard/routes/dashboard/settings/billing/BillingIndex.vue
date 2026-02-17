@@ -64,12 +64,15 @@ const submitTopup = async () => {
   try {
     const payload = {
       amount_cents: amountCents,
-      provider_ref: `manual-ui-${Date.now()}`,
     };
     if (note.value) payload.note = note.value;
-    await AiWalletsAPI.topup(payload);
-    await loadWallet();
-    useAlert(t('BILLING.TOPUP.SUCCESS'));
+    const { data } = await AiWalletsAPI.paytrCheckout(payload);
+    if (!data?.checkout_url) {
+      throw new Error('checkout_url_missing');
+    }
+
+    window.open(data.checkout_url, '_blank', 'noopener,noreferrer');
+    useAlert(t('BILLING.TOPUP.CHECKOUT_STARTED'));
     amountUsd.value = '';
     note.value = '';
     closeTopupModal();

@@ -403,6 +403,7 @@
       "SUBMIT": "Top up",
       "CANCEL": "Cancel",
       "SUCCESS": "Balance updated successfully.",
+      "CHECKOUT_STARTED": "Payment page opened in a new tab.",
       "ERROR": "Failed to top up. Please try again.",
       "INVALID_AMOUNT": "Please enter a valid amount."
     }

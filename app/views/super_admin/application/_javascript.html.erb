@@ -1,10 +1,10 @@
 <%#
 # Javascript Partial
-
-This partial imports the necessary javascript on each page.
-By default, it includes the application JS,
-but each page can define additional JS sources
-by providing a `content_for(:javascript)` block.
+#
+# This partial imports the necessary javascript on each page.
+# By default, it includes the application JS,
+# but each page can define additional JS sources
+# by providing a `content_for(:javascript)` block.
 %>
 
 <% Administrate::Engine.javascripts.each do |js_path| %>
@@ -13,10 +13,56 @@ by providing a `content_for(:javascript)` block.
 
 <%= yield :javascript %>
 
+<%= javascript_tag do %>
+  (() => {
+    const THEME_KEY = 'super_admin_theme';
+
+    const getTheme = () => {
+      const storedTheme = localStorage.getItem(THEME_KEY);
+      if (storedTheme === 'light' || storedTheme === 'dark') return storedTheme;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+
+    const applyTheme = theme => {
+      const root = document.documentElement;
+      root.classList.toggle('dark', theme === 'dark');
+      root.classList.toggle('light', theme !== 'dark');
+      root.style.setProperty('color-scheme', theme);
+
+      const logo = document.getElementById('super-admin-brand-logo');
+      if (logo) {
+        const lightSrc = logo.dataset.lightSrc;
+        const darkSrc = logo.dataset.darkSrc;
+        logo.src = theme === 'dark' ? (darkSrc || lightSrc || logo.src) : (lightSrc || logo.src);
+      }
+
+      const toggleButton = document.getElementById('super-admin-theme-toggle');
+      if (toggleButton) {
+        toggleButton.textContent = theme === 'dark' ? 'Aydinlik Mod' : 'Koyu Mod';
+        toggleButton.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      }
+    };
+
+    const bindThemeToggle = () => {
+      applyTheme(getTheme());
+
+      const toggleButton = document.getElementById('super-admin-theme-toggle');
+      if (!toggleButton) return;
+
+      toggleButton.addEventListener('click', () => {
+        const nextTheme = getTheme() === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(THEME_KEY, nextTheme);
+        applyTheme(nextTheme);
+      });
+    };
+
+    document.addEventListener('DOMContentLoaded', bindThemeToggle);
+  })();
+<% end %>
+
 <% if Rails.env.test? %>
   <%= javascript_tag do %>
     $.fx.off = true;
     $.ajaxSetup({ async: false });
   <% end %>
 <% end %>
-

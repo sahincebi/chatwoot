@@ -1,0 +1,38 @@
+<div class="field-unit field-unit--string">
+  <%= f.label field.attribute, 'AI Arac Politikasi (hesapta hangi AI araclari calisabilir)', class: 'field-unit__label' %>
+  <div class="field-unit__field">
+    <div class="mb-4">
+      <label style="display:flex;align-items:center;gap:8px;">
+        <%= hidden_field_tag "#{f.object_name}[#{field.attribute}][enabled]", 0 %>
+        <%= check_box_tag "#{f.object_name}[#{field.attribute}][enabled]", 1, field.enabled? %>
+        <span>Arac cagrilari aktif (AI'nin tool kullanmasina izin verir)</span>
+      </label>
+    </div>
+
+    <div class="mb-4">
+      <div style="font-weight:600;margin-bottom:8px;">Kategori bazli yetkiler (hangi islev gruplari acik olacak)</div>
+      <% field.category_options.each do |tool_category| %>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+          <%= hidden_field_tag "#{f.object_name}[#{field.attribute}][allowed_tools][#{tool_category}]", 0 %>
+          <%= check_box_tag "#{f.object_name}[#{field.attribute}][allowed_tools][#{tool_category}]", 1, field.allowed?(tool_category) %>
+          <span><%= field.category_display_name(tool_category) %></span>
+        </label>
+      <% end %>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;max-width:460px;">
+      <div>
+        <label>Mesaj basina arac limiti (tek AI cevabinda en fazla kac arac)</label>
+        <%= number_field_tag "#{f.object_name}[#{field.attribute}][limits][max_tools_per_turn]", field.max_tools_per_turn, min: 1, max: 10 %>
+      </div>
+      <div>
+        <label>Toplam adim limiti (tool dongusunda maksimum tur)</label>
+        <%= number_field_tag "#{f.object_name}[#{field.attribute}][limits][max_total_steps]", field.max_total_steps, min: 1, max: 20 %>
+      </div>
+    </div>
+
+    <p style="margin-top:10px;font-size:12px;opacity:.8;">
+      NOT (yol haritasi): Odeme, kargo ve siparis gibi yeni toollar bu alana eklenecek.
+    </p>
+  </div>
+</div>

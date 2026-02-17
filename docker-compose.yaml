@@ -69,12 +69,44 @@ services:
     environment:
       - NODE_ENV=development
       - RAILS_ENV=development
+      - SIDEKIQ_ROLE=main
+      - SIDEKIQ_ENABLE_CRON=true
       - GEM_HOME=/gems
       - BUNDLE_PATH=/gems
       - GEM_PATH=/gems:/usr/local/lib/ruby/gems/3.4.0:/usr/local/bundle:/root/.local/share/gem/ruby/3.4.0
       - BUNDLE_WITHOUT=
       - BUNDLER_VERSION=2.5.11
     command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+
+  sidekiq-ai:
+    <<: *base
+    build:
+      context: .
+      dockerfile: ./docker/dockerfiles/rails.Dockerfile
+    image: chatwoot-rails:development
+    volumes:
+      - ./:/app:delegated
+      - node_modules:/app/node_modules
+      - packs:/app/public/packs
+      - cache:/app/tmp/cache
+      - bundle:/usr/local/bundle
+      - bundle:/gems
+    depends_on:
+      - postgres
+      - redis
+      - mailhog
+    environment:
+      - NODE_ENV=development
+      - RAILS_ENV=development
+      - SIDEKIQ_ROLE=ai
+      - SIDEKIQ_ENABLE_CRON=false
+      - AI_SIDEKIQ_CONCURRENCY=20
+      - GEM_HOME=/gems
+      - BUNDLE_PATH=/gems
+      - GEM_PATH=/gems:/usr/local/lib/ruby/gems/3.4.0:/usr/local/bundle:/root/.local/share/gem/ruby/3.4.0
+      - BUNDLE_WITHOUT=
+      - BUNDLER_VERSION=2.5.11
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq_ai.yml"]
 
   vite:
     <<: *base

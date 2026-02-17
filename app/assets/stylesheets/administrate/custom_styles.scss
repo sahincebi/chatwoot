@@ -21,3 +21,114 @@
 .feature-container {
   max-width: 100rem;
 }
+
+html.dark,
+html.dark body {
+  background-color: #0b1220;
+  color: #cbd5e1;
+}
+
+html.dark .main-content,
+html.dark main[role='main'] {
+  background: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+  color: #cbd5e1;
+}
+
+html.dark .main-content__body {
+  background-color: transparent;
+  color: #cbd5e1;
+}
+
+html.dark .main-content__header {
+  background-color: #0f172a;
+  border-bottom: 1px solid #22304a;
+  color: #f8fafc;
+}
+
+html.dark .main-content__page-title,
+html.dark h1,
+html.dark h2,
+html.dark h3,
+html.dark h4,
+html.dark h5,
+html.dark h6,
+html.dark p,
+html.dark label,
+html.dark th,
+html.dark td,
+html.dark li {
+  color: #dbe4f5;
+}
+
+html.dark p {
+  color: #b8c3d9;
+}
+
+html.dark .main-content__body > .bg-white {
+  background-color: #101a2d !important;
+  border: 1px solid #24344f;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
+}
+
+html.dark .main-content__body .group.outline,
+html.dark .main-content__body .rounded-lg.outline,
+html.dark .main-content__body .rounded-md.outline {
+  background-color: #15223a;
+  border-color: #2a3a57 !important;
+}
+
+html.dark .main-content__body .text-n-slate-11,
+html.dark .main-content__body .text-slate-500,
+html.dark .main-content__body .text-slate-700 {
+  color: #9fb0cf !important;
+}
+
+html.dark .main-content__body .text-n-slate-12,
+html.dark .main-content__body .text-slate-800 {
+  color: #eaf0ff !important;
+}
+
+html.dark tr {
+  border-bottom: 1px solid #23314a;
+}
+
+html.dark tbody tr:hover {
+  background-color: #17243d;
+}
+
+html.dark a {
+  color: #7fb6ff;
+}
+
+html.dark a:hover {
+  color: #a6ccff;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #15233c;
+  border: 1px solid #2f425f;
+  color: #f8fafc;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #93a4c0;
+}
+
+html.dark input[type='checkbox'] {
+  background-color: #10192b;
+  border: 1px solid #3b4c68;
+}
+
+html.dark .field-unit--boolean [type='checkbox'] {
+  accent-color: #3b82f6;
+}
+
+html.dark .search__input {
+  background-color: #15233c;
+  border-color: #2f425f;
+  color: #f8fafc;
+}

@@ -21,6 +21,21 @@ By default, it renders:
   <title>
     <%= content_for(:title) %> - <%= application_title %>
   </title>
+  <script>
+    (() => {
+      try {
+        const storedTheme = localStorage.getItem('super_admin_theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = storedTheme === 'light' || storedTheme === 'dark' ? storedTheme : (prefersDark ? 'dark' : 'light');
+        const root = document.documentElement;
+        root.classList.toggle('dark', theme === 'dark');
+        root.classList.toggle('light', theme !== 'dark');
+        root.style.setProperty('color-scheme', theme);
+      } catch (error) {
+        // Ignore theme initialization failures.
+      }
+    })();
+  </script>
   <%= render "stylesheet" %>
   <%= vite_client_tag %>
   <%= vite_javascript_tag 'superadmin' %>

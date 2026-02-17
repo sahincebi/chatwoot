@@ -713,7 +713,7 @@
 ## 2025-12-28 22:49
 - Tarih/Saat (TR): 2025-12-28 22:49
 - Amac: InstallationConfig set_value icin NULL serialized_value hatasini kalici engellemek.
-- Sorun / Belirti: set_value s¦-ras¦-nda PG::NotNullViolation (serialized_value NULL).
+- Sorun / Belirti: set_value s-ras-nda PG::NotNullViolation (serialized_value NULL).
 - Kok Neden (Varsa): NULL kayitlar ve locked kayitlarin set_value ile guncellenememesi.
 - Yapilan Degisiklikler (dosya bazli):
   - app/models/installation_config.rb
@@ -752,7 +752,7 @@
 - Tarih/Saat (TR): 2025-12-29 01:06
 - Amac: Login/LCP yavasligini tespit etmek ve minimal Vite dev server iyilestirmesi uygulamak.
 - Sorun / Belirti: /app/login TTFB 60s+ ve LCP ~100s; view render sureleri cok uzundu.
-- Kok Neden (Varsa): Vite dev server container i+ðinden erisilemiyor ve autoBuild ile Rails isteginde build tetikleniyordu.
+- Kok Neden (Varsa): Vite dev server container i+inden erisilemiyor ve autoBuild ile Rails isteginde build tetikleniyordu.
 - Yapilan Degisiklikler (dosya bazli):
   - config/vite.json
   - vite.config.ts
@@ -783,7 +783,7 @@
 
 ## 2025-12-29 01:53
 - Tarih/Saat (TR): 2025-12-29 01:53
-- Amac: Sayfa gecikmesini metriklerle tespit etmek (1. model: yalnizca +Âl+ð+-m).
+- Amac: Sayfa gecikmesini metriklerle tespit etmek (1. model: yalnizca +l++-m).
 - Sorun / Belirti: /app/login ve dashboard TTFB 60s+.
 - Kok Neden (Varsa): TTFB kaynakli yavaslik; view render suresi ve/veya asset build path'i.
 - Yapilan Degisiklikler (dosya bazli):
@@ -1010,7 +1010,7 @@
   - rg -n "<woot-modal[^>]*(:on-close|:onClose|\\son-close=)" app/javascript -g "*.vue"
   - Get-Date -Format "yyyy-MM-dd HH:mm"
   - docker compose restart rails sidekiq vite
-- Dogrulama: Beklemede (UI'da /app/accounts/1/... gezisinde 404 g+Âr+-nmemeli, onClose warning olmamali).
+- Dogrulama: Beklemede (UI'da /app/accounts/1/... gezisinde 404 g+r+-nmemeli, onClose warning olmamali).
 - Notlar / Riskler:
   - Rollback: accounts limits guard ve Modal warn degisikligini geri al.
 
@@ -1776,7 +1776,7 @@
     raise 'admin missing' unless admin_id
     u=User.find(admin_id)
 
-    # contact + contact_inbox (ChatwootÔÇÖun bekledigi sekilde)
+    # contact + contact_inbox (Chatwootun bekledigi sekilde)
     ci=ContactInboxWithContactBuilder.new(
       inbox: inbox,
       contact_attributes: { name: 'Debug Support', email: 'debug-support@example.com' },
@@ -1863,7 +1863,7 @@
 - Dogrulama:
   - VapidService.public_key/private_key runner crash olmadan calisti.
 - Notlar / Riskler:
-  - VAPID_KEYS yoksa runtimeÔÇÖda {} doner; yeni anahtarlar create edilirken hata olursa dashboard 500 vermez.
+  - VAPID_KEYS yoksa runtimeda {} doner; yeni anahtarlar create edilirken hata olursa dashboard 500 vermez.
 - Sonraki Adimlar:
   - /app/dashboard acilisinda 500 olmadigini kontrol et.
 
@@ -1899,7 +1899,7 @@
 - Calistirilan Komutlar:
   - (yok)
 - Dogrulama:
-  - /app/accounts/1/dashboard ekraninda kar+þilama ve "Create canned responses" karti TR gorunmeli.
+  - /app/accounts/1/dashboard ekraninda kar+ilama ve "Create canned responses" karti TR gorunmeli.
 - Notlar / Riskler:
   - Placeholder yapisi korunmustur ({name}, {installationName}).
 - Sonraki Adimlar:
@@ -1955,7 +1955,7 @@
 
 - Tarih/Saat (TR): 31.12.2025 01:50
 - Amac: Website inbox sohbetleri yuklenirken 500 hatasi ile takilma sorununu gidermek.
-- Sorun / Belirti: /api/v1/accounts/1/conversations istegi 500 donuyor, UI "Sohbetler Y+-kleniyor"da kal¦-yor.
+- Sorun / Belirti: /api/v1/accounts/1/conversations istegi 500 donuyor, UI "Sohbetler Y+-kleniyor"da kal-yor.
 - Kok Neden (Varsa): cached_label_list kolonu olmayan ortamlarda Conversation#cached_label_list_array NoMethodError veriyor.
 - Yapilan Degisiklikler (dosya bazli):
   - app/models/conversation.rb: cached_label_list kolonunu guard ile kontrol edip yoksa bos liste donmek.
@@ -2012,18 +2012,18 @@
 ---
 
 - Tarih/Saat (TR): 29.12.2025 21:02
-- Amac: Destek bildiriminde basarili olunca listeye yonlendirmek ve ticket id toastÔÇÖi gostermek.
+- Amac: Destek bildiriminde basarili olunca listeye yonlendirmek ve ticket id toasti gostermek.
 - Sorun / Belirti: /support/new submit sonrasi sayfada kaliniyor, refresh ile form geri geliyor.
 - Kok Neden (Varsa): Basarili aksiyonda router.push eksik ve toast ticket id icermiyor.
 - Yapilan Degisiklikler (dosya bazli):
-  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili aksiyonda support_ticket_indexÔÇÖe yonlendirme.
+  - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: basarili aksiyonda support_ticket_indexe yonlendirme.
   - app/javascript/dashboard/i18n/locale/en/support.json ve app/javascript/dashboard/i18n/locale/tr/support.json: SUCCESS_WITH_ID eklendi.
 - Calistirilan Komutlar:
   - (yok)
 - Dogrulama:
-  - /app/accounts/:id/support/new formu gonder -> toast ÔÇ£Ticket ID/NoÔÇØ ve /support/ticketsÔÇÖe redirect.
+  - /app/accounts/:id/support/new formu gonder -> toast Ç£Ticket ID/No ve /support/ticketse redirect.
 - Notlar / Riskler:
-  - Ticket id responseÔÇÖda yoksa sadece genel basari mesaji gosterilir.
+  - Ticket id responseda yoksa sadece genel basari mesaji gosterilir.
 - Sonraki Adimlar:
   - /support/tickets listesinde yeni ticket gorunurlugunu kontrol et.
 
@@ -2083,7 +2083,7 @@
 - Calistirilan Komutlar:
   - (yok)
 - Dogrulama:
-  - Tarayicida hard refresh (Ctrl+F5) sonras¦-:
+  - Tarayicida hard refresh (Ctrl+F5) sonras-:
     - /app/accounts/:id/support/new -> create -> /app/accounts/:id/support/tickets/:id
     - /app/accounts/:id/support/tickets/:id refresh -> sayfada kalir
     - /app/accounts/:id/support/tickets -> dashboard'a dusmez (new'e redirect olur)
@@ -2096,7 +2096,7 @@
 
 - Tarih/Saat (TR): 30.12.2025 01:21
 - Amac: Create sonrasi /support/new'de kalma sorununu kesin tespit ve fallback ile kapatmak.
-- Sorun / Belirti: UI bilet no gosteriyor ama URL /support/new'de kal¦-yor.
+- Sorun / Belirti: UI bilet no gosteriyor ama URL /support/new'de kal-yor.
 - Kok Neden (Varsa): Router replace guard/permission ya da nav failure; cache/HMR etkisi.
 - Yapilan Degisiklikler (dosya bazli):
   - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: console.warn debug loglari + router.replace failure loglama + window.location.assign fallback.
@@ -2220,7 +2220,7 @@
 - Tarih/Saat (TR): 30.12.2025 05:01
 - Amac: Support sayfalarinda "Missing required prop: name" uyarilarini kaldirarak navigation fail'i engellemek.
 - Sorun / Belirti: /support/tickets acilinca Vue warn (name prop) ve rota new'e dusuyor.
-- Kok Neden (Varsa): WithLabel bile+þeni name prop'u required iken SupportTicketNew/Show'da verilmemesi.
+- Kok Neden (Varsa): WithLabel bile+eni name prop'u required iken SupportTicketNew/Show'da verilmemesi.
 - Yapilan Degisiklikler (dosya bazli):
   - app/javascript/dashboard/routes/dashboard/support/SupportTicketNew.vue: WithLabel'lara name prop eklendi.
   - app/javascript/dashboard/routes/dashboard/support/SupportTicketShow.vue: reply/attachments WithLabel name prop eklendi.
@@ -2239,7 +2239,7 @@
 - Tarih/Saat (TR): 30.12.2025 05:18
 - Amac: Support sayfalarinda "Missing required prop: name" uyarilarini tamamen kaldirmak.
 - Sorun / Belirti: Vue warn nedeniyle navigation fail ve /support/new fallback.
-- Kok Neden (Varsa): WithLabel bile+þeninde name prop required iken baz¦- kullan¦-mlarda gelmemesi.
+- Kok Neden (Varsa): WithLabel bile+eninde name prop required iken baz- kullan-mlarda gelmemesi.
 - Yapilan Degisiklikler (dosya bazli):
   - app/javascript/v3/components/Form/WithLabel.vue: name prop required olmaktan cikti, default '' verildi.
 - Calistirilan Komutlar:
@@ -3002,3 +3002,288 @@
 - Runtime Config Notu:
   - InstallationConfig uzerindeki AI_INPUT_COST_PER_1M ve AI_OUTPUT_COST_PER_1M override degerleri temizlendi (nil).
   - Kontrol: Ai::PricingConfig.current(model:'gpt-5.1-2025-11-13') artik input=1.25, output=10.0, cached_input=0.125 (source=openai_model_catalog).
+
+## 2026-02-15 12:04
+- Tarih/Saat (TR): 2026-02-15 12:04
+- Amac: Eksik kalan 2-3-4 adimlarini tamamlamak (label/note write-back tools, 100 hesap icin scale-test tasklari, urunlesmis KPI ozeti).
+- Sorun / Belirti:
+  - AI tarafinda musteri notu ve etiket write-back tool seti yoktu.
+  - 100 hesap icin tekrar calistirilabilir operasyonel yuk testi task seti yoktu.
+  - Super Admin AI billing ekraninda donemsel KPI analizi sinirliydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/tools/add_label_to_conversation.rb
+  - app/services/ai/tools/remove_label_from_conversation.rb
+  - app/services/ai/tools/add_contact_note.rb
+  - app/services/ai/tools/add_private_note_to_conversation.rb
+  - app/services/ai/tools/tool_registry.rb
+  - app/fields/ai_tool_policy_field.rb
+  - lib/tasks/ai_scale_test.rake
+  - app/services/ai/kpi_summary_service.rb
+  - app/controllers/super_admin/ai_billings_controller.rb
+  - app/views/super_admin/ai_billings/index.html.erb
+  - app/views/super_admin/ai_billings/show.html.erb
+  - spec/services/ai/tools/writeback_tools_spec.rb
+  - spec/services/ai/kpi_summary_service_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb spec/services/ai/tools/writeback_tools_spec.rb spec/services/ai/kpi_summary_service_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "puts({tools: Ai::Tools::ToolRegistry::TOOL_CONFIG.keys.grep(/label|note/)}.inspect)"
+  - docker compose exec -T rails bundle exec rake -T ai:scale_test
+  - docker compose exec -T rails bundle exec rails runner "summary=Ai::KpiSummaryService.new(scope: AiUsageLog.all, days: 30); puts(summary.totals.slice(:request_count,:total_tokens,:provider_cost_cents,:billed_cost_cents).inspect)"
+- Dogrulama:
+  - RSpec: 16 examples, 0 failures.
+  - Tool registry yeni write-back araclari: add_label_to_conversation, remove_label_from_conversation, add_private_note_to_conversation, add_contact_note.
+  - Scale test tasklari listelendi: prepare/enqueue_messages/report/cleanup.
+  - KPI runner cikti: {request_count: 44, total_tokens: 132848, provider_cost_cents: 9, billed_cost_cents: 36}.
+- Notlar / Riskler:
+  - ai_tool_policy icinde yeni kategori 'crm' kullanildi; hesap bazinda aktif edilmezse add_contact_note calismaz.
+  - Scale tasklari test verisi olusturur; prod benzeri ortamda PREFIX ile izole calistirin ve cleanup kullanin.
+
+## 2026-02-15 12:16
+- Tarih/Saat (TR): 2026-02-15 12:16
+- Amac: 2-3-4 adimlari icin kalan scale-test idempotency hatasini kapatip dogrulamayi tamamlamak.
+- Sorun / Belirti:
+  - `ai:scale_test:prepare` calisirken bazi kayitlarda `Email zaten alindi` (RecordInvalid) ile AI agent provision kesiliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - lib/tasks/ai_scale_test.rake
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/tools/writeback_tools_spec.rb spec/services/ai/kpi_summary_service_spec.rb spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T -e PREFIX=AI_SCALE_SMOKE_20260215_1212 -e TOTAL=2 rails bundle exec rake ai:scale_test:prepare
+  - docker compose exec -T -e PREFIX=AI_SCALE_SMOKE_20260215_1212 rails bundle exec rake ai:scale_test:report
+  - docker compose exec -T -e PREFIX=AI_SCALE_SMOKE_20260215_1212 rails bundle exec rake ai:scale_test:cleanup
+- Dogrulama:
+  - RSpec: 16 examples, 0 failures.
+  - `prepare` basarili: `{event: "ai_scale_prepare_done", prepared: 2, prefix: "AI_SCALE_SMOKE_20260215_1212"}`
+  - `report` basarili: `{event: "ai_scale_report", accounts: 2, wallets: 2, usage_logs: 0, ...}`
+  - `cleanup` basarili: `{event: "ai_scale_cleanup_done", removed_accounts: 2, prefix: "AI_SCALE_SMOKE_20260215_1212"}`
+- Notlar / Riskler:
+  - AI agent olusturma fallback'i artik `RecordNotUnique` ve `RecordInvalid(email taken)` durumunda mevcut agent'i hesaba baglayarak idempotent devam ediyor.
+
+## 2026-02-16 01:02
+- Tarih/Saat (TR): 2026-02-16 01:02
+- Amac: OpenAI tarafinda eklenecek musteri notu/etiket tool fonksiyonlari ile backend tool isimlerini birebir uyumlu hale getirmek.
+- Sorun / Belirti:
+  - Prompt/tool adlandirmasi degistiginde backend'de `tool_not_allowed`/`tool bulunamadi` riski olusuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/tools/tool_registry.rb
+  - spec/services/ai/tools/writeback_tools_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/tools/writeback_tools_spec.rb
+- Dogrulama:
+  - 3 examples, 0 failures.
+  - Alias adlar calisiyor: add_conversation_label, remove_conversation_label, add_conversation_private_note, add_customer_note.
+- Notlar / Riskler:
+  - Mevcut eski adlar da korunuyor; OpenAI prompt tarafinda kademeli gecis yapilabilir.
+
+## 2026-02-16 20:38
+- Tarih/Saat (TR): 2026-02-16 20:38
+- Amac: 100 hesaplik AI olcek testi (prepare/enqueue/report/cleanup) ve test sirasinda yakalanan yarismaci olusum hatalarinin giderilmesi.
+- Sorun / Belirti:
+  - i:scale_test:prepare adiminda Email zaten alindi / User zaten alindi hatasi.
+  - enqueue_messages sirasinda coklu hesaplarda insufficient_balance (wallet=0).
+- Kok Neden (Varsa):
+  - AI agent provisioning ve inbox uyelik olusturma adimlari yarismaci kosullarda idempotent degildi.
+  - prepare task'i mevcut wallet kayitlarinda bakiyeyi yukari cekmiyordu (find_or_create block'u sadece yeni kayitta calisiyordu).
+- Yapilan Degisiklikler (dosya bazli):
+  - pp/services/account/provision_ai_agent_service.rb
+  - lib/tasks/ai_scale_test.rake
+- Calistirilan Komutlar:
+  - docker compose exec -T -e PREFIX=AI_SCALE_RUN_20260216_201003 -e TOTAL=100 -e PROMPT_ID=pmpt_6955c980d5a08196a1ccb532d81744000f114b7123b85142 -e PROMPT_VERSION=1 rails bundle exec rake ai:scale_test:prepare
+  - docker compose exec -T -e PREFIX=AI_SCALE_RUN_20260216_201003 -e PER_ACCOUNT=1 -e ENQUEUE_MODE=async rails bundle exec rake ai:scale_test:enqueue_messages
+  - docker compose exec -T -e PREFIX=AI_SCALE_RUN_20260216_201003 rails bundle exec rake ai:scale_test:report
+  - docker compose exec -T -e PREFIX=AI_SCALE_RUN_20260216_201003 -e PER_ACCOUNT=1 -e ENQUEUE_MODE=inline rails bundle exec rake ai:scale_test:enqueue_messages
+  - docker compose exec -T rails sh -lc "grep -n '\\[AI_REPLY\\]' log/development.log | tail -n 120"
+  - docker compose exec -T -e PREFIX=AI_SCALE_RUN_20260216_201003 rails bundle exec rake ai:scale_test:cleanup
+- Dogrulama:
+  - prepare basarili: {event: "ai_scale_prepare_done", prepared: 100, ...}
+  - wallet kontrolu: {accounts: 100, zero_wallets: 0, min_balance: 10000, max_balance: 10000}
+  - rapor (DNS hatasina kadar islenenler): {usage_logs: 29, total_tokens: 78273, provider_cost_cents: 33, billed_cost_cents: 132, total_debit_cents: 132}
+  - cleanup sonrasi: {remaining_accounts: 0}
+- Notlar / Riskler:
+  - OpenAI tarafinda gecici DNS hatasi (Socket::ResolutionError: getaddrinfo(3): Try again) nedeniyle inline enqueue tamamlama adimi yarida kesildi.
+  - Mail delivery (sendmail) hatalari sidekiq loglarini gurultulendiriyor; load-testte AI kuyruk gorunurlugunu zorlastiriyor.
+
+## 2026-02-16 23:37
+- Tarih/Saat (TR): 2026-02-16 23:37
+- Amac: Yuksek kapasiteye gecis icin AI reply islemlerini ayri kuyruga tasimak ve OpenAI ag hatalarinda kontrollu retry davranisi eklemek.
+- Sorun / Belirti:
+  - AI reply joblari `default` kuyrugunda diger islerle yarisa girdigi icin yuk altinda gecikme riski.
+  - OpenAI transport hatalarinda (timeout/socket) job dayanimi dusuktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - config/sidekiq.yml
+  - docker-compose.yaml
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - Select-String -Path app/jobs/ai/respond_to_message_job.rb -Pattern "PROCESSING_LOCK_NAMESPACE|OPENAI_RETRYABLE_ERRORS|queue_as"
+- Dogrulama:
+  - AI job kuyrugu `ai_replies` olarak ayarlandi.
+  - `sidekiq-ai` adinda sadece `ai_replies` dinleyen ayri worker servisi eklendi.
+  - OpenAI transport hatalari icin retryable hata listesi + `retry_on` eklendi.
+  - Not: Docker daemon kapali oldugu icin rspec komutu calistirilamadi (pipe `dockerDesktopLinuxEngine` bulunamadi).
+- Notlar / Riskler:
+  - Test calistirmak icin Docker Desktop acik olmalidir; ardindan rspec ve smoke test tekrar edilmelidir.
+  - `sidekiq-ai` servisini aktif etmek icin: `docker compose up -d sidekiq-ai`.
+
+## 2026-02-17 02:02
+- Tarih/Saat (TR): 2026-02-17 02:02
+- Amac: Kalici kapasite iyilestirmesi olarak burst mesajlarda eski incoming mesajlarin AI tarafinda islenmesini engellemek ve Ã§oklu yÃ¶ntemle dogrulamak.
+- Sorun / Belirti:
+  - Ayni conversation'da hizli ardarda gelen mesajlarin hepsi OpenAI cagrisi tetikleyebiliyor, gereksiz maliyet ve gecikme olusuyordu.
+- Kok Neden (Varsa):
+  - Dedupe sadece message_id bazliydi; conversation icin daha yeni incoming mesaj kontrolu yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - app/models/message.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md (encoding UTF-8 olarak duzeltildi ve bu kayit eklendi)
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/tools/writeback_tools_spec.rb
+  - docker compose exec -T rails bundle exec rspec spec/requests/api/v1/accounts/ai_wallets_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "a=Account.find(1); c=a.conversations.find_by(assignee_id: a.ai_agent_user_id); i=c.inbox; before_usage=AiUsageLog.count; m1=Message.create!(account:a,conversation:c,inbox:i,message_type: :incoming,private:false,content:'burst old'); sleep 1; m2=Message.create!(account:a,conversation:c,inbox:i,message_type: :incoming,private:false,content:'burst new'); Ai::RespondToMessageJob.perform_now(m1.id); after_usage=AiUsageLog.count; puts({scenario:'superseded', old_id:m1.id, new_id:m2.id, usage_delta:after_usage-before_usage, old_usage:AiUsageLog.where(account_id:a.id,message_id:m1.id).count}.inspect)"
+  - docker compose exec -T rails bundle exec rails runner "u=AiUsageLog.order(id: :desc).first; before_usage=AiUsageLog.count; before_debit=AiTransaction.where(kind: :debit).count; Ai::RespondToMessageJob.perform_now(u.message_id); puts({scenario:'already_processed', message_id:u.message_id, usage_delta:AiUsageLog.count-before_usage, debit_delta:AiTransaction.where(kind: :debit).count-before_debit}.inspect)"
+  - docker compose exec -T rails sh -lc "tail -n 3000 log/development.log | grep '\\[AI_REPLY\\]' | grep 'superseded_message' | tail -n 5"
+- Dogrulama:
+  - RSpec (job): 13 examples, 0 failures.
+  - RSpec (tool writeback): 3 examples, 0 failures.
+  - RSpec (wallet API): 7 examples, 0 failures.
+  - Runner (superseded): {scenario: "superseded", old_id: 921, new_id: 922, usage_delta: 0, old_usage: 0}
+  - Runner (already_processed): {scenario: "already_processed", message_id: 844, usage_delta: 0, debit_delta: 0}
+  - Log kaniti: [AI_REPLY] reason="superseded_message" satirlari goruldu.
+- Notlar / Riskler:
+  - Debounce varsayilani AI_REPLY_DEBOUNCE_SECONDS=2; gerekiyorsa ENV ile 0 yapilip devre disi birakilabilir.
+  - Parallel RSpec kosularinda test DB purging cakismasi oldugu icin kritik testler sirali kosuldu.
+
+## 2026-02-17 03:28
+- Tarih/Saat (TR): 2026-02-17 03:28
+- Amac: PayTR wallet topup entegrasyonunu request/callback seviyesinde dogrulamak ve callback endpointi icin regression spec eklemek.
+- Sorun / Belirti:
+  - PayTR callback route'u vardi ancak request spec yoktu.
+  - Yeni ai_payment_orders migration'i testten once pending durumdaydi.
+- Yapilan Degisiklikler (dosya bazli):
+  - spec/requests/api/v1/payments/paytr_callbacks_spec.rb
+  - db/migrate/20260217120000_create_ai_payment_orders.rb (migrate calistirildi)
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rspec spec/requests/api/v1/accounts/ai_wallets_spec.rb spec/requests/api/v1/payments/paytr_callbacks_spec.rb
+  - docker compose exec -T rails bundle exec rails routes | Select-String -Pattern "ai_wallet|paytr_checkout|payments/paytr/callback"
+  - docker compose exec -T rails bundle exec rails runner "puts({ai_payment_orders_table: ActiveRecord::Base.connection.data_source_exists?(:ai_payment_orders), unique_merchant_oid_index: ActiveRecord::Base.connection.indexes(:ai_payment_orders).any? { |i| i.name == 'index_ai_payment_orders_on_merchant_oid' && i.unique }}.inspect)"
+- Dogrulama:
+  - Migration basarili: CreateAiPaymentOrders uygulandi.
+  - RSpec: 11 examples, 0 failures.
+  - Route kaniti: GET/POST /api/v1/accounts/:account_id/ai_wallet + POST /api/v1/accounts/:account_id/ai_wallet/paytr_checkout + POST /api/v1/payments/paytr/callback goruluyor.
+  - Runner cikti: {ai_payment_orders_table: true, unique_merchant_oid_index: true}
+- Notlar / Riskler:
+  - Bu adim callback request davranisini dogrular; canli PayTR panel callback URL ve env konfigu yine deployment ortaminda ayri test edilmelidir.
+
+## 2026-02-17 03:50
+- Tarih/Saat (TR): 2026-02-17 03:50
+- Amac: PayTR tahsilat para birimini TL yerine USD yapmak (USD odemesi).
+- Sorun / Belirti:
+  - PayTR checkout payload'inda `currency=TL` ve `payment_amount` TRY bazli hesaplaniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/payments/paytr_service.rb
+  - spec/requests/api/v1/accounts/ai_wallets_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/requests/api/v1/accounts/ai_wallets_spec.rb spec/requests/api/v1/payments/paytr_callbacks_spec.rb
+- Dogrulama:
+  - RSpec: 11 examples, 0 failures.
+  - `paytr_checkout` request dogrulamasi: payload `currency=USD` ve `payment_amount=1800` (15 USD + %20 VAT) olarak gonderiliyor.
+  - `AiPaymentOrder`: `payment_currency=USD`, `payment_amount_cents=1800`, `fx_rate=1.0`.
+- Notlar / Riskler:
+  - Callback hash akisi degismedi; PayTR tarafinda USD tahsilat yetkisi panelde acik olmali.
+
+## 2026-02-17 04:00
+- Tarih/Saat (TR): 2026-02-17 04:00
+- Amac: PayTR callback success/failed/double-callback akisini kalici yazim ve idempotency acisindan uctan uca dogrulamak.
+- Sorun / Belirti:
+  - `Ai::Payments::PaytrService#process_callback!` icinde `with_lock` blogunda `return` kullanimi nedeniyle callback sonucu "paid" donse bile DB yazimi rollback olabiliyordu.
+- Kok Neden (Varsa):
+  - `with_lock` (transaction) icinden non-local return kullanimi transaction commit davranisini bozuyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/payments/paytr_service.rb
+  - spec/services/ai/payments/paytr_service_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/payments/paytr_service_spec.rb spec/requests/api/v1/accounts/ai_wallets_spec.rb spec/requests/api/v1/payments/paytr_callbacks_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "... success + duplicate callback simulation ..."
+  - docker compose exec -T rails bundle exec rails runner "... failed callback simulation ..."
+- Dogrulama:
+  - RSpec: 14 examples, 0 failures.
+  - Success + duplicate runner: `balance_delta: 333`, `tx_delta: 1`, ikinci callback sonucu `already_processed`, `order_status: paid`.
+  - Failed runner: `balance_delta: 0`, `tx_delta: 0`, `order_status: failed`.
+- Notlar / Riskler:
+  - PayTR canli callback URL'i bu projede `/api/v1/payments/paytr/callback` olmalidir.
+
+## 2026-02-17 04:06
+- Tarih/Saat (TR): 2026-02-17 04:06
+- Amac: PayTR odeme akisini farkli olasiliklarda tekrar kontrol etmek ve test kapsamini genisletmek.
+- Yapilan Degisiklikler (dosya bazli):
+  - spec/services/ai/payments/paytr_service_spec.rb
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/payments/paytr_service_spec.rb spec/requests/api/v1/accounts/ai_wallets_spec.rb spec/requests/api/v1/payments/paytr_callbacks_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "... success+duplicate callback scenario ..."
+  - docker compose exec -T rails bundle exec rails runner "... failed callback scenario ..."
+  - docker compose exec -T rails bundle exec rails runner "... invalid signature scenario ..."
+- Dogrulama:
+  - RSpec: 24 examples, 0 failures.
+  - Runner success+duplicate: {balance_delta: 321, tx_delta: 1, first: "paid", second: "already_processed", order_status: "paid"}
+  - Runner failed: {balance_delta: 0, tx_delta: 0, result: "failed", order_status: "failed"}
+  - Runner invalid signature: InvalidSignatureError alindi.
+- Notlar / Riskler:
+  - Testler local/simule callback ile dogrulandi; canli PayTR panel callback smoke testi deployment ortaminda tekrar edilmelidir.
+
+## 2026-02-17 04:28
+- Tarih/Saat (TR): 2026-02-17 04:28
+- Amac: PayTR entegrasyonunu resmi dokumana gore guvenlik sertlestirmesi ile guncellemek (callback payload dogrulama + IP allowlist + DB idempotency indexi).
+- Sorun / Belirti:
+  - Callback tarafinda status/format dogrulamasi sinirliydi.
+  - `ai_transactions` tablosunda PayTR provider_ref icin DB seviyesinde unique koruma yoktu.
+  - Callback tarafinda opsiyonel IP allowlist yoktu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/services/ai/payments/paytr_service.rb
+  - app/controllers/api/v1/payments/paytr_callbacks_controller.rb
+  - app/models/ai_transaction.rb
+  - db/migrate/20260217153000_add_unique_paytr_provider_ref_index_to_ai_transactions.rb (DB-agnostic duplicate cleanup + partial unique index)
+  - db/schema.rb
+  - spec/services/ai/payments/paytr_service_spec.rb
+  - spec/requests/api/v1/payments/paytr_callbacks_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rspec spec/services/ai/payments/paytr_service_spec.rb spec/requests/api/v1/payments/paytr_callbacks_spec.rb spec/requests/api/v1/accounts/ai_wallets_spec.rb
+  - rg -n "index_ai_transactions_on_account_provider_ref_paytr_unique" db/schema.rb
+- Dogrulama:
+  - Migration basarili: `index_ai_transactions_on_account_provider_ref_paytr_unique` eklendi.
+  - RSpec: 28 examples, 0 failures.
+  - Callback tarafinda yeni korumalar aktif:
+    - merchant_oid/status/total_amount/hash payload dogrulamasi
+    - opsiyonel `PAYTR_CALLBACK_IP_ALLOWLIST` kontrolu
+    - callback loglarinda remote_ip izlenebilirligi
+  - Success callback validasyonunda tutarsiz amount/currency durumunda order `failed_validation` olarak kapanir, wallet kredi yazilmaz.
+- Notlar / Riskler:
+  - `PAYTR_CALLBACK_IP_ALLOWLIST` bos ise allowlist kontrolu devre disidir (geriye donuk uyumluluk).
+  - PayTR tarafinda callback payload alanlari degisirse ilgili validasyon/snapshot alanlari birlikte guncellenmelidir.
+
+## 2026-02-17 04:45
+- Tarih/Saat (TR): 2026-02-17 04:45
+- Amac: Account panelinden dogrudan bakiye yazan manuel `topup` cagrisini kapatip sadece PayTR checkout akisina zorlamak.
+- Sorun / Belirti:
+  - UI eski bundle veya yanlis endpoint nedeniyle `/ai_wallet/topup` cagirarak PayTR ekranina gitmeden bakiye arttirabiliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/controllers/api/v1/accounts/ai_wallets_controller.rb
+  - spec/requests/api/v1/accounts/ai_wallets_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/requests/api/v1/accounts/ai_wallets_spec.rb spec/services/ai/payments/paytr_service_spec.rb spec/requests/api/v1/payments/paytr_callbacks_spec.rb
+  - docker compose exec -T rails bundle exec rails assets:clobber
+  - docker compose exec -T rails bundle exec rails assets:precompile
+  - docker compose restart rails sidekiq vite
+- Dogrulama:
+  - `POST /api/v1/accounts/:account_id/ai_wallet/topup` account admin icin `403` (disabled).
+  - PayTR akisi (`/ai_wallet/paytr_checkout`) testleri yesil.
+  - RSpec: 27 examples, 0 failures.
+- Notlar / Riskler:
+  - Bu degisiklikten sonra account panelde bakiye yukleme yalnizca PayTR checkout acilariyla yapilir.

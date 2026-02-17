@@ -105,6 +105,7 @@ class Account < ApplicationRecord
   has_many :support_tickets, dependent: :destroy_async
   has_one :ai_wallet, dependent: :destroy
   has_many :ai_integrations, dependent: :destroy
+  has_many :ai_payment_orders, dependent: :destroy
   has_many :ai_transactions, dependent: :destroy
   has_many :ai_usage_logs, dependent: :destroy
   has_many :teams, dependent: :destroy_async

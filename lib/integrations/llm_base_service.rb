@@ -1,5 +1,6 @@
 class Integrations::LlmBaseService
   include Integrations::LlmInstrumentation
+  MIN_BALANCE_CENTS = 10
 
   # gpt-4o-mini supports 128,000 tokens
   # 1 token is approx 4 characters
@@ -170,7 +171,7 @@ class Integrations::LlmBaseService
     account = reloaded_account
     return false unless account&.ai_enabled?
     return false if account.ai_prompt_id.blank?
-    return false unless account.ai_wallet&.balance_cents.to_i.positive?
+    return false unless account.ai_wallet&.balance_cents.to_i >= MIN_BALANCE_CENTS
     return false unless conversation&.assignee_id.present?
     return false unless account.ai_agent_user_id.present?
 

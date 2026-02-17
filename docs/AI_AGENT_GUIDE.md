@@ -196,12 +196,16 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 - [ ] OpenAI Responses tool loop:
   - Response’da tool call varsa → tool’u çalıştır → sonucu tekrar modele ver → final text al
 - [ ] Minimum tool set (başlangıç):
+  - `create_payment_link`
+  - `get_shipment_status`
   - `search_products`
   - `create_order`
   - `get_order_status`
   - `create_refund_request`
   - `close_conversation`
   - (randevu için) `calendar_query_availability`, `calendar_create_event` vb.
+- [ ] Hesap bazlı tool yetkilendirme (policy) kapsamını satış/operasyon araçları için genişlet:
+  - her account için ödeme/kargo/sipariş araçları ayrı ayrı açılıp kapatılabilsin
 - [ ] Tool execution güvenliği:
   - allowlist tool isimleri
   - request validation (JSON schema)

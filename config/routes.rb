@@ -156,6 +156,7 @@ Rails.application.routes.draw do
           resource :ai_settings, only: [:show, :update]
           resource :ai_wallet, only: [:show] do
             post :topup
+            post :paytr_checkout
           end
           namespace :ai_integrations do
             resource :google_calendar, only: [:update]
@@ -419,6 +420,8 @@ Rails.application.routes.draw do
           end
         end
       end
+
+      post 'payments/paytr/callback', to: 'payments/paytr_callbacks#create'
     end
 
     namespace :v2 do
@@ -634,6 +637,11 @@ Rails.application.routes.draw do
 
       resources :support_tickets, only: [:index, :show, :update] do
         post :reply, on: :member
+      end
+
+      resources :ai_billings, only: [:index, :show], param: :account_id do
+        post :topup, on: :member
+        post :update_pricing, on: :collection
       end
 
       # resources that doesn't appear in primary navigation in super admin

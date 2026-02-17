@@ -403,6 +403,7 @@
       "SUBMIT": "Y\u00fckle",
       "CANCEL": "Vazge\u00e7",
       "SUCCESS": "Bakiye ba\u015far\u0131yla g\u00fcncellendi.",
+      "CHECKOUT_STARTED": "\u00d6deme sayfas\u0131 yeni sekmede a\u00e7\u0131ld\u0131.",
       "ERROR": "Bakiye y\u00fcklenemedi. L\u00fctfen tekrar deneyin.",
       "INVALID_AMOUNT": "L\u00fctfen ge\u00e7erli bir tutar girin."
     }

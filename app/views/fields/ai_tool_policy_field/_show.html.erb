@@ -1,0 +1,13 @@
+<div>
+  <div><strong>Aktiflik:</strong> <%= field.enabled? ? 'Acik' : 'Kapali' %></div>
+  <div><strong>Yetkili kategoriler:</strong>
+    <% if field.category_options.empty? %>
+      <span>-</span>
+    <% else %>
+      <span>
+        <%= field.category_options.map { |category| "#{field.category_display_name(category)}=#{field.allowed?(category) ? 'acik' : 'kapali'}" }.join(', ') %>
+      </span>
+    <% end %>
+  </div>
+  <div><strong>Limitler:</strong> mesaj basina arac=<%= field.max_tools_per_turn %>, toplam adim=<%= field.max_total_steps %></div>
+</div>

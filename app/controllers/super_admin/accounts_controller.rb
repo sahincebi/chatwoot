@@ -37,6 +37,7 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     permitted_params = super
     permitted_params[:limits] = permitted_params[:limits].to_h.compact
     permitted_params[:selected_feature_flags] = params[:enabled_features].keys.map(&:to_sym) if params[:enabled_features].present?
+    permitted_params[:ai_tool_policy] = normalize_ai_tool_policy(permitted_params[:ai_tool_policy], requested_resource)
     permitted_params
   end
 
@@ -64,6 +65,34 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     # rubocop:disable Rails/I18nLocaleTexts
     redirect_back(fallback_location: [namespace, requested_resource], notice: 'Account deletion is in progress.')
     # rubocop:enable Rails/I18nLocaleTexts
+  end
+
+  private
+
+  def normalize_ai_tool_policy(raw_policy, account)
+    current_policy = account&.ai_tool_policy_with_defaults || Account::DEFAULT_AI_TOOL_POLICY.deep_dup
+    policy = raw_policy.respond_to?(:to_h) ? raw_policy.to_h : {}
+    policy = policy.deep_stringify_keys
+
+    boolean_type = ActiveModel::Type::Boolean.new
+    enabled = boolean_type.cast(policy['enabled'])
+    enabled = current_policy['enabled'] if enabled.nil?
+
+    allowed_tools = policy['allowed_tools'].is_a?(Hash) ? policy['allowed_tools'].deep_stringify_keys : {}
+    allowed_tools = allowed_tools.transform_values { |value| boolean_type.cast(value) }
+
+    limits = policy['limits'].is_a?(Hash) ? policy['limits'].deep_stringify_keys : {}
+    max_tools_per_turn = limits['max_tools_per_turn'].to_i
+    max_total_steps = limits['max_total_steps'].to_i
+
+    {
+      'enabled' => enabled,
+      'allowed_tools' => current_policy['allowed_tools'].merge(allowed_tools),
+      'limits' => {
+        'max_tools_per_turn' => max_tools_per_turn.between?(1, 10) ? max_tools_per_turn : current_policy['limits']['max_tools_per_turn'],
+        'max_total_steps' => max_total_steps.between?(1, 20) ? max_total_steps : current_policy['limits']['max_total_steps']
+      }
+    }
   end
 end
 

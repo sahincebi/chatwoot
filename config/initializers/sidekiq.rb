@@ -1,6 +1,15 @@
 require Rails.root.join('lib/redis/config')
 
-schedule_file = 'config/schedule.yml'
+BOOLEAN = ActiveModel::Type::Boolean.new
+
+sidekiq_cron_enabled = lambda do
+  explicit_value = ENV['SIDEKIQ_ENABLE_CRON']
+  unless explicit_value.nil?
+    next BOOLEAN.cast(explicit_value)
+  end
+
+  ENV['SIDEKIQ_ROLE'] != 'ai'
+end
 
 Sidekiq.configure_client do |config|
   config.redis = Redis::Config.app
@@ -17,8 +26,10 @@ end
 
 Sidekiq.configure_server do |config|
   config.redis = Redis::Config.app
+  cron_enabled = sidekiq_cron_enabled.call
+  config[:cron_poll_interval] = 0 unless cron_enabled
 
-  if ActiveModel::Type::Boolean.new.cast(ENV.fetch('ENABLE_SIDEKIQ_DEQUEUE_LOGGER', false))
+  if BOOLEAN.cast(ENV.fetch('ENABLE_SIDEKIQ_DEQUEUE_LOGGER', false))
     config.server_middleware do |chain|
       chain.add ChatwootDequeuedLogger
     end
@@ -30,9 +41,4 @@ Sidekiq.configure_server do |config|
     config[:skip_default_job_logging] = true
     config.logger.level = Logger.const_get(ENV.fetch('LOG_LEVEL', 'info').upcase.to_s)
   end
-end
-
-# https://github.com/ondrejbartas/sidekiq-cron
-Rails.application.reloader.to_prepare do
-  Sidekiq::Cron::Job.load_from_hash YAML.load_file(schedule_file) if File.exist?(schedule_file) && Sidekiq.server?
 end

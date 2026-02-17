@@ -34,6 +34,10 @@ RSpec.describe Ai::RespondToMessageJob do
     wallet.update!(balance_cents: 1000, currency: 'USD', status: :active)
   end
 
+  it 'uses dedicated ai_replies queue' do
+    expect(described_class.queue_name).to eq('ai_replies')
+  end
+
   it 'dedupes usage, debit, and outgoing message for the same message id' do
     stub_request(:post, 'https://api.openai.com/v1/responses')
       .with do |req|
@@ -70,6 +74,44 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(
       Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).count
     ).to eq(1)
+  end
+
+  it 'skips processing when advisory lock is not available' do
+    allow_any_instance_of(described_class).to receive(:acquire_processing_lock).and_return(false)
+
+    expect_any_instance_of(described_class).not_to receive(:fetch_ai_response)
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    expect(
+      Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).count
+    ).to eq(0)
+    expect(AiUsageLog.where(account_id: account.id, message_id: message.id)).to be_empty
+  end
+
+  it 'skips processing when a newer incoming message exists in the same conversation' do
+    message
+    create(
+      :message,
+      account: account,
+      conversation: conversation,
+      inbox: inbox,
+      message_type: :incoming,
+      private: false,
+      content: 'latest message'
+    )
+
+    expect_any_instance_of(described_class).not_to receive(:fetch_ai_response)
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    expect(
+      Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).count
+    ).to eq(0)
+    expect(AiUsageLog.where(account_id: account.id, message_id: message.id)).to be_empty
+    expect(AiTransaction.where(account_id: account.id, kind: :debit)).to be_empty
   end
 
   it 'applies cached input token pricing when usage includes cached tokens' do
@@ -350,7 +392,7 @@ RSpec.describe Ai::RespondToMessageJob do
     end
 
     outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
-    expect(outgoing.content).to eq('Merhaba')
+    expect(outgoing.content).to eq("Merhaba\nNasil yardim edebilirim?")
     expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
     expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
     expect(outgoing.content_attributes['ai_state']).to eq('collect')
@@ -385,6 +427,36 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
     expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
     expect(outgoing.content_attributes['ai_state']).to eq('scheduled')
+  end
+
+  it 'normalizes response field output to plain text' do
+    raw_json = {
+      'action' => 'chat.reply',
+      'state' => 'qualify',
+      'response' => 'Yarin 15:00-16:00 uygundur.'
+    }.to_json
+
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_response',
+          'output_text' => raw_json,
+          'model' => 'gpt-test',
+          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
+    expect(outgoing.content).to eq('Yarin 15:00-16:00 uygundur.')
+    expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
+    expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
+    expect(outgoing.content_attributes['ai_state']).to eq('qualify')
   end
 
   it 'passes through plain text output and stores raw text' do

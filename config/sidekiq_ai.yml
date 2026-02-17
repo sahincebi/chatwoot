@@ -1,0 +1,15 @@
+---
+:verbose: false
+:concurrency: <%= ENV.fetch("AI_SIDEKIQ_CONCURRENCY", 20) %>
+:timeout: 25
+:max_retries: 3
+:cron_poll_interval: 0
+:cron_schedule_file: config/schedule_sidekiq_ai.yml
+
+:queues:
+  - ai_replies
+
+production:
+  :concurrency: <%= ENV.fetch("AI_SIDEKIQ_CONCURRENCY", 20) %>
+staging:
+  :concurrency: <%= ENV.fetch("AI_SIDEKIQ_CONCURRENCY", 20) %>

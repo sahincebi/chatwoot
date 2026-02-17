@@ -42,42 +42,66 @@ RSpec.describe 'Api::V1::Accounts::AiWallets' do
       expect(response).to have_http_status(:unauthorized)
     end
 
-    it 'tops up wallet and creates transaction' do
+    it 'returns forbidden for account admin (manual topup disabled)' do
       post "/api/v1/accounts/#{account.id}/ai_wallet/topup",
            params: { amount_cents: 1000 },
            headers: admin.create_new_auth_token
 
-      expect(response).to have_http_status(:success)
-      account.reload
-      expect(account.ai_wallet.balance_cents).to eq(1000)
-      expect(AiTransaction.where(account_id: account.id, kind: :topup).count).to eq(1)
+      expect(response).to have_http_status(:forbidden)
     end
 
-    it 'rejects invalid amount' do
+    it 'returns forbidden even for invalid amount (endpoint disabled)' do
       post "/api/v1/accounts/#{account.id}/ai_wallet/topup",
            params: { amount_cents: 0 },
            headers: admin.create_new_auth_token
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe 'POST /api/v1/accounts/:account_id/ai_wallet/paytr_checkout' do
+    let(:headers) { admin.create_new_auth_token }
+
+    before do
+      stub_request(:post, 'https://www.paytr.com/odeme/api/get-token')
+        .to_return(
+          status: 200,
+          body: { status: 'success', token: 'test-token' }.to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        )
     end
 
-    it 'prevents duplicate topup with same provider_ref' do
-      headers = admin.create_new_auth_token
-      post "/api/v1/accounts/#{account.id}/ai_wallet/topup",
-           params: { amount_cents: 2000, provider_ref: 'dup-1' },
-           headers: headers
+    it 'creates a pending paytr order and returns checkout url' do
+      with_modified_env(
+        'PAYTR_MERCHANT_ID' => 'merchant-id',
+        'PAYTR_MERCHANT_KEY' => 'merchant-key',
+        'PAYTR_MERCHANT_SALT' => 'merchant-salt',
+        'PAYTR_OK_URL' => 'https://example.com/paytr/ok',
+        'PAYTR_FAIL_URL' => 'https://example.com/paytr/fail',
+        'PAYTR_TEST_MODE' => '1',
+        'MINIMUM_TOPUP_USD' => '10',
+        'PAYMENTS_VAT_RATE' => '0.2'
+      ) do
+        post "/api/v1/accounts/#{account.id}/ai_wallet/paytr_checkout",
+             params: { amount_cents: 1500, note: 'test checkout' },
+             headers: headers
+      end
 
       expect(response).to have_http_status(:success)
-      first_balance = account.reload.ai_wallet.balance_cents
+      body = response.parsed_body
+      expect(body['checkout_url']).to eq('https://www.paytr.com/odeme/test-token')
+      expect(body['merchant_oid']).to be_present
+      expect(AiPaymentOrder.where(account_id: account.id).count).to eq(1)
+      order = AiPaymentOrder.last
+      expect(order).to be_pending
+      expect(order.payment_currency).to eq('USD')
+      expect(order.payment_amount_cents).to eq(1800)
+      expect(order.fx_rate.to_f).to eq(1.0)
 
-      post "/api/v1/accounts/#{account.id}/ai_wallet/topup",
-           params: { amount_cents: 2000, provider_ref: 'dup-1' },
-           headers: headers
-
-      expect(response).to have_http_status(:success)
-      account.reload
-      expect(account.ai_wallet.balance_cents).to eq(first_balance)
-      expect(AiTransaction.where(account_id: account.id, provider: 'admin', provider_ref: 'dup-1').count).to eq(1)
+      expect(a_request(:post, 'https://www.paytr.com/odeme/api/get-token')
+        .with { |request| request.body.include?('currency=USD') }).to have_been_made
+      expect(a_request(:post, 'https://www.paytr.com/odeme/api/get-token')
+        .with { |request| request.body.include?('payment_amount=1800') }).to have_been_made
     end
   end
 end

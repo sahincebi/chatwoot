@@ -3,6 +3,31 @@ tr:
     messages:
       taken: "zaten al\u0131nd\u0131"
   activerecord:
+    models:
+      account:
+        one: "Hesap"
+        other: "Hesaplar"
+      user:
+        one: "Kullanici"
+        other: "Kullanicilar"
+      agent_bot:
+        one: "Temsilci Bot"
+        other: "Temsilci Botlari"
+      platform_app:
+        one: "Platform Uygulamasi"
+        other: "Platform Uygulamalari"
+      support_ticket:
+        one: "Destek Talebi"
+        other: "Destek Talepleri"
+    attributes:
+      account:
+        name: "Hesap Adi"
+        locale: "Dil"
+        status: "Durum"
+        ai_enabled: "AI Aktif"
+        ai_prompt_id: "AI Prompt ID"
+        ai_prompt_version: "AI Prompt Versiyonu"
+        ai_agent_user_id: "AI Temsilci Kullanici ID"
     errors:
       messages:
         taken: "zaten al\u0131nd\u0131"

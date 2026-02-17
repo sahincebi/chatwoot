@@ -1,11 +1,25 @@
 require 'net/http'
 
 class Ai::RespondToMessageJob < ApplicationJob
-  queue_as :default
+  queue_as :ai_replies
   MIN_BALANCE_CENTS = 10
+  PROCESSING_LOCK_NAMESPACE = 91_001
+  OPENAI_RETRYABLE_ERRORS = [
+    Net::OpenTimeout,
+    Net::ReadTimeout,
+    Timeout::Error,
+    Errno::ECONNRESET,
+    Errno::ETIMEDOUT,
+    SocketError,
+    OpenSSL::SSL::SSLError
+  ].freeze
+
+  retry_on(*OPENAI_RETRYABLE_ERRORS, wait: :exponentially_longer, attempts: 8)
 
   SKIP_REASONS = {
     already_processed: 'already_processed',
+    already_running: 'already_running',
+    superseded_message: 'superseded_message',
     ai_agent_missing: 'ai_agent_missing',
     not_assigned_to_ai: 'not_assigned_to_ai',
     ai_disabled: 'ai_disabled',
@@ -46,6 +60,9 @@ class Ai::RespondToMessageJob < ApplicationJob
     end
     return log_skip(account, conversation, message, SKIP_REASONS[:ai_agent_missing]) unless ai_user&.is_ai_agent?
     return log_skip(account, conversation, message, SKIP_REASONS[:not_assigned_to_ai]) unless conversation.assignee_id == ai_user.id
+    if superseded_by_newer_incoming_message?(conversation, message)
+      return log_skip(account, conversation, message, SKIP_REASONS[:superseded_message])
+    end
     return log_skip(account, conversation, message, SKIP_REASONS[:ai_disabled]) unless account.ai_enabled?
     return log_skip(account, conversation, message, SKIP_REASONS[:missing_prompt]) if account.ai_prompt_id.blank?
 
@@ -55,151 +72,176 @@ class Ai::RespondToMessageJob < ApplicationJob
       return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents)
     end
 
-    response_payload = fetch_ai_response(account, conversation, message)
-    return if response_payload[:error] == 'openai_error'
-    unless response_payload[:text].present?
-      reason = response_payload[:output_types].present? ? SKIP_REASONS[:tool_loop_failed] : SKIP_REASONS[:ai_response_empty]
+    unless acquire_processing_lock(message.id)
+      return log_skip(account, conversation, message, SKIP_REASONS[:already_running])
+    end
+
+    begin
+      if superseded_by_newer_incoming_message?(conversation, message)
+        return log_skip(account, conversation, message, SKIP_REASONS[:superseded_message])
+      end
+
+      response_payload = fetch_ai_response(account, conversation, message)
+      return if response_payload[:error] == 'openai_error'
+      unless response_payload[:text].present?
+        reason = response_payload[:output_types].present? ? SKIP_REASONS[:tool_loop_failed] : SKIP_REASONS[:ai_response_empty]
+        log_event(
+          event: 'error',
+          account: account,
+          conversation: conversation,
+          message: message,
+          prompt_id: account.ai_prompt_id,
+          prompt_version: account.ai_prompt_version,
+          response_id: response_payload[:response_id],
+          reason: reason,
+          output_types: response_payload[:output_types],
+          first_tool_name: response_payload[:first_tool_name]
+        )
+        return log_skip(account, conversation, message, reason)
+      end
+
+      usage = response_payload[:usage] || {}
+      input_tokens = usage['input_tokens'].to_i
+      output_tokens = usage['output_tokens'].to_i
+      total_tokens = usage['total_tokens'].to_i
+      total_tokens = input_tokens + output_tokens if total_tokens.zero?
+      model_for_pricing = response_payload[:model].presence || ai_model
+      pricing_config = Ai::PricingConfig.current(model: model_for_pricing)
+      cached_input_tokens, uncached_input_tokens = token_breakdown(input_tokens, usage)
+      provider_cost_cents = calculate_provider_cost_cents(
+        uncached_input_tokens: uncached_input_tokens,
+        cached_input_tokens: cached_input_tokens,
+        output_tokens: output_tokens,
+        pricing_config: pricing_config
+      )
+      billed_cost_cents = calculate_billed_cost_cents(provider_cost_cents, pricing_config)
+
+      balance_after = nil
+      balance_before = nil
+      already_processed_after_lock = false
+      response_id = response_payload[:response_id]
+      begin
+        wallet.with_lock do
+          wallet.reload
+          balance_before = wallet.balance_cents
+
+          if AiUsageLog.exists?(account_id: account.id, message_id: message.id)
+            already_processed_after_lock = true
+            next
+          end
+
+          if wallet.balance_cents.to_i < billed_cost_cents
+            return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents)
+          end
+
+          if billed_cost_cents.positive?
+            wallet.update!(balance_cents: wallet.balance_cents - billed_cost_cents)
+            AiTransaction.create!(
+              account: account,
+              kind: :debit,
+              amount_cents: billed_cost_cents,
+              currency: wallet.currency,
+              provider: 'openai',
+              provider_ref: response_id,
+              meta: {
+                prompt_id: account.ai_prompt_id,
+                prompt_version: account.ai_prompt_version,
+                provider_cost_cents: provider_cost_cents,
+                billed_cost_cents: billed_cost_cents,
+                billing_multiplier: pricing_config.billing_multiplier,
+                cached_input_tokens: cached_input_tokens,
+                uncached_input_tokens: uncached_input_tokens
+              }
+            )
+          end
+
+          AiUsageLog.create!(
+            account: account,
+            conversation_id: conversation.id,
+            message_id: message.id,
+            prompt_id: account.ai_prompt_id,
+            prompt_version: account.ai_prompt_version,
+            model: response_payload[:model],
+            input_tokens: input_tokens,
+            output_tokens: output_tokens,
+            total_tokens: total_tokens,
+            cost_cents: billed_cost_cents,
+            provider_cost_cents: provider_cost_cents,
+            billed_cost_cents: billed_cost_cents,
+            billing_multiplier: pricing_config.billing_multiplier,
+            currency: wallet.currency,
+            meta: {
+              provider: 'openai',
+              response_id: response_payload[:response_id],
+              raw_response: response_payload[:raw_response],
+              cached_input_tokens: cached_input_tokens,
+              uncached_input_tokens: uncached_input_tokens,
+              pricing_source: pricing_config.source
+            }
+          )
+
+          balance_after = wallet.balance_cents
+        end
+      rescue ActiveRecord::RecordNotUnique
+        return log_skip(account, conversation, message, SKIP_REASONS[:already_processed], balance_before: wallet.reload.balance_cents)
+      end
+
+      return log_skip(account, conversation, message, SKIP_REASONS[:already_processed], balance_before: balance_before) if already_processed_after_lock
+
+      normalized = normalize_ai_output(response_payload[:text])
+      normalized_text = normalized[:text]
       log_event(
-        event: 'error',
+        event: 'normalized_reply',
         account: account,
         conversation: conversation,
         message: message,
         prompt_id: account.ai_prompt_id,
         prompt_version: account.ai_prompt_version,
-        response_id: response_payload[:response_id],
-        reason: reason,
-        output_types: response_payload[:output_types],
-        first_tool_name: response_payload[:first_tool_name]
+        model: response_payload[:model],
+        raw_is_json: normalized[:raw_is_json],
+        ai_action: normalized[:action],
+        ai_state: normalized[:state]
       )
-      return log_skip(account, conversation, message, reason)
-    end
+      params = ActionController::Parameters.new(
+        content: normalized_text,
+        message_type: 'outgoing',
+        private: false,
+        content_attributes: {
+          ai_raw: normalized[:raw],
+          ai_action: normalized[:action],
+          ai_state: normalized[:state]
+        }.compact
+      )
+      Messages::MessageBuilder.new(ai_user, conversation, params).perform
 
-    usage = response_payload[:usage] || {}
-    input_tokens = usage['input_tokens'].to_i
-    output_tokens = usage['output_tokens'].to_i
-    total_tokens = usage['total_tokens'].to_i
-    total_tokens = input_tokens + output_tokens if total_tokens.zero?
-    model_for_pricing = response_payload[:model].presence || ai_model
-    pricing_config = Ai::PricingConfig.current(model: model_for_pricing)
-    cached_input_tokens, uncached_input_tokens = token_breakdown(input_tokens, usage)
-    provider_cost_cents = calculate_provider_cost_cents(
-      uncached_input_tokens: uncached_input_tokens,
-      cached_input_tokens: cached_input_tokens,
-      output_tokens: output_tokens,
-      pricing_config: pricing_config
-    )
-    billed_cost_cents = calculate_billed_cost_cents(provider_cost_cents, pricing_config)
-
-    balance_after = nil
-    balance_before = nil
-    response_id = response_payload[:response_id]
-    wallet.with_lock do
-      wallet.reload
-      balance_before = wallet.balance_cents
-      if wallet.balance_cents.to_i < billed_cost_cents
-        return log_skip(account, conversation, message, SKIP_REASONS[:insufficient_balance], balance_before: wallet.balance_cents)
-      end
-
-      if billed_cost_cents.positive?
-        wallet.update!(balance_cents: wallet.balance_cents - billed_cost_cents)
-        AiTransaction.create!(
-          account: account,
-          kind: :debit,
-          amount_cents: billed_cost_cents,
-          currency: wallet.currency,
-          provider: 'openai',
-          provider_ref: response_id,
-          meta: {
-            prompt_id: account.ai_prompt_id,
-            prompt_version: account.ai_prompt_version,
-            provider_cost_cents: provider_cost_cents,
-            billed_cost_cents: billed_cost_cents,
-            billing_multiplier: pricing_config.billing_multiplier,
-            cached_input_tokens: cached_input_tokens,
-            uncached_input_tokens: uncached_input_tokens
-          }
-        )
-      end
-
-      AiUsageLog.create!(
+      log_event(
+        event: 'success',
         account: account,
-        conversation_id: conversation.id,
-        message_id: message.id,
+        conversation: conversation,
+        message: message,
         prompt_id: account.ai_prompt_id,
         prompt_version: account.ai_prompt_version,
         model: response_payload[:model],
+        response_id: response_id,
         input_tokens: input_tokens,
+        cached_input_tokens: cached_input_tokens,
+        uncached_input_tokens: uncached_input_tokens,
         output_tokens: output_tokens,
         total_tokens: total_tokens,
         cost_cents: billed_cost_cents,
         provider_cost_cents: provider_cost_cents,
         billed_cost_cents: billed_cost_cents,
         billing_multiplier: pricing_config.billing_multiplier,
-        currency: wallet.currency,
-        meta: {
-          provider: 'openai',
-          response_id: response_payload[:response_id],
-          raw_response: response_payload[:raw_response],
-          cached_input_tokens: cached_input_tokens,
-          uncached_input_tokens: uncached_input_tokens,
-          pricing_source: pricing_config.source
-        }
+        input_cost_per_1m: pricing_config.input_cost_per_1m,
+        cached_input_cost_per_1m: pricing_config.cached_input_cost_per_1m,
+        output_cost_per_1m: pricing_config.output_cost_per_1m,
+        pricing_source: pricing_config.source,
+        balance_before: balance_before,
+        balance_after: balance_after
       )
-
-      balance_after = wallet.balance_cents
+    ensure
+      release_processing_lock(message.id)
     end
-
-    normalized = normalize_ai_output(response_payload[:text])
-    normalized_text = normalized[:text]
-    log_event(
-      event: 'normalized_reply',
-      account: account,
-      conversation: conversation,
-      message: message,
-      prompt_id: account.ai_prompt_id,
-      prompt_version: account.ai_prompt_version,
-      model: response_payload[:model],
-      raw_is_json: normalized[:raw_is_json],
-      ai_action: normalized[:action],
-      ai_state: normalized[:state]
-    )
-    params = ActionController::Parameters.new(
-      content: normalized_text,
-      message_type: 'outgoing',
-      private: false,
-      content_attributes: {
-        ai_raw: normalized[:raw],
-        ai_action: normalized[:action],
-        ai_state: normalized[:state]
-      }.compact
-    )
-    Messages::MessageBuilder.new(ai_user, conversation, params).perform
-
-    log_event(
-      event: 'success',
-      account: account,
-      conversation: conversation,
-      message: message,
-      prompt_id: account.ai_prompt_id,
-      prompt_version: account.ai_prompt_version,
-      model: response_payload[:model],
-      response_id: response_id,
-      input_tokens: input_tokens,
-      cached_input_tokens: cached_input_tokens,
-      uncached_input_tokens: uncached_input_tokens,
-      output_tokens: output_tokens,
-      total_tokens: total_tokens,
-      cost_cents: billed_cost_cents,
-      provider_cost_cents: provider_cost_cents,
-      billed_cost_cents: billed_cost_cents,
-      billing_multiplier: pricing_config.billing_multiplier,
-      input_cost_per_1m: pricing_config.input_cost_per_1m,
-      cached_input_cost_per_1m: pricing_config.cached_input_cost_per_1m,
-      output_cost_per_1m: pricing_config.output_cost_per_1m,
-      pricing_source: pricing_config.source,
-      balance_before: balance_before,
-      balance_after: balance_after
-    )
   end
 
   private
@@ -455,6 +497,9 @@ class Ai::RespondToMessageJob < ApplicationJob
   def call_openai(account, conversation, message, uri, api_key, payload)
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = uri.scheme == 'https'
+    http.open_timeout = ENV.fetch('AI_OPENAI_OPEN_TIMEOUT', 5).to_i
+    http.read_timeout = ENV.fetch('AI_OPENAI_READ_TIMEOUT', 120).to_i
+    http.write_timeout = ENV.fetch('AI_OPENAI_WRITE_TIMEOUT', 30).to_i if http.respond_to?(:write_timeout=)
     request = Net::HTTP::Post.new(uri.request_uri)
     request['Authorization'] = "Bearer #{api_key}"
     request['Content-Type'] = 'application/json'
@@ -497,6 +542,20 @@ class Ai::RespondToMessageJob < ApplicationJob
       error: (http_status >= 400 ? 'openai_error' : nil),
       error_message: error_message
     }
+  rescue *OPENAI_RETRYABLE_ERRORS => e
+    log_event(
+      event: 'error',
+      account: account,
+      conversation: conversation,
+      message: message,
+      prompt_id: account.ai_prompt_id,
+      prompt_version: account.ai_prompt_version,
+      model: payload[:model],
+      reason: 'openai_transport_error',
+      error_class: e.class.to_s,
+      error_message: e.message.to_s.truncate(500)
+    )
+    raise
   end
 
   def extract_error_message(raw_body, parsed)
@@ -531,11 +590,17 @@ class Ai::RespondToMessageJob < ApplicationJob
   end
 
   def normalize_ai_output(raw_text)
-    raw_string = raw_text.is_a?(String) ? raw_text : raw_text.to_s
-    json_candidate = extract_json_candidate(raw_string)
+    raw_string = raw_text.is_a?(String) ? raw_text : JSON.generate(raw_text)
+    json_candidate = raw_text.is_a?(Hash) || raw_text.is_a?(Array) ? raw_string : extract_json_candidate(raw_string)
     return { text: raw_string, raw: raw_string, raw_is_json: false } if json_candidate.blank?
 
     parsed = JSON.parse(json_candidate)
+    if parsed.is_a?(String)
+      nested_candidate = extract_json_candidate(parsed)
+      parsed = JSON.parse(nested_candidate) if nested_candidate.present?
+    end
+    return { text: raw_string, raw: raw_string, raw_is_json: false } unless parsed.is_a?(Hash)
+
     messages = parsed['messages']
     extracted = nil
     if messages.is_a?(Array)
@@ -543,15 +608,21 @@ class Ai::RespondToMessageJob < ApplicationJob
         next unless item.is_a?(Hash)
         next unless item['type'] == 'text'
 
-        item['text']
+        text_value = item['text']
+        text_value = text_value['value'] if text_value.is_a?(Hash)
+        normalize_candidate_text(text_value)
       end
-      extracted = texts.first
+      extracted = texts.join("\n").presence
     end
     extracted ||= parsed.dig('data', 'message') ||
+      parsed.dig('data', 'messages', 0, 'text') ||
+      parsed['response'] ||
+      parsed.dig('payload', 'message') ||
       parsed.dig('meta', 'message') ||
       parsed['message'] ||
       parsed.dig('data', 'text') ||
       parsed.dig('data', 'content')
+    extracted = normalize_candidate_text(extracted)
 
     {
       text: extracted.presence || raw_string,
@@ -577,6 +648,22 @@ class Ai::RespondToMessageJob < ApplicationJob
     return nil unless start_idx && end_idx && end_idx > start_idx
 
     stripped[start_idx..end_idx]
+  end
+
+  def normalize_candidate_text(value)
+    case value
+    when nil
+      nil
+    when String
+      value
+    when Hash
+      value['text'] || value['message'] || value['content'] || value.to_json
+    when Array
+      texts = value.filter_map { |item| normalize_candidate_text(item) }
+      texts.join("\n")
+    else
+      value.to_s
+    end
   end
 
   def log_skip(account, conversation, message, reason, balance_before: nil)
@@ -706,5 +793,29 @@ class Ai::RespondToMessageJob < ApplicationJob
         { status: 'ok', tool: tool_name }
       end
     end
+  end
+
+  def superseded_by_newer_incoming_message?(conversation, message)
+    conversation.messages
+                .where(message_type: :incoming, private: false)
+                .where('id > ?', message.id)
+                .exists?
+  end
+
+  def acquire_processing_lock(message_id)
+    lock_key = message_id.to_i
+    connection = ActiveRecord::Base.connection
+    acquired = connection.select_value("SELECT pg_try_advisory_lock(#{PROCESSING_LOCK_NAMESPACE}, #{lock_key})")
+    ActiveModel::Type::Boolean.new.cast(acquired)
+  rescue StandardError => e
+    Rails.logger.info("[AI_REPLY] lock_acquire_error=#{e.class}: #{e.message.to_s.truncate(200)}")
+    true
+  end
+
+  def release_processing_lock(message_id)
+    lock_key = message_id.to_i
+    ActiveRecord::Base.connection.execute("SELECT pg_advisory_unlock(#{PROCESSING_LOCK_NAMESPACE}, #{lock_key})")
+  rescue StandardError => e
+    Rails.logger.info("[AI_REPLY] lock_release_error=#{e.class}: #{e.message.to_s.truncate(200)}")
   end
 end

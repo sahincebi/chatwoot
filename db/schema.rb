@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2026_01_01_004200) do
+ActiveRecord::Schema[7.1].define(version: 2026_02_17_153000) do
   # These extensions should be enabled to support this database
   enable_extension "pg_stat_statements"
   enable_extension "pg_trgm"
@@ -163,6 +163,37 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_01_004200) do
     t.index ["account_id", "provider"], name: "index_ai_integrations_on_account_id_and_provider", unique: true
   end
 
+  create_table "ai_payment_orders", force: :cascade do |t|
+    t.bigint "account_id", null: false
+    t.bigint "user_id"
+    t.string "provider", default: "paytr", null: false
+    t.string "merchant_oid", null: false
+    t.integer "status", default: 0, null: false
+    t.bigint "amount_cents", null: false
+    t.string "currency", default: "USD", null: false
+    t.bigint "payment_amount_cents", null: false
+    t.string "payment_currency", default: "TRY", null: false
+    t.decimal "vat_rate", precision: 8, scale: 4, default: "0.0", null: false
+    t.decimal "fx_rate", precision: 12, scale: 6, default: "0.0", null: false
+    t.string "provider_ref"
+    t.string "paytr_status"
+    t.string "fail_reason_code"
+    t.string "fail_reason_message"
+    t.jsonb "meta", default: {}, null: false
+    t.jsonb "raw_request", default: {}, null: false
+    t.jsonb "raw_callback", default: {}, null: false
+    t.datetime "paid_at"
+    t.datetime "failed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["account_id", "status"], name: "index_ai_payment_orders_on_account_id_and_status"
+    t.index ["account_id"], name: "index_ai_payment_orders_on_account_id"
+    t.index ["merchant_oid"], name: "index_ai_payment_orders_on_merchant_oid", unique: true
+    t.index ["user_id"], name: "index_ai_payment_orders_on_user_id"
+    t.check_constraint "amount_cents > 0", name: "ai_payment_orders_amount_cents_positive"
+    t.check_constraint "payment_amount_cents > 0", name: "ai_payment_orders_payment_amount_cents_positive"
+  end
+
   create_table "ai_transactions", force: :cascade do |t|
     t.bigint "account_id", null: false
     t.integer "kind", null: false
@@ -174,6 +205,7 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_01_004200) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "created_at"], name: "index_ai_transactions_on_account_id_and_created_at"
+    t.index ["account_id", "provider", "provider_ref"], name: "index_ai_transactions_on_account_provider_ref_paytr_unique", unique: true, where: "(((provider)::text = 'paytr'::text) AND (provider_ref IS NOT NULL))"
     t.index ["account_id"], name: "index_ai_transactions_on_account_id"
     t.index ["provider_ref"], name: "index_ai_transactions_on_provider_ref"
   end
@@ -193,6 +225,9 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_01_004200) do
     t.jsonb "meta"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "provider_cost_cents", default: 0, null: false
+    t.bigint "billed_cost_cents", default: 0, null: false
+    t.decimal "billing_multiplier", precision: 8, scale: 4, default: "1.0", null: false
     t.index ["account_id", "created_at"], name: "index_ai_usage_logs_on_account_id_and_created_at"
     t.index ["account_id", "message_id"], name: "index_ai_usage_logs_on_account_id_and_message_id_unique", unique: true
     t.index ["account_id"], name: "index_ai_usage_logs_on_account_id"
@@ -1372,6 +1407,8 @@ ActiveRecord::Schema[7.1].define(version: 2026_01_01_004200) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "ai_integrations", "accounts"
+  add_foreign_key "ai_payment_orders", "accounts"
+  add_foreign_key "ai_payment_orders", "users"
   add_foreign_key "ai_transactions", "accounts"
   add_foreign_key "ai_usage_logs", "accounts"
   add_foreign_key "ai_wallets", "accounts"

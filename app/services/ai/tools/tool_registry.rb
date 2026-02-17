@@ -31,6 +31,46 @@ module Ai
           klass: CloseConversationLog,
           category: 'conversation',
           requires_calendar: false
+        },
+        'add_label_to_conversation' => {
+          klass: AddLabelToConversation,
+          category: 'conversation',
+          requires_calendar: false
+        },
+        'add_conversation_label' => {
+          klass: AddLabelToConversation,
+          category: 'conversation',
+          requires_calendar: false
+        },
+        'remove_label_from_conversation' => {
+          klass: RemoveLabelFromConversation,
+          category: 'conversation',
+          requires_calendar: false
+        },
+        'remove_conversation_label' => {
+          klass: RemoveLabelFromConversation,
+          category: 'conversation',
+          requires_calendar: false
+        },
+        'add_private_note_to_conversation' => {
+          klass: AddPrivateNoteToConversation,
+          category: 'conversation',
+          requires_calendar: false
+        },
+        'add_conversation_private_note' => {
+          klass: AddPrivateNoteToConversation,
+          category: 'conversation',
+          requires_calendar: false
+        },
+        'add_contact_note' => {
+          klass: AddContactNote,
+          category: 'crm',
+          requires_calendar: false
+        },
+        'add_customer_note' => {
+          klass: AddContactNote,
+          category: 'crm',
+          requires_calendar: false
         }
       }.freeze
 

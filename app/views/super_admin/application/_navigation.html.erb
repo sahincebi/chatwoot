@@ -22,20 +22,38 @@ as defined by the routes in the `admin/` namespace
 
 <% brand_name = BrandingConfig.brand_name %>
 
-<div class="border-slate-100 border-r w-56 flex-shrink-0 justify-between h-full flex flex-col" role="navigation">
+<div class="border-slate-100 dark:border-slate-700 border-r w-56 flex-shrink-0 justify-between h-full flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100" role="navigation">
   <div>
-    <div class="flex mx-4 mb-4 border-slate-100 border-b py-6">
-      <%= link_to image_tag('/brand-assets/logo_thumbnail.svg', alt: "#{brand_name} Admin Dashboard", class: 'h-10'), super_admin_root_url %>
-      <div class="flex flex-col ml-3">
-        <div class="text-sm"><%= brand_name %> <%= Chatwoot.config[:version] %></div>
-        <div class="text-xs text-slate-700 mt-0.5">Super Admin Console</div>
+    <div class="mx-4 mb-4 border-slate-100 dark:border-slate-700 border-b py-6">
+      <div class="flex">
+        <%= link_to image_tag('/brand-assets/cebi-favicon-light.svg',
+                              alt: "#{brand_name} Yönetim Paneli",
+                              class: 'h-10',
+                              id: 'super-admin-brand-logo',
+                              data: {
+                                light_src: '/brand-assets/cebi-favicon-light.svg',
+                                dark_src: '/brand-assets/cebi-favicon-dark.svg'
+                              }),
+                    super_admin_root_url %>
+        <div class="flex flex-col ml-3">
+          <div class="text-sm"><%= brand_name %> <%= Chatwoot.config[:version] %></div>
+          <div class="text-xs text-slate-700 mt-0.5 dark:text-slate-300">Super Admin Konsolu</div>
+        </div>
       </div>
+      <button
+        id="super-admin-theme-toggle"
+        type="button"
+        aria-pressed="false"
+        class="mt-4 inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+      >
+        Koyu Mod
+      </button>
     </div>
 
     <ul class="my-4">
-      <%= render partial: "nav_item", locals: { icon: 'icon-grid-line', url: super_admin_root_url, label: 'Dashboard' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-grid-line', url: super_admin_root_url, label: 'Panel' } %>
       <% Administrate::Namespace.new(namespace).resources.each do |resource| %>
-        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings"].include?  resource.resource %>
+        <% next if ["account_users", "access_tokens", "installation_configs", "dashboard", "devise/sessions", "app_configs", "instance_statuses", "settings", "ai_billings"].include? resource.resource %>
         <%= render partial: "nav_item", locals: {
             icon: sidebar_icons[resource.resource.to_sym],
             url: resource_index_route(resource),
@@ -44,15 +62,21 @@ as defined by the routes in the `admin/` namespace
         %>
 
       <% end %>
+      <%= render partial: "nav_item", locals: {
+          icon: 'icon-dashboard-line',
+          url: super_admin_ai_billings_path,
+          label: 'AI Faturalandirma'
+        }
+      %>
       <%= render 'settings_menu', open: settings_open? %>
     </ul>
   </div>
   <div>
     <ul class="my-4">
-      <%= render partial: "nav_item", locals: { icon: 'icon-mist-fill', url: sidekiq_web_url, label: 'Sidekiq Dashboard' } %>
-      <%= render partial: "nav_item", locals: { icon: 'icon-health-book-line', url: super_admin_instance_status_url, label: 'Instance Health' } %>
-      <%= render partial: "nav_item", locals: { icon: 'icon-dashboard-line', url: '/', label: 'Agent Dashboard' } %>
-      <%= render partial: "nav_item", locals: { icon: 'icon-logout-circle-r-line', url: super_admin_logout_url, label: 'Logout' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-mist-fill', url: sidekiq_web_url, label: 'Sidekiq Paneli' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-health-book-line', url: super_admin_instance_status_url, label: 'Sunucu Sagligi' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-dashboard-line', url: '/', label: 'Temsilci Paneli' } %>
+      <%= render partial: "nav_item", locals: { icon: 'icon-logout-circle-r-line', url: super_admin_logout_url, label: 'Cikis' } %>
     </ul>
   </div>
 </div>
