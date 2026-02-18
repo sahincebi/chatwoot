@@ -81,13 +81,20 @@ to display a collection of resources in an HTML table.
         <% end %>
 
         <% if existing_action? collection_presenter.resource_name, :destroy %>
-          <td><%= link_to(
-            t("administrate.actions.destroy"),
-            [namespace, collection_presenter.resource_name == 'account_user' ? resource : resource.becomes(User)],
-            class: "text-color-red",
-            method: :delete,
-            data: { confirm: t("administrate.actions.confirm") }
-          ) if authorized_action? resource, :destroy %></td>
+          <td>
+            <% if authorized_action? resource, :destroy %>
+              <%= button_to(
+                t("administrate.actions.destroy"),
+                [namespace, collection_presenter.resource_name == 'account_user' ? resource : resource.becomes(User)],
+                method: :delete,
+                form: {
+                  class: "inline-block",
+                  onsubmit: "return confirm('#{j t('administrate.actions.confirm')}')"
+                },
+                class: "text-color-red bg-transparent border-0 p-0 cursor-pointer"
+              ) %>
+            <% end %>
+          </td>
         <% end %>
       </tr>
     <% end %>

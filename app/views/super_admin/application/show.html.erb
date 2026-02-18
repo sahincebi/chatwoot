@@ -30,13 +30,18 @@ as well as a link to its edit page.
       class: "button",
     ) if accessible_action?(page.resource, :edit) %>
 
-    <%= link_to(
-      t("administrate.actions.destroy"),
-      [namespace, page.resource],
-      class: "button button--danger",
-      method: :delete,
-      data: { confirm: t("administrate.actions.confirm") }
-    ) if accessible_action?(page.resource, :destroy) %>
+    <% if accessible_action?(page.resource, :destroy) %>
+      <%= button_to(
+        t("administrate.actions.destroy"),
+        [namespace, page.resource],
+        method: :delete,
+        form: {
+          class: "inline-block",
+          onsubmit: "return confirm('#{j t('administrate.actions.confirm')}')"
+        },
+        class: "button button--danger"
+      ) %>
+    <% end %>
   </div>
 </header>
 
