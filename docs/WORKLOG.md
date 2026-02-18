@@ -3287,3 +3287,24 @@
   - RSpec: 27 examples, 0 failures.
 - Notlar / Riskler:
   - Bu degisiklikten sonra account panelde bakiye yukleme yalnizca PayTR checkout acilariyla yapilir.
+
+## 2026-02-18 12:19
+- Tarih/Saat (TR): 2026-02-18 12:19
+- Amac: Signup ekranindaki Kullanim Kosullari ve Gizlilik Politikasi linklerini Chatwoot yerine Cebi Medya linklerine yonlendirmek.
+- Sorun / Belirti:
+  - `/app/auth/signup` ekraninda linkler `chatwoot.com` adreslerine gidiyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/javascript/v3/views/auth/signup/components/Signup/Form.vue
+  - config/installation_config.yml
+  - db/migrate/20260218091500_set_cebimedya_legal_urls.rb
+  - db/schema.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rails db:migrate
+  - docker compose exec -T rails bundle exec rails runner "puts({terms: InstallationConfig.get_value('TERMS_URL'), privacy: InstallationConfig.get_value('PRIVACY_URL')}.inspect)"
+- Dogrulama:
+  - Migration basarili: `20260218091500 SetCebimedyaLegalUrls` uygulandi.
+  - Runtime config dogrulamasi: `TERMS_URL=https://cebimedya.com/hizmet-sartlari` ve `PRIVACY_URL=https://cebimedya.com/gizlilik-politikasi`.
+  - Signup formunda link replace artik hem `/terms` hem `/terms-of-service` varyantlarini kapsiyor.
+- Notlar / Riskler:
+  - Degisikligin sunucuya yansimasi icin deploy tarafinda `db:prepare` ve asset refresh adimlari calistirilmalidir.
