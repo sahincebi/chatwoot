@@ -429,6 +429,36 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(outgoing.content_attributes['ai_state']).to eq('scheduled')
   end
 
+  it 'normalizes meta reply output to plain text' do
+    raw_json = {
+      'action' => 'chat.reply',
+      'state' => 'qualify',
+      'meta' => { 'reply' => 'Merhaba, size nasil yardimci olabilirim?' }
+    }.to_json
+
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_meta_reply',
+          'output_text' => raw_json,
+          'model' => 'gpt-test',
+          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
+    expect(outgoing.content).to eq('Merhaba, size nasil yardimci olabilirim?')
+    expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
+    expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
+    expect(outgoing.content_attributes['ai_state']).to eq('qualify')
+  end
+
   it 'normalizes response field output to plain text' do
     raw_json = {
       'action' => 'chat.reply',

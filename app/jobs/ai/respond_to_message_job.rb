@@ -619,9 +619,12 @@ class Ai::RespondToMessageJob < ApplicationJob
       parsed['response'] ||
       parsed.dig('payload', 'message') ||
       parsed.dig('meta', 'message') ||
+      parsed.dig('meta', 'reply') ||
       parsed['message'] ||
+      parsed['reply'] ||
       parsed.dig('data', 'text') ||
-      parsed.dig('data', 'content')
+      parsed.dig('data', 'content') ||
+      parsed.dig('data', 'reply')
     extracted = normalize_candidate_text(extracted)
 
     {

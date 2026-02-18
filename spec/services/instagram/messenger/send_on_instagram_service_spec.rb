@@ -152,6 +152,34 @@ describe Instagram::Messenger::SendOnInstagramService do
         allow(Facebook::Messenger::Configuration::AppSecretProofCalculator).to receive(:call).and_return('app_secret_key', 'access_token')
       end
 
+      it 'retries without HUMAN_AGENT tag when review is not approved' do
+        message = create(:message, message_type: 'outgoing', inbox: instagram_messenger_inbox, account: account, conversation: conversation)
+        InstallationConfig.where(name: 'ENABLE_MESSENGER_CHANNEL_HUMAN_AGENT').first_or_create(value: true)
+        GlobalConfig.clear_cache
+
+        human_agent_error_body = {
+          'error' => {
+            'message' => "To use 'Human Agent', your use of this endpoint must be reviewed and approved by Facebook.",
+            'type' => 'OAuthException',
+            'code' => 10
+          }
+        }
+        human_agent_error_response = instance_double(
+          HTTParty::Response,
+          success?: false,
+          body: human_agent_error_body.to_json,
+          parsed_response: human_agent_error_body
+        )
+
+        allow(HTTParty).to receive(:post).and_return(human_agent_error_response, mock_response)
+
+        response = described_class.new(message: message).perform
+
+        expect(response['message_id']).to eq('anyrandommessageid1234567890')
+        expect(HTTParty).to have_received(:post).twice
+        expect(message.reload.status).not_to eq('failed')
+      end
+
       it 'handles HTTP errors' do
         message = create(:message, message_type: 'outgoing', inbox: instagram_messenger_inbox, account: account, conversation: conversation)
         allow(HTTParty).to receive(:post).and_return(error_response)

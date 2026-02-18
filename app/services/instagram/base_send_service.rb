@@ -59,6 +59,11 @@ class Instagram::BaseSendService < Base::SendOnChannelService
       message.update!(source_id: parsed_response['message_id'])
       parsed_response
     else
+      if retry_without_human_agent_tag?(parsed_response, message_content)
+        Rails.logger.warn("Instagram response: #{external_error(parsed_response)} : retrying without HUMAN_AGENT tag")
+        return send_message(without_human_agent_tag(message_content))
+      end
+
       external_error = external_error(parsed_response)
       Rails.logger.error("Instagram response: #{external_error} : #{message_content}")
       Messages::StatusUpdateService.new(message, 'failed', external_error).perform
@@ -82,6 +87,33 @@ class Instagram::BaseSendService < Base::SendOnChannelService
     return attachment.file_type if %w[image audio video file].include? attachment.file_type
 
     'file'
+  end
+
+  def retry_without_human_agent_tag?(parsed_response, message_content)
+    human_agent_tag_payload?(message_content) && human_agent_not_approved_error?(parsed_response)
+  end
+
+  def human_agent_tag_payload?(message_content)
+    tag = message_content[:tag] || message_content['tag']
+    messaging_type = message_content[:messaging_type] || message_content['messaging_type']
+
+    tag.to_s.casecmp('HUMAN_AGENT').zero? && messaging_type.to_s.casecmp('MESSAGE_TAG').zero?
+  end
+
+  def human_agent_not_approved_error?(parsed_response)
+    error_code = parsed_response.dig('error', 'code').to_i
+    error_message = parsed_response.dig('error', 'message').to_s.downcase
+
+    error_code == 10 && error_message.include?('human agent') && error_message.include?('review')
+  end
+
+  def without_human_agent_tag(message_content)
+    payload = message_content.deep_dup
+    payload.delete(:messaging_type)
+    payload.delete('messaging_type')
+    payload.delete(:tag)
+    payload.delete('tag')
+    payload
   end
 
   # Methods to be implemented by child classes
