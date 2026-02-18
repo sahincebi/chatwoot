@@ -9,9 +9,25 @@ class ChatwootHub
   CAPTAIN_ACCOUNTS_URL = "#{BASE_URL}/instance_captain_accounts".freeze
 
   def self.installation_identifier
-    identifier = InstallationConfig.find_by(name: 'INSTALLATION_IDENTIFIER')&.value
-    identifier ||= InstallationConfig.create!(name: 'INSTALLATION_IDENTIFIER', value: SecureRandom.uuid).value
-    identifier
+    retries = 0
+
+    begin
+      config = InstallationConfig.unscoped.find_or_initialize_by(name: 'INSTALLATION_IDENTIFIER')
+      if config.value.blank?
+        config.locked = true if config.locked.nil?
+        config.value = SecureRandom.uuid
+        config.save!
+      end
+      config.value
+    rescue ActiveRecord::RecordNotUnique
+      retries += 1
+      retry if retries < 3
+
+      fallback_config = InstallationConfig.unscoped.find_by(name: 'INSTALLATION_IDENTIFIER')
+      return fallback_config.value if fallback_config&.value.present?
+
+      raise
+    end
   end
 
   def self.billing_url

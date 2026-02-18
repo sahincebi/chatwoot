@@ -1,6 +1,18 @@
 require 'rails_helper'
 
 describe ChatwootHub do
+  it 'backfills an existing blank installation identifier without creating duplicates' do
+    config = InstallationConfig.unscoped.find_or_initialize_by(name: 'INSTALLATION_IDENTIFIER')
+    config.value = nil
+    config.locked = true if config.locked.nil?
+    config.save!
+
+    expect do
+      identifier = described_class.installation_identifier
+      expect(identifier).to be_present
+    end.not_to change { InstallationConfig.unscoped.where(name: 'INSTALLATION_IDENTIFIER').count }
+  end
+
   it 'generates installation identifier' do
     installation_identifier = described_class.installation_identifier
     expect(installation_identifier).not_to be_nil
