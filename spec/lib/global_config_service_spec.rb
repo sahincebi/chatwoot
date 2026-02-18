@@ -1,43 +1,38 @@
 require 'rails_helper'
 
 describe GlobalConfigService do
-  subject(:trigger) { described_class }
+  describe '.load' do
+    before do
+      GlobalConfig.clear_cache
+      InstallationConfig.unscoped.where(name: 'ENABLE_ACCOUNT_SIGNUP').delete_all
+    end
 
-  describe 'execute' do
-    context 'when called with default options' do
-      before do
-        # to clear redis cache
-        GlobalConfig.clear_cache
+    it 'returns persisted false value without treating it as absent' do
+      InstallationConfig.set_value('ENABLE_ACCOUNT_SIGNUP', false, locked: false)
+
+      with_modified_env ENABLE_ACCOUNT_SIGNUP: 'true' do
+        value = described_class.load('ENABLE_ACCOUNT_SIGNUP', 'true')
+        expect(value).to eq(false)
       end
+    end
 
-      # it 'set default value if not found on db nor env var' do
-      #   value = GlobalConfig.get('ENABLE_ACCOUNT_SIGNUP')
-      #   expect(value['ENABLE_ACCOUNT_SIGNUP']).to eq nil
+    it 'backfills nil installation config value from env' do
+      InstallationConfig.unscoped.create!(name: 'ENABLE_ACCOUNT_SIGNUP', locked: false, serialized_value: {})
 
-      #   described_class.load('ENABLE_ACCOUNT_SIGNUP', 'true')
-
-      #   value = GlobalConfig.get('ENABLE_ACCOUNT_SIGNUP')
-      #   expect(value['ENABLE_ACCOUNT_SIGNUP']).to eq 'true'
-      #   expect(InstallationConfig.find_by(name: 'ENABLE_ACCOUNT_SIGNUP')&.value).to eq 'true'
-      # end
-
-      it 'get value from env variable even if present on DB' do
-        with_modified_env ENABLE_ACCOUNT_SIGNUP: 'false' do
-          expect(InstallationConfig.find_by(name: 'ENABLE_ACCOUNT_SIGNUP')&.value).to be_nil
-          value = described_class.load('ENABLE_ACCOUNT_SIGNUP', 'true')
-          expect(value).to eq 'false'
-        end
+      with_modified_env ENABLE_ACCOUNT_SIGNUP: 'false' do
+        value = described_class.load('ENABLE_ACCOUNT_SIGNUP', 'true')
+        expect(value).to eq('false')
+        expect(InstallationConfig.unscoped.find_by(name: 'ENABLE_ACCOUNT_SIGNUP')&.value).to eq('false')
       end
+    end
 
-      # it 'get value from DB if found' do
-      #   # Set a value in db first and make sure this value
-      #   # is not respected even when load() method is called with
-      #   # another value.
-      #   InstallationConfig.where(name: 'ENABLE_ACCOUNT_SIGNUP').first_or_create(value: 'true')
-      #   described_class.load('ENABLE_ACCOUNT_SIGNUP', 'false')
-      #   value = GlobalConfig.get('ENABLE_ACCOUNT_SIGNUP')
-      #   expect(value['ENABLE_ACCOUNT_SIGNUP']).to eq 'true'
-      # end
+    it 'keeps DB value when present even if env is different' do
+      InstallationConfig.set_value('ENABLE_ACCOUNT_SIGNUP', 'true', locked: false)
+
+      with_modified_env ENABLE_ACCOUNT_SIGNUP: 'false' do
+        value = described_class.load('ENABLE_ACCOUNT_SIGNUP', 'false')
+        expect(value).to eq('true')
+      end
     end
   end
 end

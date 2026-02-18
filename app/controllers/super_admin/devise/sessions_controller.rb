@@ -6,7 +6,10 @@ class SuperAdmin::Devise::SessionsController < Devise::SessionsController
   end
 
   def create
-    redirect_to(super_admin_session_path, flash: { error: @error_message }) && return unless valid_credentials?
+    unless valid_credentials?
+      redirect_to super_admin_session_path, flash: { error: @error_message }
+      return
+    end
 
     sign_in(:super_admin, @super_admin)
     flash.discard
@@ -14,9 +17,9 @@ class SuperAdmin::Devise::SessionsController < Devise::SessionsController
   end
 
   def destroy
-    sign_out
+    sign_out(:super_admin)
     flash.discard
-    redirect_to '/'
+    redirect_to super_admin_session_path
   end
 
   private
@@ -30,5 +33,9 @@ class SuperAdmin::Devise::SessionsController < Devise::SessionsController
     Rails.logger.error e.message
     @error_message = 'Invalid credentials. Please try again.'
     false
+  end
+
+  def after_sign_in_path_for(_resource)
+    super_admin_users_path
   end
 end
