@@ -255,9 +255,21 @@ class Conversation < ApplicationRecord
 
   def assign_ai_agent
     return if assignee_id.present?
-    return if account&.ai_agent_user_id.blank?
+    return unless account
+
+    ensure_account_ai_agent!
+    return if account.ai_agent_user_id.blank?
 
     self.assignee_id = account.ai_agent_user_id
+  end
+
+  def ensure_account_ai_agent!
+    return if account.ai_agent_user_id.present?
+
+    Account::ProvisionAiAgentService.new(account: account).call
+    account.reload
+  rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid => e
+    Rails.logger.info("[AI_ASSIGN] auto_provision_error account_id=#{account.id} error=#{e.class} message=#{e.message.to_s.truncate(200)}")
   end
 
   def determine_conversation_status

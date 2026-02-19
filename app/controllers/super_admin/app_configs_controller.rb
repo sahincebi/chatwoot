@@ -19,8 +19,9 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
     params['app_config'].each do |key, value|
       next unless @allowed_configs.include?(key)
 
-      i = InstallationConfig.where(name: key).first_or_create(value: value, locked: false)
-      i.value = value
+      casted_value = cast_value_for_key(key, value)
+      i = InstallationConfig.where(name: key).first_or_create(value: casted_value, locked: false)
+      i.value = casted_value
       errors.concat(i.errors.full_messages) unless i.save
     end
 
@@ -56,6 +57,17 @@ class SuperAdmin::AppConfigsController < SuperAdmin::ApplicationController
       @config,
       %w[ENABLE_ACCOUNT_SIGNUP FIREBASE_PROJECT_ID FIREBASE_CREDENTIALS WEBHOOK_TIMEOUT MAXIMUM_FILE_UPLOAD_SIZE]
     )
+  end
+
+  def cast_value_for_key(key, value)
+    return value unless config_type_for(key) == 'boolean'
+
+    ActiveModel::Type::Boolean.new.cast(value)
+  end
+
+  def config_type_for(key)
+    installation_configs = ConfigLoader.new.general_configs
+    installation_configs.find { |config| config['name'] == key }&.dig('type')
   end
 end
 

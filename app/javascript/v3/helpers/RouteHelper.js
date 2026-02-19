@@ -3,6 +3,7 @@ import { clearBrowserSessionCookies } from 'dashboard/store/utils/api';
 import { hasAuthCookie } from './AuthHelper';
 import { DEFAULT_REDIRECT_URL } from 'dashboard/constants/globals';
 import { replaceRouteWithReload } from './CommonHelper';
+import { isTruthyConfigValue } from './ConfigBooleanHelper';
 
 const validateSSOLoginParams = to => {
   const isLoginRoute = to.name === 'login';
@@ -37,7 +38,7 @@ export const validateRouteAccess = (to, next, chatwootConfig = {}) => {
   // Disable navigation to signup page if signups are disabled
   // Signup route has an attribute (requireSignupEnabled) in it's definition
   const isAnInalidSignupNavigation =
-    chatwootConfig.signupEnabled !== 'true' &&
+    !isTruthyConfigValue(chatwootConfig.signupEnabled) &&
     to.meta &&
     to.meta.requireSignupEnabled;
 

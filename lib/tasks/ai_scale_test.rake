@@ -1,5 +1,29 @@
 namespace :ai do
   namespace :scale_test do
+    desc 'Verify runtime OpenAI key source and account/prompt distribution (masked output)'
+    task verify_global_key: :environment do
+      prefix = ENV.fetch('PREFIX', 'AI Scale Test')
+      limit = ENV.fetch('SAMPLE', '10').to_i
+      account_scope = Account.where('name LIKE ?', "#{prefix}%").order(:id)
+
+      puts(
+        {
+          event: 'ai_scale_verify_global_key',
+          openai_api_key_present: ENV['OPENAI_API_KEY'].present?,
+          endpoint: ENV['AI_OPENAI_ENDPOINT'].presence || ENV['OPENAI_BASE_URL'].presence || 'https://api.openai.com',
+          model: ENV['AI_MODEL'].presence || ENV['OPENAI_MODEL'].presence || 'gpt-5.1-2025-11-13',
+          accounts_total: account_scope.count,
+          prompt_distribution_sample: account_scope.limit(limit).pluck(:id, :ai_prompt_id, :ai_prompt_version).map do |row|
+            {
+              account_id: row[0],
+              prompt_id: row[1],
+              prompt_version: row[2]
+            }
+          end
+        }.inspect
+      )
+    end
+
     desc 'Prepare synthetic accounts for AI scale testing (default TOTAL=100)'
     task prepare: :environment do
       total = ENV.fetch('TOTAL', '100').to_i
@@ -15,6 +39,7 @@ namespace :ai do
 
         updates = {
           ai_enabled: true,
+          ai_prompt_id: prompt_id || "pmpt_scale_#{account.id}",
           ai_prompt_version: prompt_version,
           ai_tool_policy: account.ai_tool_policy_with_defaults.merge(
             'enabled' => true,
@@ -27,7 +52,6 @@ namespace :ai do
             }
           )
         }
-        updates[:ai_prompt_id] = prompt_id if prompt_id
         account.update!(updates)
 
         wallet = AiWallet.find_or_create_by!(account_id: account.id)
@@ -100,6 +124,10 @@ namespace :ai do
       usage = AiUsageLog.where(account_id: account_ids)
       topup = AiTransaction.where(account_id: account_ids, kind: :topup).sum(:amount_cents)
       debit = AiTransaction.where(account_id: account_ids, kind: :debit).sum(:amount_cents)
+      wallet_total_balance = AiWallet.where(account_id: account_ids).sum(:balance_cents)
+      expected_wallet_balance = topup - debit
+      usage_billed_total = usage.sum(:billed_cost_cents)
+      financial_drift_cents = debit - usage_billed_total
 
       puts(
         {
@@ -111,9 +139,50 @@ namespace :ai do
           provider_cost_cents: usage.sum(:provider_cost_cents),
           billed_cost_cents: usage.sum(:billed_cost_cents),
           total_topup_cents: topup,
-          total_debit_cents: debit
+          total_debit_cents: debit,
+          wallet_total_balance_cents: wallet_total_balance,
+          expected_wallet_total_balance_cents: expected_wallet_balance,
+          wallet_balance_drift_cents: wallet_total_balance - expected_wallet_balance,
+          debit_vs_usage_billed_drift_cents: financial_drift_cents
         }.inspect
       )
+    end
+
+    desc 'Enqueue two burst scenarios: 500 (100x5) and 1000 (100x10) messages'
+    task burst_matrix: :environment do
+      total = ENV.fetch('TOTAL', '100').to_i
+      prefix = ENV.fetch('PREFIX', 'AI Scale Test')
+      scenarios = [
+        { name: 'burst_500', per_account: 5 },
+        { name: 'burst_1000', per_account: 10 }
+      ]
+
+      puts({ event: 'ai_scale_burst_matrix_start', total_accounts: total, prefix: prefix }.inspect)
+
+      scenarios.each do |scenario|
+        ENV['TOTAL'] = total.to_s
+        ENV['PREFIX'] = prefix
+        ENV['PER_ACCOUNT'] = scenario[:per_account].to_s
+
+        Rake::Task['ai:scale_test:prepare'].reenable
+        Rake::Task['ai:scale_test:prepare'].invoke
+        Rake::Task['ai:scale_test:enqueue_messages'].reenable
+        Rake::Task['ai:scale_test:enqueue_messages'].invoke
+        Rake::Task['ai:scale_test:report'].reenable
+        Rake::Task['ai:scale_test:report'].invoke
+
+        puts(
+          {
+            event: 'ai_scale_burst_matrix_scenario_done',
+            scenario: scenario[:name],
+            accounts: total,
+            per_account: scenario[:per_account],
+            expected_messages: total * scenario[:per_account]
+          }.inspect
+        )
+      end
+    ensure
+      ENV.delete('PER_ACCOUNT')
     end
 
     desc 'Cleanup synthetic load-test accounts'

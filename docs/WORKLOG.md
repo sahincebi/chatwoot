@@ -3308,3 +3308,38 @@
   - Signup formunda link replace artik hem `/terms` hem `/terms-of-service` varyantlarini kapsiyor.
 - Notlar / Riskler:
   - Degisikligin sunucuya yansimasi icin deploy tarafinda `db:prepare` ve asset refresh adimlari calistirilmalidir.
+
+## 2026-02-19 05:25
+- Tarih/Saat (TR): 2026-02-19 05:25
+- Amac: AI atama yarisi + global OPENAI anahtari dogrulama + 500/1000 burst testi planini kod/test seviyesinde uygulamak.
+- Sorun / Belirti:
+  - Yeni hesapta ilk conversation bazen `atanmamis` gorunebiliyordu (AI agent async provisioning yarisi).
+  - 100 hesapta tek `.env` OPENAI anahtarinin kullanimi ve prompt dagilimi net kanitlanmamisti.
+- Kok Neden (Varsa):
+  - `Account` olusumunda AI agent provisioning async job ile ilerliyordu; conversation create bu jobdan once gelirse `assignee_id` bos kalabiliyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/conversation.rb
+  - spec/models/conversation_ai_assignment_spec.rb
+  - spec/models/message_ai_reply_routing_spec.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - lib/tasks/ai_scale_test.rake
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/models/conversation_ai_assignment_spec.rb spec/models/message_ai_reply_routing_spec.rb spec/jobs/ai/respond_to_message_job_spec.rb
+  - docker compose exec -T rails bundle exec rails runner "puts({openai_api_key_present: ENV['OPENAI_API_KEY'].present?, endpoint: ENV['AI_OPENAI_ENDPOINT'].presence || ENV['OPENAI_BASE_URL'].presence || 'https://api.openai.com', model: ENV['AI_MODEL'].presence || ENV['OPENAI_MODEL'].presence || 'gpt-5.1-2025-11-13'}.inspect)"
+  - docker compose exec -T rails bundle exec rake ai:scale_test:prepare TOTAL=100 PREFIX="AI Scale Test Plan"
+  - docker compose exec -T rails bundle exec rake ai:scale_test:verify_global_key PREFIX="AI Scale Test Plan" SAMPLE=5
+  - docker compose exec -T rails sh -lc "OPENAI_API_KEY= ENQUEUE_MODE=inline bundle exec rake ai:scale_test:burst_matrix TOTAL=100 PREFIX='AI Scale Test Plan'"
+  - docker compose exec -T rails bundle exec rake ai:scale_test:cleanup PREFIX="AI Scale Test Plan"
+  - docker compose exec -T rails bundle exec rake ai:scale_test:verify_global_key PREFIX="AI Scale Test Plan" SAMPLE=3
+- Dogrulama:
+  - RSpec: `18 examples, 0 failures`.
+  - Runtime key check: `{openai_api_key_present: true, endpoint: "https://api.openai.com", model: "gpt-5.1-2025-11-13"}`.
+  - Scale verify (100 hesap): `accounts_total: 100`, prompt sample dagilimi hesap bazli farkli (`pmpt_scale_<account_id>`), key source tek env.
+  - Burst matrix:
+    - `burst_500`: `accounts: 100`, `enqueued: 500`, mode `inline`.
+    - `burst_1000`: `accounts: 100`, `enqueued: 1000`, mode `inline`.
+  - Cleanup sonrasi verify: `accounts_total: 0`.
+- Notlar / Riskler:
+  - Burst testi maliyet ve dis API riskini onlemek icin `OPENAI_API_KEY` bos (safe mode) ve `ENQUEUE_MODE=inline` ile kosuldu; bu kosum queue dayanimi/isleyis testi icin kullanildi.
+  - Finansal dogruluk (usage/debit tekilligi) mevcut job spec'lerde dogrulaniyor; canli OpenAI ile buyuk hacim testi ayrica kontrollu pencerede alinmali.

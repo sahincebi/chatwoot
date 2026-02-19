@@ -7,6 +7,7 @@ import { required, email } from '@vuelidate/validators';
 import { useVuelidate } from '@vuelidate/core';
 import { SESSION_STORAGE_KEYS } from 'dashboard/constants/sessionStorage';
 import SessionStorage from 'shared/helpers/sessionStorage';
+import { isTruthyConfigValue } from '../../helpers/ConfigBooleanHelper';
 
 // components
 import SimpleDivider from '../../components/Divider/SimpleDivider.vue';
@@ -91,7 +92,7 @@ export default {
       );
     },
     showSignupLink() {
-      return window.chatwootConfig.signupEnabled === 'true';
+      return isTruthyConfigValue(window.chatwootConfig?.signupEnabled);
     },
     showSamlLogin() {
       return this.allowedLoginMethods.includes('saml');

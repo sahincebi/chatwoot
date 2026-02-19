@@ -11,6 +11,7 @@ vi.mock('../CommonHelper', () => ({ replaceRouteWithReload: vi.fn() }));
 
 describe('#validateRouteAccess', () => {
   beforeEach(() => {
+    next.mockReset();
     vi.spyOn(Cookies, 'set');
   });
 
@@ -57,12 +58,52 @@ describe('#validateRouteAccess', () => {
     expect(next).toHaveBeenCalledWith('/app/login');
   });
 
-  it('redirects to login if signup is disabled', () => {
-    validateRouteAccess({ meta: { requireSignupEnabled: true } }, next, {
-      signupEnabled: 'true',
-    });
+  it('redirects to login if signup is disabled as boolean', () => {
+    validateRouteAccess(
+      { name: 'auth_signup', meta: { requireSignupEnabled: true } },
+      next,
+      {
+        signupEnabled: false,
+      }
+    );
     expect(clearBrowserSessionCookies).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalledWith('/app/login');
+  });
+
+  it('redirects to login if signup is disabled as string', () => {
+    validateRouteAccess(
+      { name: 'auth_signup', meta: { requireSignupEnabled: true } },
+      next,
+      {
+        signupEnabled: 'false',
+      }
+    );
+    expect(clearBrowserSessionCookies).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith('/app/login');
+  });
+
+  it('allows signup route when signup is enabled as string', () => {
+    validateRouteAccess(
+      { name: 'auth_signup', meta: { requireSignupEnabled: true } },
+      next,
+      {
+        signupEnabled: 'true',
+      }
+    );
+    expect(clearBrowserSessionCookies).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith();
+  });
+
+  it('allows signup route when signup is enabled as boolean', () => {
+    validateRouteAccess(
+      { name: 'auth_signup', meta: { requireSignupEnabled: true } },
+      next,
+      {
+        signupEnabled: true,
+      }
+    );
+    expect(clearBrowserSessionCookies).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledWith();
   });
 
   it('continues to the route in every other case', () => {
@@ -88,7 +129,8 @@ describe('isOnOnboardingView', () => {
     expect(isOnOnboardingView(route)).toBe(false);
   });
 
-  test('returns false for an  undefined route object', () => {
+  test('returns false for an undefined route object', () => {
     expect(isOnOnboardingView()).toBe(false);
   });
 });
+

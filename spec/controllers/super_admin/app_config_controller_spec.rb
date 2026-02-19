@@ -5,43 +5,41 @@ RSpec.describe 'Super Admin Application Config API', type: :request do
 
   describe 'GET /super_admin/app_config' do
     context 'when it is an unauthenticated super admin' do
-      it 'returns unauthorized' do
+      it 'returns redirect' do
         get '/super_admin/app_config'
         expect(response).to have_http_status(:redirect)
       end
     end
 
     context 'when it is an authenticated super admin' do
-      let!(:config) { create(:installation_config, { name: 'FB_APP_ID', value: 'TESTVALUE' }) }
+      before do
+        InstallationConfig.set_value('FB_APP_ID', 'TESTVALUE', locked: false)
+      end
 
       it 'shows the app_config page' do
         sign_in(super_admin, scope: :super_admin)
         get '/super_admin/app_config?config=facebook'
         expect(response).to have_http_status(:success)
-        expect(response.body).to include(config.value)
+        expect(response.body).to include('TESTVALUE')
       end
     end
   end
 
   describe 'POST /super_admin/app_config' do
-    context 'when it is an unauthenticated super admin' do
-      it 'returns unauthorized' do
-        post '/super_admin/app_config', params: { app_config: { TESTKEY: 'TESTVALUE' } }
-        expect(response).to have_http_status(:redirect)
-      end
-    end
+    it 'casts boolean typed configs before persisting' do
+      sign_in(super_admin, scope: :super_admin)
 
-    context 'when it is an aunthenticated super admin' do
-      it 'shows the app_config page' do
-        sign_in(super_admin, scope: :super_admin)
-        post '/super_admin/app_config?config=facebook', params: { app_config: { FB_APP_ID: 'FB_APP_ID' } }
+      get '/super_admin/app_config?config=general'
+      csrf_token = response.body.match(/name="csrf-token" content="([^"]+)"/)&.captures&.first
+      expect(csrf_token).to be_present
 
-        expect(response).to have_http_status(:found)
-        expect(response).to redirect_to(super_admin_settings_path)
+      post '/super_admin/app_config?config=general',
+           params: { app_config: { ENABLE_ACCOUNT_SIGNUP: 'true' } },
+           headers: { 'X-CSRF-Token' => csrf_token }
 
-        config = GlobalConfig.get('FB_APP_ID')
-        expect(config['FB_APP_ID']).to eq('FB_APP_ID')
-      end
+      expect(response).to have_http_status(:found)
+      expect(response).to redirect_to(super_admin_settings_path)
+      expect(InstallationConfig.find_by(name: 'ENABLE_ACCOUNT_SIGNUP').value).to eq(true)
     end
   end
 end

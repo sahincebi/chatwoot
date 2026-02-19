@@ -45,7 +45,7 @@
         whatsappAppId: '<%= @global_config['WHATSAPP_APP_ID'] %>',
         whatsappConfigurationId: '<%= @global_config['WHATSAPP_CONFIGURATION_ID'] %>',
         whatsappApiVersion: '<%= @global_config['WHATSAPP_API_VERSION'] %>',
-        signupEnabled: '<%= @global_config['ENABLE_ACCOUNT_SIGNUP'] %>',
+        signupEnabled: <%= ActiveModel::Type::Boolean.new.cast(@global_config['ENABLE_ACCOUNT_SIGNUP']).to_json %>,
         isEnterprise: '<%= @global_config['IS_ENTERPRISE'] %>',
         isMfaEnabled: '<%= Chatwoot.mfa_enabled? %>',
         APP_TITLE: '<%= @global_config['APP_TITLE'] %>',

@@ -38,6 +38,99 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(described_class.queue_name).to eq('ai_replies')
   end
 
+  it 'skips without calling openai when OPENAI_API_KEY is missing' do
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_unused',
+          'output_text' => 'ok',
+          'model' => 'gpt-test',
+          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    with_modified_env('OPENAI_API_KEY' => nil) do
+      described_class.perform_now(message.id)
+    end
+
+    expect(a_request(:post, 'https://api.openai.com/v1/responses')).not_to have_been_made
+    expect(
+      Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).count
+    ).to eq(0)
+    expect(AiUsageLog.where(account_id: account.id, message_id: message.id)).to be_empty
+  end
+
+  it 'uses the same global OPENAI_API_KEY across multiple accounts while preserving account-specific prompts' do
+    second_account = create(:account)
+    second_ai_user = create(:user, account: second_account, role: :agent, is_ai_agent: true)
+    second_inbox = create(:inbox, account: second_account)
+    second_conversation = create(:conversation, account: second_account, inbox: second_inbox, assignee: second_ai_user)
+    second_message = create(
+      :message,
+      account: second_account,
+      conversation: second_conversation,
+      inbox: second_inbox,
+      message_type: :incoming,
+      private: false,
+      content: 'hello from account 2'
+    )
+    second_account.update!(
+      ai_enabled: true,
+      ai_prompt_id: 'pmpt_second',
+      ai_prompt_version: 7,
+      ai_agent_user_id: second_ai_user.id,
+      ai_tool_policy: {
+        'enabled' => false,
+        'allowed_tools' => {},
+        'limits' => { 'max_tools_per_turn' => 3, 'max_total_steps' => 6 }
+      }
+    )
+    second_wallet = AiWallet.find_or_create_by!(account: second_account)
+    second_wallet.update!(balance_cents: 1000, currency: 'USD', status: :active)
+
+    captured_requests = []
+    request_sequence = 0
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .with do |req|
+        body = JSON.parse(req.body)
+        captured_requests << {
+          authorization: req.headers['Authorization'],
+          prompt_id: body.dig('prompt', 'id'),
+          prompt_version: body.dig('prompt', 'version')
+        }
+        true
+      end
+      .to_return do |_req|
+        request_sequence += 1
+        {
+          status: 200,
+          body: {
+            'id' => "resp_multi_#{request_sequence}",
+            'output_text' => "ok #{request_sequence}",
+            'model' => 'gpt-test',
+            'usage' => {
+              'input_tokens' => 1,
+              'output_tokens' => 1,
+              'total_tokens' => 2
+            }
+          }.to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        }
+      end
+
+    with_modified_env('OPENAI_API_KEY' => 'shared-key') do
+      described_class.perform_now(message.id)
+      described_class.perform_now(second_message.id)
+    end
+
+    expect(captured_requests.size).to eq(2)
+    expect(captured_requests.map { |r| r[:authorization] }.uniq).to eq(['Bearer shared-key'])
+    expect(captured_requests.map { |r| r[:prompt_id] }).to contain_exactly('pmpt_test', 'pmpt_second')
+    expect(captured_requests.map { |r| r[:prompt_version] }).to contain_exactly('1', '7')
+  end
+
   it 'dedupes usage, debit, and outgoing message for the same message id' do
     stub_request(:post, 'https://api.openai.com/v1/responses')
       .with do |req|
