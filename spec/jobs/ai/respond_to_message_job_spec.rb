@@ -582,6 +582,40 @@ RSpec.describe Ai::RespondToMessageJob do
     expect(outgoing.content_attributes['ai_state']).to eq('qualify')
   end
 
+  it 'uses safe fallback text for chat.reply json without reply/message fields' do
+    raw_json = {
+      'action' => 'chat.reply',
+      'state' => 'collect',
+      'meta' => { 'oed_quantity' => 2, 'oed_usage' => 'egitim' }
+    }.to_json
+
+    stub_request(:post, 'https://api.openai.com/v1/responses')
+      .to_return(
+        status: 200,
+        body: {
+          'id' => 'resp_missing_reply_payload',
+          'output_text' => raw_json,
+          'model' => 'gpt-test',
+          'usage' => { 'input_tokens' => 1, 'output_tokens' => 1, 'total_tokens' => 2 }
+        }.to_json,
+        headers: { 'Content-Type' => 'application/json' }
+      )
+
+    allow(Rails.logger).to receive(:info)
+    with_modified_env('OPENAI_API_KEY' => 'test') do
+      described_class.perform_now(message.id)
+    end
+
+    outgoing = Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).last
+    expect(outgoing.content).to eq('Teşekkürler, bilgileri aldım. Kısa süre içinde net teklif paylaşacağım.')
+    expect(outgoing.content).not_to start_with('{')
+    expect(outgoing.content_attributes['ai_raw']).to eq(raw_json)
+    expect(outgoing.content_attributes['ai_action']).to eq('chat.reply')
+    expect(outgoing.content_attributes['ai_state']).to eq('collect')
+    expect(Rails.logger).to have_received(:info).with(include('"fallback_used":true')).at_least(:once)
+    expect(Rails.logger).to have_received(:info).with(include('"fallback_reason":"missing_reply_payload"')).at_least(:once)
+  end
+
   it 'passes through plain text output and stores raw text' do
     stub_request(:post, 'https://api.openai.com/v1/responses')
       .to_return(

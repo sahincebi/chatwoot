@@ -30,6 +30,18 @@ class Ai::RespondToMessageJob < ApplicationJob
     tool_loop_failed: 'tool_loop_failed',
     tool_policy_disabled: 'tool_policy_disabled'
   }.freeze
+  CHAT_REPLY_FALLBACK_TEXT = 'Teşekkürler, bilgileri aldım. Kısa süre içinde net teklif paylaşacağım.'.freeze
+  MISSING_REPLY_FIELDS = %w[
+    messages[].text
+    data.message
+    meta.reply
+    meta.message
+    reply
+    message
+    data.text
+    data.content
+    data.reply
+  ].freeze
 
   def perform(message_id)
     message = Message.find_by(id: message_id)
@@ -200,7 +212,10 @@ class Ai::RespondToMessageJob < ApplicationJob
         model: response_payload[:model],
         raw_is_json: normalized[:raw_is_json],
         ai_action: normalized[:action],
-        ai_state: normalized[:state]
+        ai_state: normalized[:state],
+        fallback_used: normalized[:fallback_used],
+        fallback_reason: normalized[:fallback_reason],
+        missing_text_fields: normalized[:missing_text_fields]
       )
       params = ActionController::Parameters.new(
         content: normalized_text,
@@ -626,13 +641,27 @@ class Ai::RespondToMessageJob < ApplicationJob
       parsed.dig('data', 'content') ||
       parsed.dig('data', 'reply')
     extracted = normalize_candidate_text(extracted)
+    action = parsed['action']
+    state = parsed['state']
+    fallback_used = false
+    fallback_reason = nil
+    missing_text_fields = nil
+    if extracted.blank? && action == 'chat.reply'
+      extracted = CHAT_REPLY_FALLBACK_TEXT
+      fallback_used = true
+      fallback_reason = 'missing_reply_payload'
+      missing_text_fields = MISSING_REPLY_FIELDS
+    end
 
     {
       text: extracted.presence || raw_string,
       raw: raw_string,
       raw_is_json: true,
-      action: parsed['action'],
-      state: parsed['state']
+      action: action,
+      state: state,
+      fallback_used: fallback_used,
+      fallback_reason: fallback_reason,
+      missing_text_fields: missing_text_fields
     }
   rescue JSON::ParserError => e
     Rails.logger.info("[AI_REPLY] normalize_error=#{e.class}: #{e.message.to_s.truncate(200)}")
@@ -725,7 +754,10 @@ class Ai::RespondToMessageJob < ApplicationJob
     phase: nil,
     raw_is_json: nil,
     ai_action: nil,
-    ai_state: nil
+    ai_state: nil,
+    fallback_used: nil,
+    fallback_reason: nil,
+    missing_text_fields: nil
   )
     payload = {
       event: event,
@@ -735,6 +767,9 @@ class Ai::RespondToMessageJob < ApplicationJob
       raw_is_json: raw_is_json,
       ai_action: ai_action,
       ai_state: ai_state,
+      fallback_used: fallback_used,
+      fallback_reason: fallback_reason,
+      missing_text_fields: missing_text_fields,
       account_id: account&.id,
       conversation_id: conversation&.id,
       message_id: message&.id,

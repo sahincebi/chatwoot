@@ -3343,3 +3343,27 @@
 - Notlar / Riskler:
   - Burst testi maliyet ve dis API riskini onlemek icin `OPENAI_API_KEY` bos (safe mode) ve `ENQUEUE_MODE=inline` ile kosuldu; bu kosum queue dayanimi/isleyis testi icin kullanildi.
   - Finansal dogruluk (usage/debit tekilligi) mevcut job spec'lerde dogrulaniyor; canli OpenAI ile buyuk hacim testi ayrica kontrollu pencerede alinmali.
+
+## 2026-02-19 05:45
+- Tarih/Saat (TR): 2026-02-19 05:45
+- Amac: `chat.reply` aksiyonunda metin alani olmayan JSON payload'in kullaniciya ham JSON olarak gitmesini global ve kalici olarak engellemek.
+- Sorun / Belirti:
+  - Bazı cevaplarda (`action=chat.reply`) metin alani bos kalinca normalize fallback ham JSON'a dusuyordu.
+- Kok Neden (Varsa):
+  - `normalize_ai_output` icinde JSON parse edilse de text extraction bossa `text: raw_string` davraniyordu.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/jobs/ai/respond_to_message_job.rb
+  - spec/jobs/ai/respond_to_message_job_spec.rb
+  - docs/WORKLOG.md
+- Calistirilan Komutlar:
+  - docker compose exec -T rails bundle exec rspec spec/jobs/ai/respond_to_message_job_spec.rb
+- Dogrulama:
+  - RSpec: `17 examples, 0 failures`.
+  - Yeni regression senaryosu eklendi:
+    - `action=chat.reply` + metin alani olmayan JSON payload icin outgoing mesaj fallback metin oluyor.
+    - Outgoing content JSON ile baslamiyor.
+    - `content_attributes.ai_raw/ai_action/ai_state` korunuyor.
+    - Log'da `fallback_used=true` ve `fallback_reason=missing_reply_payload` geciyor.
+- Notlar / Riskler:
+  - `chat.reply` disindaki JSON aksiyonlarinda mevcut davranis korunuyor.
+  - Prompt tarafinda `meta.reply` veya esdeger text alani zorunlu kontrat olarak tutulmali; bu fix guvenlik agi olarak calisir.
