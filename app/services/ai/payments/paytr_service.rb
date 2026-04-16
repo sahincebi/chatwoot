@@ -168,7 +168,7 @@ module Ai
               )
 
               wallet.with_lock do
-                wallet.balance_cents += order.amount_cents
+                wallet.balance_cents += order.payment_amount_cents
                 wallet.save!
               end
 
@@ -178,7 +178,7 @@ module Ai
                 provider_ref: merchant_oid
               ) do |ai_transaction|
                 ai_transaction.kind = :topup
-                ai_transaction.amount_cents = order.amount_cents
+                ai_transaction.amount_cents = order.payment_amount_cents
                 ai_transaction.currency = order.currency
                 ai_transaction.meta = {
                   payment_order_id: order.id,

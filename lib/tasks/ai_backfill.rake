@@ -17,4 +17,12 @@ namespace :ai do
       Account::ProvisionAiAgentService.new(account: account).call
     end
   end
+
+  desc 'Enqueue OpenAI project provisioning for accounts missing a project_id'
+  task backfill_openai_projects: :environment do
+    Account.where(openai_project_id: nil).in_batches(of: 1000) do |batch|
+      jobs = batch.pluck(:id).map { |id| Ai::OpenaiProjectProvisionJob.new(id) }
+      ActiveJob.perform_all_later(jobs)
+    end
+  end
 end

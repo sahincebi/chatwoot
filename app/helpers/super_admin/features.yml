@@ -2,13 +2,6 @@
 # No need to replicate the same values in two places
 
 # ------- Premium Features ------- #
-captain:
-  name: 'Captain'
-  description: 'Musterilerinizle yapay zeka destekli gorusmeleri etkinlestirin.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-captain'
-  config_key: 'captain'
-  enterprise: true
 saml:
   name: 'SAML SSO'
   description: 'SAML tekli giris erisiminin ayarlarini yonetin.'
@@ -41,13 +34,6 @@ disable_branding:
   enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
   icon: 'icon-sailbot-fill'
   enterprise: true
-
-# ------- Product Features ------- #
-help_center:
-  name: 'Yardim Merkezi'
-  description: 'Temsilcilerin yardim merkezi makalesi olusturup portala yayinlamasini saglayin.'
-  enabled: true
-  icon: 'icon-book-2-line'
 
 # ------- Communication Channels ------- #
 live_chat:

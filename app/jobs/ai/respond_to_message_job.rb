@@ -131,6 +131,7 @@ class Ai::RespondToMessageJob < ApplicationJob
       balance_after = nil
       balance_before = nil
       already_processed_after_lock = false
+      debit_transaction = nil
       response_id = response_payload[:response_id]
       begin
         wallet.with_lock do
@@ -148,7 +149,7 @@ class Ai::RespondToMessageJob < ApplicationJob
 
           if billed_cost_cents.positive?
             wallet.update!(balance_cents: wallet.balance_cents - billed_cost_cents)
-            AiTransaction.create!(
+            debit_transaction = AiTransaction.create!(
               account: account,
               kind: :debit,
               amount_cents: billed_cost_cents,
@@ -200,34 +201,63 @@ class Ai::RespondToMessageJob < ApplicationJob
 
       return log_skip(account, conversation, message, SKIP_REASONS[:already_processed], balance_before: balance_before) if already_processed_after_lock
 
-      normalized = normalize_ai_output(response_payload[:text])
-      normalized_text = normalized[:text]
-      log_event(
-        event: 'normalized_reply',
-        account: account,
-        conversation: conversation,
-        message: message,
-        prompt_id: account.ai_prompt_id,
-        prompt_version: account.ai_prompt_version,
-        model: response_payload[:model],
-        raw_is_json: normalized[:raw_is_json],
-        ai_action: normalized[:action],
-        ai_state: normalized[:state],
-        fallback_used: normalized[:fallback_used],
-        fallback_reason: normalized[:fallback_reason],
-        missing_text_fields: normalized[:missing_text_fields]
-      )
-      params = ActionController::Parameters.new(
-        content: normalized_text,
-        message_type: 'outgoing',
-        private: false,
-        content_attributes: {
-          ai_raw: normalized[:raw],
+      begin
+        normalized = normalize_ai_output(response_payload[:text])
+        normalized_text = normalized[:text]
+        log_event(
+          event: 'normalized_reply',
+          account: account,
+          conversation: conversation,
+          message: message,
+          prompt_id: account.ai_prompt_id,
+          prompt_version: account.ai_prompt_version,
+          model: response_payload[:model],
+          raw_is_json: normalized[:raw_is_json],
           ai_action: normalized[:action],
-          ai_state: normalized[:state]
-        }.compact
-      )
-      Messages::MessageBuilder.new(ai_user, conversation, params).perform
+          ai_state: normalized[:state],
+          fallback_used: normalized[:fallback_used],
+          fallback_reason: normalized[:fallback_reason],
+          missing_text_fields: normalized[:missing_text_fields]
+        )
+        params = ActionController::Parameters.new(
+          content: normalized_text,
+          message_type: 'outgoing',
+          private: false,
+          content_attributes: {
+            ai_raw: normalized[:raw],
+            ai_action: normalized[:action],
+            ai_state: normalized[:state]
+          }.compact
+        )
+        Messages::MessageBuilder.new(ai_user, conversation, params).perform
+      rescue StandardError => e
+        if debit_transaction && billed_cost_cents.positive?
+          begin
+            wallet.with_lock do
+              wallet.reload
+              wallet.update!(balance_cents: wallet.balance_cents + billed_cost_cents)
+              AiTransaction.create!(
+                account: account,
+                kind: :refund,
+                amount_cents: billed_cost_cents,
+                currency: wallet.currency,
+                provider: 'openai',
+                provider_ref: response_id,
+                meta: {
+                  original_debit_id: debit_transaction.id,
+                  reason: 'post_debit_delivery_failure',
+                  error_class: e.class.to_s,
+                  error_message: e.message.to_s.truncate(500)
+                }
+              )
+              balance_after = wallet.balance_cents
+            end
+          rescue StandardError => refund_error
+            Rails.logger.error("[AI_REPLY] refund_failed account_id=#{account.id} original_debit_id=#{debit_transaction.id} error=#{refund_error.class}: #{refund_error.message.to_s.truncate(200)}")
+          end
+        end
+        raise e
+      end
 
       log_event(
         event: 'success',
@@ -338,6 +368,9 @@ class Ai::RespondToMessageJob < ApplicationJob
 
     tool_calls = extract_tool_calls(response_payload[:raw_response])
     return response_payload if tool_calls.empty?
+
+    total_usage = accumulate_usage({ 'input_tokens' => 0, 'output_tokens' => 0, 'total_tokens' => 0,
+                                     'input_tokens_details' => { 'cached_tokens' => 0 } }, response_payload[:usage])
 
     unless account.tool_calling_enabled?
       log_event(
@@ -490,8 +523,11 @@ class Ai::RespondToMessageJob < ApplicationJob
       }
 
       response_payload = call_openai(account, conversation, message, uri, api_key, followup_payload)
+      total_usage = accumulate_usage(total_usage, response_payload[:usage])
       tool_calls = extract_tool_calls(response_payload[:raw_response])
     end
+
+    response_payload[:usage] = total_usage
 
     if tool_calls.any?
       log_event(
@@ -518,6 +554,11 @@ class Ai::RespondToMessageJob < ApplicationJob
     request = Net::HTTP::Post.new(uri.request_uri)
     request['Authorization'] = "Bearer #{api_key}"
     request['Content-Type'] = 'application/json'
+    if account.openai_project_id.present?
+      request['OpenAI-Project'] = account.openai_project_id
+    else
+      Rails.logger.warn("[AI_REPLY] missing_openai_project_id account_id=#{account.id}")
+    end
     request.body = payload.to_json
     response = http.request(request)
 
@@ -577,6 +618,20 @@ class Ai::RespondToMessageJob < ApplicationJob
     message = parsed.dig('error', 'message') || parsed['message'] || raw_body.to_s
     message = message.to_s
     message.length > 3000 ? message[0, 3000] : message
+  end
+
+  def accumulate_usage(acc, incoming)
+    return acc unless incoming.is_a?(Hash)
+
+    acc['input_tokens'] = acc['input_tokens'].to_i + incoming['input_tokens'].to_i
+    acc['output_tokens'] = acc['output_tokens'].to_i + incoming['output_tokens'].to_i
+    incoming_total = incoming['total_tokens'].to_i
+    incoming_total = incoming['input_tokens'].to_i + incoming['output_tokens'].to_i if incoming_total.zero?
+    acc['total_tokens'] = acc['total_tokens'].to_i + incoming_total
+    acc['input_tokens_details'] ||= { 'cached_tokens' => 0 }
+    acc['input_tokens_details']['cached_tokens'] =
+      acc['input_tokens_details']['cached_tokens'].to_i + incoming.dig('input_tokens_details', 'cached_tokens').to_i
+    acc
   end
 
   def token_breakdown(input_tokens, usage)

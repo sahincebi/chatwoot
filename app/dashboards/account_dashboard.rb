@@ -38,6 +38,10 @@ class AccountDashboard < Administrate::BaseDashboard
     ai_prompt_version: Field::Number,
     ai_agent_user_id: Field::Number,
     ai_tool_policy: AiToolPolicyField,
+    openai_project_id: Field::String,
+    openai_project_status: Field::Select.with_options(collection: Account.openai_project_statuses.keys),
+    openai_project_created_at: Field::DateTime,
+    openai_project_last_error: Field::Text,
     account_users: Field::HasMany,
     custom_attributes: Field::String
   }.merge(enterprise_attribute_types).freeze
@@ -54,6 +58,7 @@ class AccountDashboard < Administrate::BaseDashboard
     users
     conversations
     status
+    openai_project_status
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -78,6 +83,10 @@ class AccountDashboard < Administrate::BaseDashboard
     ai_prompt_version
     ai_agent_user_id
     ai_tool_policy
+    openai_project_id
+    openai_project_status
+    openai_project_created_at
+    openai_project_last_error
     conversations
     account_users
   ] + enterprise_show_page_attributes).freeze
@@ -118,7 +127,10 @@ class AccountDashboard < Administrate::BaseDashboard
     active: ->(resources) { resources.where(status: :active) },
     suspended: ->(resources) { resources.where(status: :suspended) },
     recent: ->(resources) { resources.where('created_at > ?', 30.days.ago) },
-    marked_for_deletion: ->(resources) { resources.where("custom_attributes->>'marked_for_deletion_at' IS NOT NULL") }
+    marked_for_deletion: ->(resources) { resources.where("custom_attributes->>'marked_for_deletion_at' IS NOT NULL") },
+    openai_failed: ->(resources) { resources.where(openai_project_status: :failed) },
+    openai_pending: ->(resources) { resources.where(openai_project_status: %i[pending provisioning]) },
+    openai_unprovisioned: ->(resources) { resources.where(openai_project_id: nil) }
   }.freeze
 
   # Overwrite this method to customize how accounts are displayed

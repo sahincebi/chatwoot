@@ -59,3 +59,10 @@ periodic_assignment_job:
   cron: '*/30 * * * *'
   class: 'AutoAssignment::PeriodicAssignmentJob'
   queue: scheduled_jobs
+
+# executed every 15 minutes
+# reconciles OpenAI reported usage against locally recorded AiTransaction debits
+ai_usage_reconcile_job:
+  cron: '*/15 * * * *'
+  class: 'Ai::UsageReconcileJob'
+  queue: low

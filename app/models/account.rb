@@ -123,11 +123,13 @@ class Account < ApplicationRecord
 
   enum :locale, LANGUAGES_CONFIG.map { |key, val| [val[:iso_639_1_code], key] }.to_h, prefix: true
   enum :status, { active: 0, suspended: 1 }
+  enum openai_project_status: { pending: 0, provisioning: 1, active: 2, failed: 3, disabled: 4 }, _prefix: :openai_project
 
   scope :with_auto_resolve, -> { where("(settings ->> 'auto_resolve_after')::int IS NOT NULL") }
 
   before_validation :validate_limit_keys
   after_create_commit :notify_creation, :provision_support_inbox, :provision_ai_agent, :provision_ai_wallet
+  after_create_commit :provision_openai_project
   after_destroy :remove_account_sequences
 
   def agents
@@ -253,6 +255,12 @@ class Account < ApplicationRecord
   def remove_account_sequences
     ActiveRecord::Base.connection.exec_query("drop sequence IF EXISTS camp_dpid_seq_#{id}")
     ActiveRecord::Base.connection.exec_query("drop sequence IF EXISTS conv_dpid_seq_#{id}")
+  end
+
+  def provision_openai_project
+    return if openai_project_id.present?
+
+    Ai::OpenaiProjectProvisionJob.perform_later(id)
   end
 end
 

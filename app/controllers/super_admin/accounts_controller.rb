@@ -58,6 +58,14 @@ class SuperAdmin::AccountsController < SuperAdmin::ApplicationController
     # rubocop:enable Rails/I18nLocaleTexts
   end
 
+  def reprovision_openai
+    requested_resource.update!(openai_project_id: nil, openai_project_status: :pending, openai_project_last_error: nil)
+    Ai::OpenaiProjectProvisionJob.perform_later(requested_resource.id)
+    # rubocop:disable Rails/I18nLocaleTexts
+    redirect_back(fallback_location: [namespace, requested_resource], notice: 'OpenAI project reprovisioning enqueued.')
+    # rubocop:enable Rails/I18nLocaleTexts
+  end
+
   def destroy
     account = Account.find(params[:id])
 

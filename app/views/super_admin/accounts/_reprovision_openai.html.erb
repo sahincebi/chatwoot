@@ -1,0 +1,16 @@
+<section class="main-content__body">
+  <hr/>
+  <%= form_for([:reprovision_openai, namespace, page.resource], method: :post, html: { class: "form" }) do |f| %>
+    <div class="form-actions">
+      <p class="pb-3">
+        Bu hesap için OpenAI projesini sıfırla ve yeniden sağlama işini kuyruğa al.
+        <br>
+        Mevcut durum: <strong><%= page.resource.openai_project_status %></strong>
+        <% if page.resource.openai_project_last_error.present? %>
+          <br>Son hata: <code><%= truncate(page.resource.openai_project_last_error, length: 200) %></code>
+        <% end %>
+      </p>
+      <%= f.submit 'OpenAI Projesini Yeniden Sağla', data: { confirm: 'Mevcut openai_project_id silinecek ve yeni bir sağlama işi başlatılacak. Emin misin?' } %>
+    </div>
+  <% end %>
+</section>
