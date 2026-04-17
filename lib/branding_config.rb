@@ -1,11 +1,11 @@
 class BrandingConfig
   class << self
     def installation_name
-      value('INSTALLATION_NAME', "\u00c7ebi Medya AI Panel")
+      value('INSTALLATION_NAME', "\u00c7ebi AI Chat")
     end
 
     def brand_name
-      value('BRAND_NAME', "\u00c7ebi Medya")
+      value('BRAND_NAME', "\u00c7ebi AI Chat")
     end
 
     def brand_url
@@ -37,7 +37,7 @@ class BrandingConfig
     end
 
     def app_title
-      value('APP_TITLE', "\u00c7ebi Medya AI Panel")
+      value('APP_TITLE', "\u00c7ebi AI Chat")
     end
 
     def manifest_name

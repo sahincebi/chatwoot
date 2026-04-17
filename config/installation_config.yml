@@ -15,7 +15,7 @@
 
 # ------- Branding Related Config ------- #
 - name: INSTALLATION_NAME
-  value: "\u00c7ebi Medya AI Panel"
+  value: "\u00c7ebi AI Chat"
   display_title: 'Installation Name'
   description: 'The installation wide name that would be used in the dashboard, title etc.'
 - name: LOGO_THUMBNAIL
@@ -47,15 +47,15 @@
   display_title: 'Widget Brand URL'
   description: 'The URL that would be used in the widget under the section “Powered By”'
 - name: BRAND_NAME
-  value: "\u00c7ebi Medya"
+  value: "\u00c7ebi AI Chat"
   display_title: 'Brand Name'
   description: 'The name that would be used in emails and the widget'
 - name: APP_TITLE
-  value: "\u00c7ebi Medya AI Panel"
+  value: "\u00c7ebi AI Chat"
   display_title: 'App Title'
   description: 'The title that would be used in the browser and app metadata'
 - name: MANIFEST_NAME
-  value: "\u00c7ebi Medya AI Panel"
+  value: "\u00c7ebi AI Chat"
   display_title: 'Manifest Name'
   description: 'The name that would be used in the web app manifest'
 - name: MANIFEST_SHORT_NAME
