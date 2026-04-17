@@ -1,40 +1,6 @@
 # TODO: Move this values to features.yml itself
 # No need to replicate the same values in two places
 
-# ------- Premium Features ------- #
-saml:
-  name: 'SAML SSO'
-  description: 'SAML tekli giris erisiminin ayarlarini yonetin.'
-  enabled: <%= ChatwootApp.enterprise? %>
-  icon: 'icon-lock-line'
-  config_key: 'saml'
-  enterprise: true
-custom_branding:
-  name: 'Ozel Markalama'
-  description: 'Bu kurulumda kendi markanizi kullanin.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-paint-brush-line'
-  config_key: 'custom_branding'
-  enterprise: true
-agent_capacity:
-  name: 'Temsilci Kapasitesi'
-  description: 'Gorusmelerin temsilcilere otomatik atanmasi icin limit belirleyin.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-hourglass-line'
-  enterprise: true
-audit_logs:
-  name: 'Denetim Kayitlari'
-  description: 'Hesap aktivitelerini detayli denetim kayitlari ile takip edin.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-menu-search-line'
-  enterprise: true
-disable_branding:
-  name: 'Markalamayi Kaldir'
-  description: 'Canli sohbet widget ve dis e-postalarda markalamayi kapatin.'
-  enabled: <%= (ChatwootHub.pricing_plan != 'community') %>
-  icon: 'icon-sailbot-fill'
-  enterprise: true
-
 # ------- Communication Channels ------- #
 live_chat:
   name: 'Canli Sohbet'

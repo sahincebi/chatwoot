@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
   <head>
     <% brand_name = BrandingConfig.brand_name %>
-    <title>SuperAdmin | <%= brand_name %></title>
+    <title>Ilk Kurulum | <%= brand_name %></title>
     <%= vite_client_tag %>
     <%= vite_javascript_tag 'superadmin' %>
   </head>
@@ -13,8 +13,11 @@
           <img src="/brand-assets/logo.svg" alt="<%= brand_name %>" class="mx-auto h-8 w-auto block dark:hidden">
           <img src="/brand-assets/logo_dark.svg" alt="<%= brand_name %>" class="mx-auto h-8 w-auto hidden dark:block">
           <h2 class="mt-6 text-center text-3xl font-medium text-slate-900 dark:text-woot-50">
-            Howdy, Welcome to <%= brand_name %>
+            <%= brand_name %>'ya Hos Geldiniz
           </h2>
+          <p class="mt-2 text-center text-sm text-slate-600 dark:text-slate-300">
+            Ilk yonetici hesabinizi olusturun ve panele giris yapin.
+          </p>
         </section>
         <section class="bg-white shadow sm:mx-auto mt-11 sm:w-full sm:max-w-lg dark:bg-slate-800 p-11 sm:shadow-lg sm:rounded-lg mb-8 mt-15">
           <div>
@@ -25,50 +28,50 @@
               <% end %>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
-                  Name
+                <label for="user_name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                  Ad Soyad
                 </label>
                 <div class="mt-1">
-                  <%= text_field :user, :name, placeholder: "Enter your full name. eg: Bruce Wayne", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= text_field :user, :name, placeholder: "Adinizi ve soyadinizi girin", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
                 </div>
               </div>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
-                  Company Name
+                <label for="user_company" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                  Sirket Adi
                 </label>
                 <div class="mt-1">
-                  <%= text_field :user, :company, placeholder: "Enter your company name. eg: Wayne Enterprises", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= text_field :user, :company, placeholder: "Sirket adinizi girin", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
                 </div>
               </div>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
-                  Work Email
+                <label for="user_email" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                  Is E-postasi
                 </label>
                 <div class="mt-1">
-                  <%= email_field :user, :email, placeholder: "Enter your work email address. eg: bruce@wayne.enterprises", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= email_field :user, :email, placeholder: "ornek@sirketiniz.com", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
                 </div>
               </div>
 
               <div>
-                <label for="name" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
-                  Password
+                <label for="user_password" class="flex justify-between text-sm font-medium leading-6 text-slate-900 dark:text-white">
+                  Parola
                 </label>
                 <div class="mt-1">
-                  <%= password_field :user, :password, placeholder: "Enter a password with 6 characters or more.", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
+                  <%= password_field :user, :password, placeholder: "En az 6 karakter", required: true, class: "block w-full rounded-md border-0 px-3 py-3 appearance-none shadow-sm ring-1 ring-inset text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-woot-500 sm:text-sm sm:leading-6 outline-none dark:bg-slate-700 dark:ring-slate-600 dark:focus:ring-woot-500 ring-slate-200" %>
                 </div>
               </div>
 
-              <div class="text-sm text-slate-900">
-                <%= check_box_tag "subscribe_to_updates", 'true', true %>
+              <div class="text-sm text-slate-900 dark:text-slate-200">
+                <%= check_box_tag "subscribe_to_updates", 'true', false %>
                 <label class="ml-2" for="subscribe_to_updates">
-                  Subscribe to release notes, newsletters & product feedback surveys.
+                  Urun guncellemeleri ve duyurulari e-posta ile almak istiyorum.
                 </label>
               </div>
 
               <button type="submit" class="flex items-center w-full justify-center rounded-md bg-woot-500 py-3 px-3 text-base font-medium text-white shadow-sm hover:bg-woot-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-woot-500 cursor-pointer">
-                Finish Setup
+                Kurulumu Tamamla
               </button>
             </div>
             <% end %>
