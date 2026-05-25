@@ -171,8 +171,10 @@ Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve �
 **Sorun:** Sidekiq retry veya race condition durumunda aynı message için ikinci kez debit/usage log yazılabilir.
 - [x] DB unique index:
   - `ai_usage_logs` üzerinde `[:account_id, :message_id]` unique (migration `20251231190000_add_unique_index_to_ai_usage_logs.rb`)
-- [ ] Job başında dedupe:
-  - aynı `(account_id, message_id)` usage log varsa **return** *(kod kontrolü beklemede)*
+- [x] Job başında dedupe (3 katman — `app/jobs/ai/respond_to_message_job.rb`):
+  - **Katman 1 (satır 70):** `AiUsageLog.exists?(account_id:, message_id:)` ile erken return
+  - **Katman 2 (satır 141):** wallet `with_lock` içinde tekrar kontrol (race condition)
+  - **Katman 3 (satır 198):** `rescue ActiveRecord::RecordNotUnique` — DB index ihlali yakalanıyor
 - [x] Transaction dedupe:
   - `ai_transactions` `(account_id, provider, provider_ref)` partial unique WHERE `provider='paytr'` (migration `20260217153000_add_unique_paytr_provider_ref_index_to_ai_transactions.rb`)
 
@@ -183,8 +185,9 @@ Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve �
 
 ### P0-2: **Yeni Account’ta wallet otomatik oluşturulsun**
 Şu an wallet backfill var; yeni account’ta wallet yoksa AI tamamen skip ediyor.
-- [ ] `Account::ProvisionAiAgentService` veya `Account` after_create_commit içinde:
-  - `AiWallet.find_or_create_by!(account_id: account.id)`
+- [x] `Account` modelinde callback (`app/models/account.rb` satır 131 + 233-241):
+  - `after_create_commit :provision_ai_wallet`
+  - `provision_ai_wallet` metodu: `AiWallet.find_or_create_by!(account_id: id)` + `RecordNotUnique` rescue
 
 **Doğrulama:**
 - Yeni account create → ai_wallet otomatik var.
@@ -231,24 +234,33 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 > P1 = “Satış yapabilen, randevu alabilen, not/etiket yönetebilen AI” için şart.
 
 ### P1-1: **Tool-calling / Aksiyon yürütme döngüsü**
-Şu an AI sadece text dönüyor. Tool’lar çalıştırılmıyor.
-- [ ] OpenAI Responses tool loop:
-  - Response’da tool call varsa → tool’u çalıştır → sonucu tekrar modele ver → final text al
-- [ ] Minimum tool set (başlangıç):
-  - `create_payment_link`
-  - `get_shipment_status`
-  - `search_products`
-  - `create_order`
-  - `get_order_status`
-  - `create_refund_request`
-  - `close_conversation`
-  - (randevu için) `calendar_query_availability`, `calendar_create_event` vb.
-- [ ] Hesap bazlı tool yetkilendirme (policy) kapsamını satış/operasyon araçları için genişlet:
-  - her account için ödeme/kargo/sipariş araçları ayrı ayrı açılıp kapatılabilsin
-- [ ] Tool execution güvenliği:
-  - allowlist tool isimleri
-  - request validation (JSON schema)
-  - timeout/retry policy
+> **Altyapı TAMAM** — Loop + ToolRegistry + Policy üçü de çalışıyor (`app/jobs/ai/respond_to_message_job.rb` satır 345-540, `app/services/ai/tools/tool_registry.rb`). Eksik olan: e-ticaret tool seti.
+
+- [x] OpenAI Responses tool loop:
+  - `extract_tool_calls` hem `tool_call` hem `function_call` tipini destekliyor
+  - `max_total_steps` ve `max_tools_per_turn` policy’den okunup limit uygulanıyor
+  - Her tool turn’unda usage accumulation (cached_tokens dahil)
+- Mevcut tool set (`app/services/ai/tools/`):
+  - [x] `add_label_to_conversation`, `remove_label_from_conversation`
+  - [x] `add_contact_note`, `add_private_note_to_conversation`
+  - [x] `calendar_query_availability`, `calendar_create_event`
+  - [x] `check_demo_availability`, `create_demo_appointment`, `send_demo_email`
+  - [x] `close_conversation_log`
+- Eksik tool set (P1-1’in **gerçek açık kısmı**):
+  - [ ] `create_payment_link`
+  - [ ] `get_shipment_status`
+  - [ ] `search_products`
+  - [ ] `create_order`
+  - [ ] `get_order_status`
+  - [ ] `create_refund_request`
+- [x] Hesap bazlı tool yetkilendirme (policy):
+  - `accounts.ai_tool_policy` jsonb (`allowed_tools`, `limits`, `enabled`)
+  - `ToolRegistry.allowed_by_policy?` kontrolü her tool çağrısında çalışıyor
+  - Yeni e-ticaret araçları geldiğinde policy katmanı **hazır**; sadece tool sınıfı + registry kaydı eklenecek.
+- [x] Tool execution güvenliği:
+  - Allowlist: policy üzerinden tool_name kontrolü
+  - Schema normalize: `ToolRegistry.normalize_schema` ile JSON Schema validation
+  - `tool_not_allowed`, `invalid_tool_schema` gibi hata kodları log’lanıyor
 
 **Doğrulama:**
 - AI “ürün ara” dediğinde tool çalışır, sonuçla final cevap üretir.
@@ -256,19 +268,22 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 ---
 
 ### P1-2: **Etiket, not ve müşteri profil yönetimi**
-- [ ] AI’nın:
-  - conversation label/tag ekleyebilmesi
-  - contact / conversation note ekleyebilmesi
-  - lead stage alanlarını yazabilmesi (custom attributes)
+- [x] AI’nın:
+  - [x] conversation label/tag ekleyebilmesi (`add_label_to_conversation`, `remove_label_from_conversation`)
+  - [x] contact / conversation note ekleyebilmesi (`add_contact_note`, `add_private_note_to_conversation`)
+  - [ ] lead stage alanlarını yazabilmesi (custom attributes) — **henüz tool yok**
 - [ ] Audit trail:
-  - bu aksiyonlar AI tarafından yapıldıysa meta’ya `by_ai_agent=true`
+  - bu aksiyonlar AI tarafından yapıldıysa meta’ya `by_ai_agent=true` — **doğrulanmadı, açık**
 
 ---
 
 ### P1-3: **Randevu modülü (Google Calendar) entegrasyonu**
-- [ ] Account bazlı calendar connection (credentials)
-- [ ] Uygunluk sorgusu + event yaratma + teyit mesajı
-- [ ] Aynı conversation içinde “reschedule/cancel” akışları
+- [x] Account bazlı calendar connection (credentials): `ai_integrations` tablosu + `app/controllers/api/v1/accounts/ai_integrations/google_calendar_controller.rb`
+- [x] Uygunluk sorgusu + event yaratma + teyit mesajı:
+  - `calendar_query_availability` (uygunluk sorgusu)
+  - `calendar_create_event` (event yaratma)
+  - Demo akışı: `check_demo_availability`, `create_demo_appointment`, `send_demo_email`
+- [ ] Aynı conversation içinde “reschedule/cancel” akışları — **henüz tool yok**
 
 ---
 
