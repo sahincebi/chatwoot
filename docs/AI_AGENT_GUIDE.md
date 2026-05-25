@@ -117,6 +117,40 @@ Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve �
 - Yardımcı gating (var, kullanım doğrulanacak):
   - `lib/integrations/llm_base_service.rb` (ai_allowed?)
 
+### 1.4 HTTP endpoint'leri (özet)
+
+**Account scope (`/api/v1/accounts/:id/...`)** — hepsi `ensure_admin!` (SuperAdmin veya account admin):
+
+| Method | Yol | Controller | İş |
+|---|---|---|---|
+| GET | `/ai_settings` | `AiSettingsController#show` | AI ayarları + tool_policy + google_calendar entegrasyon durumu |
+| PUT | `/ai_settings` | `AiSettingsController#update` | enabled / prompt_id / prompt_version / tool_policy güncelle |
+| GET | `/ai_wallet` | `AiWalletsController#show` | balance + `low_balance` flag + threshold |
+| GET | `/ai_wallet/transactions` | `AiWalletsController#transactions` | İşlem geçmişi (Kaminari pagination, `kind` filter) |
+| GET | `/ai_wallet/usage_logs` | `AiWalletsController#usage_logs` | Kullanım kayıtları (date range filter, totals meta) |
+| POST | `/ai_wallet/topup` | `AiWalletsController#topup` | **403** — PayTR akışı zorunlu (yukarıda P0-4 notu) |
+| POST | `/ai_wallet/paytr_checkout` | `AiWalletsController#paytr_checkout` | PayTR token al, `checkout_url` döner |
+
+**Public (PayTR webhook)** — `routes.rb:392`:
+
+| Method | Yol | Controller | İş |
+|---|---|---|---|
+| POST | `/api/v1/payments/paytr/callback` | `PaytrCallbacksController#create` | PayTR'den gelen ödeme bildirimi |
+
+Güvenlik:
+- IP allowlist (`PAYTR_CALLBACK_IP_ALLOWLIST` ENV, boşsa devre dışı)
+- HMAC-SHA256 imza doğrulaması (`paytr_service.rb:288-294`) — `ActiveSupport::SecurityUtils.secure_compare` ile timing-attack güvenli
+- Hata kodları: 422 (payload bozuk), 401 (imza), 422 (config), 403 (IP), 500 (diğer)
+
+**Super Admin (`/super_admin/...`)** — ayrı Devise scope:
+
+| Method | Yol | İş |
+|---|---|---|
+| GET | `/ai_billings` | Tüm hesapların AI faturalandırma özeti, KPI |
+| GET | `/ai_billings/:account_id` | Hesap detayı, transaction/usage geçmişi |
+| POST | `/ai_billings/:account_id/topup` | Manuel topup (PayTR bypass — sadece super admin) |
+| POST | `/ai_billings/update_pricing` | Fiyatlandırma config'i güncelle |
+
 ---
 
 ## 2) Yapılmışlar (Checklist)
@@ -199,11 +233,16 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 - [x] API endpoint:
   - GET `/api/v1/accounts/:id/ai_settings`
   - PUT `/api/v1/accounts/:id/ai_settings`
-- [x] Alanlar:
+- [x] GET payload alanları (`AiSettingsController#show`):
   - `ai_enabled`, `ai_prompt_id`, `ai_prompt_version`
-  - (opsiyonel) `currency` / `wallet` görüntüleme (read)
+  - `ai_tool_policy` (defaults ile birlikte) — tool yetkilendirme
+  - `ai_integrations.google_calendar` (`enabled`, `has_refresh_token`, `calendar_id`, `timezone`)
+- [x] PUT update edilebilir alanlar (strong params):
+  - `ai_enabled`, `ai_prompt_id`, `ai_prompt_version`, `ai_tool_policy`
+  - Validation: `ai_prompt_version >= 1`; tool_policy limit'leri (`max_tools_per_turn 1..10`, `max_total_steps 1..20`)
+  - [ ] **Açık:** `openai_project_id` (Nisan 2026 kolonu) update edilebilir alanlarda **YOK** — Super Admin tarafına bırakılmış mı, unutuldu mu netleştirilmeli
 - [x] AuthZ:
-  - sadece super admin veya account admin
+  - `before_action :ensure_admin!` → `SuperAdmin` veya `Current.account_user.administrator?`
 
 **Doğrulama:**
 - Version 3→4 update sonrası bir sonraki mesajda log’da `prompt_version=4` görülmeli.
@@ -213,7 +252,9 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 ### P0-4: **Wallet Top-up / Bakiye yönetimi (Admin)**
 - [x] Top-up endpoint:
   - POST `/api/v1/accounts/:id/ai_wallet/topup` (amount_cents)
-  - `AiTransaction(kind: topup)` + wallet.balance_cents artır
+  - **Davranış değişti:** Endpoint **403 forbidden** döner (`manual topup is disabled; use paytr_checkout`). Bilinçli karar — para akışı PayTR'a zorlanmış (audit + idempotency için).
+  - Account admin için: PayTR akışı zorunlu (`POST /api/v1/accounts/:id/ai_wallet/paytr_checkout`).
+  - Super admin için: manuel topup hâlâ mümkün → `POST /super_admin/ai_billings/:account_id/topup` (`AiTransaction(kind: topup)` + wallet artırma).
 - [x] UI: müşteri tarafı `BillingIndex.vue` (3 sekme: Genel Bakış / İşlemler / Kullanım) + `LowBalanceBanner` + PayTR top-up modal — commit `3e4770c48` (Mayıs 2026)
 
 **Doğrulama:**
