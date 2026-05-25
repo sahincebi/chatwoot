@@ -253,7 +253,15 @@ class Ai::RespondToMessageJob < ApplicationJob
               balance_after = wallet.balance_cents
             end
           rescue StandardError => refund_error
-            Rails.logger.error("[AI_REPLY] refund_failed account_id=#{account.id} original_debit_id=#{debit_transaction.id} error=#{refund_error.class}: #{refund_error.message.to_s.truncate(200)}")
+            log_event(
+              event: 'refund_failed',
+              account: account,
+              conversation: conversation,
+              message: message,
+              error_class: refund_error.class.to_s,
+              error_message: refund_error.message.to_s.truncate(200),
+              reason: "original_debit_id=#{debit_transaction.id}"
+            )
           end
         end
         raise e
@@ -557,7 +565,13 @@ class Ai::RespondToMessageJob < ApplicationJob
     if account.openai_project_id.present?
       request['OpenAI-Project'] = account.openai_project_id
     else
-      Rails.logger.warn("[AI_REPLY] missing_openai_project_id account_id=#{account.id}")
+      log_event(
+        event: 'missing_openai_project_error',
+        account: account,
+        conversation: conversation,
+        message: message,
+        reason: 'openai_project_id_blank'
+      )
     end
     request.body = payload.to_json
     response = http.request(request)
@@ -584,7 +598,6 @@ class Ai::RespondToMessageJob < ApplicationJob
         http_status: http_status,
         error_message: error_message
       )
-      Rails.logger.info("[AI_REPLY] openai_error status=#{response.code} message=#{error_message}")
     end
     {
       text: http_status >= 400 ? nil : extract_text(parsed),
@@ -719,7 +732,14 @@ class Ai::RespondToMessageJob < ApplicationJob
       missing_text_fields: missing_text_fields
     }
   rescue JSON::ParserError => e
-    Rails.logger.info("[AI_REPLY] normalize_error=#{e.class}: #{e.message.to_s.truncate(200)}")
+    log_event(
+      event: 'normalize_error',
+      account: nil,
+      conversation: nil,
+      message: nil,
+      error_class: e.class.to_s,
+      error_message: e.message.to_s.truncate(200)
+    )
     { text: raw_string, raw: raw_string, raw_is_json: false }
   end
 
@@ -859,7 +879,13 @@ class Ai::RespondToMessageJob < ApplicationJob
       output_types: output_types,
       first_tool_name: first_tool_name
     }.compact
-    Rails.logger.info("[AI_REPLY] #{payload.to_json}")
+    level = case event.to_s
+            when 'error', 'refund_failed' then :error
+            when 'skip', 'tool_call' then :info
+            else
+              event.to_s.end_with?('_error') ? :warn : :info
+            end
+    Rails.logger.public_send(level, "[AI_REPLY] #{payload.to_json}")
   end
 
   def ai_model
@@ -901,7 +927,15 @@ class Ai::RespondToMessageJob < ApplicationJob
     acquired = connection.select_value("SELECT pg_try_advisory_lock(#{PROCESSING_LOCK_NAMESPACE}, #{lock_key})")
     ActiveModel::Type::Boolean.new.cast(acquired)
   rescue StandardError => e
-    Rails.logger.info("[AI_REPLY] lock_acquire_error=#{e.class}: #{e.message.to_s.truncate(200)}")
+    log_event(
+      event: 'lock_acquire_error',
+      account: nil,
+      conversation: nil,
+      message: nil,
+      error_class: e.class.to_s,
+      error_message: e.message.to_s.truncate(200),
+      reason: "message_id=#{message_id}"
+    )
     true
   end
 
@@ -909,6 +943,14 @@ class Ai::RespondToMessageJob < ApplicationJob
     lock_key = message_id.to_i
     ActiveRecord::Base.connection.execute("SELECT pg_advisory_unlock(#{PROCESSING_LOCK_NAMESPACE}, #{lock_key})")
   rescue StandardError => e
-    Rails.logger.info("[AI_REPLY] lock_release_error=#{e.class}: #{e.message.to_s.truncate(200)}")
+    log_event(
+      event: 'lock_release_error',
+      account: nil,
+      conversation: nil,
+      message: nil,
+      error_class: e.class.to_s,
+      error_message: e.message.to_s.truncate(200),
+      reason: "message_id=#{message_id}"
+    )
   end
 end

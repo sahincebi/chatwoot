@@ -375,6 +375,7 @@ RSpec.describe Ai::RespondToMessageJob do
       )
 
     allow(Rails.logger).to receive(:info)
+    allow(Rails.logger).to receive(:error)
     with_modified_env('OPENAI_API_KEY' => 'test') do
       described_class.perform_now(message.id)
     end
@@ -383,7 +384,7 @@ RSpec.describe Ai::RespondToMessageJob do
       Message.where(conversation_id: conversation.id, message_type: :outgoing, sender: ai_user, private: false).count
     ).to eq(0)
     expect(AiUsageLog.where(account_id: account.id, message_id: message.id)).to be_empty
-    expect(Rails.logger).to have_received(:info).with(include("openai_error status=400 message=Missing required parameter"))
+    expect(Rails.logger).to have_received(:error).with(include('"reason":"openai_error"')).at_least(:once)
   end
 
   it 'handles function_call only responses and returns final text' do

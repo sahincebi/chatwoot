@@ -263,10 +263,13 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 ---
 
 ### P0-5: **Observability / Debug standardı**
-- [ ] `Ai::RespondToMessageJob` log formatını standardize et:
-  - account, conversation, message, response_id, tokens, cost, balance_after, prompt_version
-- [ ] Hata loglarında openai body truncate + status zaten var; bunu koru.
-- [ ] “skip reason”’lar sabit liste ve dokümante.
+- [x] `Ai::RespondToMessageJob` log formatını standardize et (`app/jobs/ai/respond_to_message_job.rb`):
+  - `log_event` helper’ı (satır 772-870) tüm alanları tek şemada toplar: account, conversation, message, response_id, prompt_id/version, model, input/cached/uncached/output/total tokens, cost_cents, provider/billed_cost_cents, billing_multiplier, balance_before/after, tool_name/category/args/result, step, duration_ms, error_class/message, http_status, output_types, first_tool_name, raw_is_json, ai_action/state, fallback_used/reason.
+  - **Severity routing:** `event: ‘error’`/`’refund_failed’` → `Rails.logger.error`; event adı `_error` ile bitenler → `Rails.logger.warn`; diğer her şey → `Rails.logger.info`.
+  - **5 inline log helper’a taşındı:** `refund_failed`, `missing_openai_project_error`, `openai_error` (574’teki helper çağrısıyla zaten kapsanıyordu — duplicate inline silindi), `normalize_error`, `lock_acquire_error`, `lock_release_error`.
+- [x] Hata loglarında openai body truncate + status korunmuş (200/500 karakter `truncate` mevcut).
+- [x] “skip reason”’lar sabit liste ve dokümante:
+  - `SKIP_REASONS` constant satır 19-32, 12 kod: `already_processed`, `already_running`, `superseded_message`, `ai_agent_missing`, `not_assigned_to_ai`, `ai_disabled`, `missing_prompt`, `missing_wallet`, `insufficient_balance`, `ai_response_empty`, `tool_loop_failed`, `tool_policy_disabled`.
 
 ---
 
