@@ -136,6 +136,8 @@ Rails.application.routes.draw do
           resource :ai_wallet, only: [:show] do
             post :topup
             post :paytr_checkout
+            get :transactions
+            get :usage_logs
           end
           namespace :ai_integrations do
             resource :google_calendar, only: [:update]

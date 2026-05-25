@@ -84,7 +84,7 @@
       <div class="rounded border border-red-300 bg-red-50 dark:bg-red-900/20 dark:border-red-700 p-4 mb-6">
         <h2 class="text-sm font-medium text-red-700 dark:text-red-300 mb-3">
           Dusuk Bakiye Uyarisi
-          (&lt; <%= number_to_currency(SuperAdmin::AiBillingsController::LOW_BALANCE_THRESHOLD_CENTS / 100.0, unit: '$') %>)
+          (&lt; <%= number_to_currency(AiWallet::LOW_BALANCE_THRESHOLD_CENTS / 100.0, unit: '$') %>)
         </h2>
         <table class="min-w-full text-sm">
           <thead>

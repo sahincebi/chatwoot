@@ -406,6 +406,55 @@
       "CHECKOUT_STARTED": "\u00d6deme sayfas\u0131 yeni sekmede a\u00e7\u0131ld\u0131.",
       "ERROR": "Bakiye y\u00fcklenemedi. L\u00fctfen tekrar deneyin.",
       "INVALID_AMOUNT": "L\u00fctfen ge\u00e7erli bir tutar girin."
+    },
+    "TABS": {
+      "OVERVIEW": "Genel Bak\u0131\u015f",
+      "TRANSACTIONS": "\u0130\u015flemler",
+      "USAGE": "Kullan\u0131m"
+    },
+    "LOW_BALANCE": {
+      "MESSAGE": "Bakiyeniz {threshold} alt\u0131nda. Hizmetin kesintisiz \u00e7al\u0131\u015fmas\u0131 i\u00e7in bakiye y\u00fckleyin."
+    },
+    "TRANSACTIONS": {
+      "FILTER_LABEL": "Filtre:",
+      "EMPTY": "Hen\u00fcz i\u015flem yok.",
+      "LOAD_ERROR": "\u0130\u015flemler y\u00fcklenemedi.",
+      "PREV": "\u00d6nceki",
+      "NEXT": "Sonraki",
+      "PAGINATION": "Sayfa {current} / {total} \u2014 {count} kay\u0131t",
+      "COLUMNS": {
+        "DATE": "Tarih",
+        "KIND": "T\u00fcr",
+        "AMOUNT": "Tutar",
+        "DESCRIPTION": "A\u00e7\u0131klama"
+      },
+      "KIND": {
+        "TOPUP": "Y\u00fckleme",
+        "DEBIT": "Kullan\u0131m",
+        "REFUND": "\u0130ade",
+        "ADJUSTMENT": "D\u00fczeltme"
+      }
+    },
+    "USAGE": {
+      "EMPTY": "Se\u00e7ili tarih aral\u0131\u011f\u0131nda kullan\u0131m kayd\u0131 yok.",
+      "LOAD_ERROR": "Kullan\u0131m kay\u0131tlar\u0131 y\u00fcklenemedi.",
+      "TOTAL_TOKENS": "Toplam token",
+      "TOTAL_COST": "Toplam maliyet",
+      "FROM": "Ba\u015flang\u0131\u00e7",
+      "TO": "Biti\u015f",
+      "APPLY": "Uygula",
+      "PREV": "\u00d6nceki",
+      "NEXT": "Sonraki",
+      "PAGINATION": "Sayfa {current} / {total} \u2014 {count} kay\u0131t",
+      "COLUMNS": {
+        "DATE": "Tarih",
+        "CONVERSATION": "Konu\u015fma",
+        "MODEL": "Model",
+        "INPUT": "Giri\u015f token",
+        "OUTPUT": "\u00c7\u0131k\u0131\u015f token",
+        "TOTAL": "Toplam token",
+        "COST": "Maliyet"
+      }
     }
   },
   "BILLING_SETTINGS": {
