@@ -28,6 +28,8 @@ Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve �
 - `ai_prompt_id` (string)
 - `ai_prompt_version` (integer, default 1, null false)
 - `ai_agent_user_id` (bigint, FK users.id, indexed)
+- `ai_tool_policy` (jsonb, default `{limits, enabled, allowed_tools}`, null false) — tool yetkilendirme
+- `openai_project_id` (string, nullable) — per-account OpenAI projesi
 
 **users**
 - `is_ai_agent` (boolean, default false, null false, indexed)
@@ -50,6 +52,19 @@ Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve �
 - `prompt_id`, `prompt_version`, `model`
 - `input_tokens`, `output_tokens`, `total_tokens`
 - `cost_cents`, `currency`, `meta`
+- `provider_cost_cents`, `billed_cost_cents`, `billing_multiplier` (decimal 8,4 default 1.0) — billing markup (×N)
+- **UNIQUE index** `(account_id, message_id)` — idempotency garantisi (migration `20251231190000`)
+
+**ai_payment_orders** (PayTR sipariş izleme — migration `20260217120000`)
+- `account_id` (FK)
+- `merchant_oid` (unique, PayTR sipariş kimliği)
+- `amount_cents`, `currency`
+- `status` (pending/paid/failed)
+- `payment_amount_cents`, `payment_currency`, `fx_rate`
+- `meta`
+
+**ai_integrations** (Account bazlı 3. parti bağlantılar — migration `20260101004200`)
+- Account başına Google Calendar vb. credential yönetimi (P1-3 randevu altyapısı)
 
 ### 1.2 Otomasyon akışı (olay bazlı)
 1) **Account create**
@@ -122,6 +137,30 @@ Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve �
   - `rake ai:backfill_wallets`
   - `rake ai:backfill_agents`
 
+### 2.3 Idempotency (Aralık 2025 – Şubat 2026)
+- [x] `ai_usage_logs` `(account_id, message_id)` unique index — migration `20251231190000`
+- [x] `ai_transactions` PayTR partial unique index — migration `20260217153000`
+- [x] `ai_payment_orders` tablosu (PayTR sipariş takibi) — migration `20260217120000`
+
+### 2.4 Tool calling altyapısı (Ocak 2026)
+- [x] `accounts.ai_tool_policy` kolonu (limits, enabled, allowed_tools) — migration `20260101004159`
+- [x] `ai_integrations` tablosu (Google Calendar bağlantısı için) — migration `20260101004200`, fix `20260217180000`
+- [x] Tool loop / tool registry kodlandı (WORKLOG ref: 2026-01-01)
+  > Not: Tool seti kapsamı P1-1'de kod seviyesinde ayrıca doğrulanacak.
+
+### 2.5 Billing markup ve Super Admin (Şubat 2026)
+- [x] `ai_usage_logs` cost_breakdown kolonları (`provider_cost_cents`, `billed_cost_cents`, `billing_multiplier`) — migration `20260214021000`
+- [x] PayTR servisi (token, callback, HMAC, idempotency) — `app/services/ai/payments/paytr_service.rb`
+- [x] Super Admin AI Billing sayfası (`/super_admin/ai_billings`)
+- [x] Per-account OpenAI projesi — migration `20260416120000`
+
+### 2.6 Müşteri Billing UI (Mayıs 2026)
+- [x] Bakiye gösterimi + PayTR top-up modal (`BillingIndex.vue`)
+- [x] İşlem geçmişi sekmesi (`TransactionHistory.vue` + `GET /ai_wallet/transactions`)
+- [x] Kullanım detayları sekmesi (`UsageLogs.vue` + `GET /ai_wallet/usage_logs`)
+- [x] Düşük bakiye uyarı bannerı (`LowBalanceBanner.vue` + `AiWallet::LOW_BALANCE_THRESHOLD_CENTS`)
+- [x] V3 (`ai.cebimedya.com`) ile PayTR pos paylaşımı — `merchant_oid` `AI*` prefix'li ödemeler V3 callback'inden `panel.cebimedya.com/api/v1/payments/paytr/callback`'e forward edilir
+
 ---
 
 ## 3) Yapılacaklar (Öncelikli / P0)
@@ -130,12 +169,12 @@ Amaç: Codex ile adım adım ilerlerken, her değişikliğin izini sürmek ve �
 
 ### P0-1: **Idempotency / Double-charge & Double-reply koruması**
 **Sorun:** Sidekiq retry veya race condition durumunda aynı message için ikinci kez debit/usage log yazılabilir.
-- [ ] DB unique index:
-  - `ai_usage_logs` üzerinde `[:account_id, :message_id]` unique
+- [x] DB unique index:
+  - `ai_usage_logs` üzerinde `[:account_id, :message_id]` unique (migration `20251231190000_add_unique_index_to_ai_usage_logs.rb`)
 - [ ] Job başında dedupe:
-  - aynı `(account_id, message_id)` usage log varsa **return**
-- [ ] Transaction dedupe:
-  - `provider_ref` (response_id) ile gerekirse ekstra kontrol
+  - aynı `(account_id, message_id)` usage log varsa **return** *(kod kontrolü beklemede)*
+- [x] Transaction dedupe:
+  - `ai_transactions` `(account_id, provider, provider_ref)` partial unique WHERE `provider='paytr'` (migration `20260217153000_add_unique_paytr_provider_ref_index_to_ai_transactions.rb`)
 
 **Doğrulama:**
 - Aynı message_id için job iki kez çalıştırılsa bile 1 kez debit olmalı.
@@ -172,7 +211,7 @@ Süper admin çok sık değişiklik yapacak; restart yok → DB update yeterli.
 - [x] Top-up endpoint:
   - POST `/api/v1/accounts/:id/ai_wallet/topup` (amount_cents)
   - `AiTransaction(kind: topup)` + wallet.balance_cents artır
-- [ ] UI sonra; önce API
+- [x] UI: müşteri tarafı `BillingIndex.vue` (3 sekme: Genel Bakış / İşlemler / Kullanım) + `LowBalanceBanner` + PayTR top-up modal — commit `3e4770c48` (Mayıs 2026)
 
 **Doğrulama:**
 - Topup sonrası AI cevap verebilmeli.
