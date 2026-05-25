@@ -1,8 +1,6 @@
 class SuperAdmin::AiBillingsController < SuperAdmin::ApplicationController
   before_action :set_account, only: [:show, :topup]
 
-  LOW_BALANCE_THRESHOLD_CENTS = 500
-
   def index
     @days = sanitized_days(params[:days], default: 30)
     @pricing_config = Ai::PricingConfig.current
@@ -20,7 +18,7 @@ class SuperAdmin::AiBillingsController < SuperAdmin::ApplicationController
     @kpi_top_accounts = @kpi_summary.top_accounts(limit: 10)
     @low_balance_accounts = @accounts.select do |account|
       wallet = @wallets_by_account_id[account.id]
-      wallet.present? && wallet.balance_cents < LOW_BALANCE_THRESHOLD_CENTS
+      wallet.present? && wallet.low_balance?
     end
   end
 

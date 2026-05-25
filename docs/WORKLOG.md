@@ -1,5 +1,40 @@
 # Worklog
 
+## 2026-05-25 13:50
+- Tarih/Saat (TR): 2026-05-25 13:50
+- Amac: Musteri tarafi billing UI'sini tamamlamak (islem gecmisi, kullanim detaylari, dusuk bakiye banner) + PayTR canli deployment runbook.
+- Sorun / Belirti: Musteri sadece bakiyesini gorebiliyor, ne harcadigini / ne yukledigini goremiyordu. Bakiye azalinca uyari yoktu.
+- Kok Neden (Varsa): Backend modellerinde veri vardi (AiTransaction, AiUsageLog) ama musteri API endpoint'i acilmamis, SuperAdmin tarafinda kalmisti.
+- Yapilan Degisiklikler (dosya bazli):
+  - app/models/ai_wallet.rb (LOW_BALANCE_THRESHOLD_CENTS=500 sabit + low_balance? helper)
+  - app/controllers/api/v1/accounts/ai_wallets_controller.rb (2 yeni action: transactions, usage_logs; show'a low_balance flag)
+  - app/controllers/super_admin/ai_billings_controller.rb (LOW_BALANCE_THRESHOLD_CENTS constant'ini AiWallet'a tasidi)
+  - app/views/super_admin/ai_billings/index.html.erb (constant referansi)
+  - config/routes.rb (ai_wallet'a get :transactions ve get :usage_logs eklendi)
+  - app/javascript/dashboard/api/aiWallets.js (getTransactions, getUsageLogs metodlari)
+  - app/javascript/dashboard/routes/dashboard/settings/billing/BillingIndex.vue (3 tab: Genel Bakis / Islemler / Kullanim; LowBalanceBanner entegrasyonu)
+  - app/javascript/dashboard/routes/dashboard/settings/billing/components/LowBalanceBanner.vue (yeni)
+  - app/javascript/dashboard/routes/dashboard/settings/billing/components/TransactionHistory.vue (yeni)
+  - app/javascript/dashboard/routes/dashboard/settings/billing/components/UsageLogs.vue (yeni)
+  - app/javascript/dashboard/i18n/locale/en/settings.json (BILLING.TABS/LOW_BALANCE/TRANSACTIONS/USAGE)
+  - app/javascript/dashboard/i18n/locale/tr/settings.json (Turkce karsiliklari)
+  - spec/requests/api/v1/accounts/ai_wallets_spec.rb (low_balance flag + transactions/usage_logs endpoint testleri)
+- Calistirilan Komutlar:
+  - python3 -c "import json; json.load(...)"  (en/tr settings.json valid)
+  - git status / git diff --stat (10 dosya degisti, 3 yeni dosya, +360/-25)
+- Dogrulama:
+  - JSON dosyalari valid
+  - Account modelinde has_one :ai_wallet + has_many :ai_transactions/ai_usage_logs ilişkileri var (account.rb 106,109,110)
+  - Button 'amber' color OPTIONS'ta tanimli
+  - Spinner ve Icon yollari dogru, text-n-brand class kullanimi var
+  - RSpec/eslint canli ortamda kosulmadi (compose down) — kullanici test edecek
+- Notlar / Riskler:
+  - Branch: feature/billing-customer-ui (prod'a alinmadi)
+  - v-if ile tab lazy mount: sadece acilan tab API cagrisi yapar
+  - Test ortami: kullanicinin kendi dev'inde rspec + pnpm dev ile manuel akis dogrulanmali
+  - PayTR canli runbook: docs/WORKLOG.md disinda ayri bir checklist olarak teslim edildi
+  - LOW_BALANCE_THRESHOLD_CENTS = 500 sabiti tek noktadan (AiWallet) okunuyor
+
 ## 2026-01-01 15:21
 - Tarih/Saat (TR): 2026-01-01 15:21
 - Amac: Responses API 400 hatasini ve function_call outputlarini dogru islemek.

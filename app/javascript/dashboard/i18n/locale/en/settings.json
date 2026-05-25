@@ -406,6 +406,55 @@
       "CHECKOUT_STARTED": "Payment page opened in a new tab.",
       "ERROR": "Failed to top up. Please try again.",
       "INVALID_AMOUNT": "Please enter a valid amount."
+    },
+    "TABS": {
+      "OVERVIEW": "Overview",
+      "TRANSACTIONS": "Transactions",
+      "USAGE": "Usage"
+    },
+    "LOW_BALANCE": {
+      "MESSAGE": "Your balance is below {threshold}. Add credit to keep the service running."
+    },
+    "TRANSACTIONS": {
+      "FILTER_LABEL": "Filter:",
+      "EMPTY": "No transactions yet.",
+      "LOAD_ERROR": "Could not load transactions.",
+      "PREV": "Previous",
+      "NEXT": "Next",
+      "PAGINATION": "Page {current} of {total} — {count} records",
+      "COLUMNS": {
+        "DATE": "Date",
+        "KIND": "Type",
+        "AMOUNT": "Amount",
+        "DESCRIPTION": "Description"
+      },
+      "KIND": {
+        "TOPUP": "Top-up",
+        "DEBIT": "Usage",
+        "REFUND": "Refund",
+        "ADJUSTMENT": "Adjustment"
+      }
+    },
+    "USAGE": {
+      "EMPTY": "No usage records in this date range.",
+      "LOAD_ERROR": "Could not load usage logs.",
+      "TOTAL_TOKENS": "Total tokens",
+      "TOTAL_COST": "Total cost",
+      "FROM": "From",
+      "TO": "To",
+      "APPLY": "Apply",
+      "PREV": "Previous",
+      "NEXT": "Next",
+      "PAGINATION": "Page {current} of {total} — {count} records",
+      "COLUMNS": {
+        "DATE": "Date",
+        "CONVERSATION": "Conversation",
+        "MODEL": "Model",
+        "INPUT": "Input tokens",
+        "OUTPUT": "Output tokens",
+        "TOTAL": "Total tokens",
+        "COST": "Cost"
+      }
     }
   },
   "BILLING_SETTINGS": {

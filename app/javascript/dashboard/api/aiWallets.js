@@ -17,6 +17,14 @@ class AiWalletsAPI extends ApiClient {
   paytrCheckout(payload) {
     return axios.post(`${this.url}/paytr_checkout`, payload);
   }
+
+  getTransactions(params = {}) {
+    return axios.get(`${this.url}/transactions`, { params });
+  }
+
+  getUsageLogs(params = {}) {
+    return axios.get(`${this.url}/usage_logs`, { params });
+  }
 }
 
 export default new AiWalletsAPI();

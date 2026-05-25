@@ -1,9 +1,12 @@
-﻿<script setup>
+<script setup>
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useAlert } from 'dashboard/composables';
 import BaseSettingsHeader from '../components/BaseSettingsHeader.vue';
 import BillingCard from './components/BillingCard.vue';
+import LowBalanceBanner from './components/LowBalanceBanner.vue';
+import TransactionHistory from './components/TransactionHistory.vue';
+import UsageLogs from './components/UsageLogs.vue';
 import Button from 'dashboard/components-next/button/Button.vue';
 import NextInput from 'dashboard/components-next/input/Input.vue';
 import Modal from 'dashboard/components/Modal.vue';
@@ -15,7 +18,16 @@ const isSubmitting = ref(false);
 const showTopupModal = ref(false);
 const amountUsd = ref('');
 const note = ref('');
-const wallet = ref({ balance_cents: 0, currency: 'USD', status: 'active' });
+const wallet = ref({
+  balance_cents: 0,
+  currency: 'USD',
+  status: 'active',
+  low_balance: false,
+  low_balance_threshold_cents: 500,
+});
+
+const TABS = ['overview', 'transactions', 'usage'];
+const activeTab = ref('overview');
 
 const formattedBalance = computed(() => {
   const currency = wallet.value.currency || 'USD';
@@ -30,7 +42,7 @@ const loadWallet = async () => {
   isLoading.value = true;
   try {
     const { data } = await AiWalletsAPI.show();
-    wallet.value = data;
+    wallet.value = { ...wallet.value, ...data };
   } catch (error) {
     useAlert(t('BILLING.TOPUP.ERROR'));
   } finally {
@@ -92,7 +104,36 @@ onMounted(loadWallet);
       :title="$t('BILLING.TITLE')"
       :description="$t('BILLING.DESCRIPTION')"
     />
-    <div class="mt-6 space-y-6">
+
+    <LowBalanceBanner
+      v-if="!isLoading && wallet.low_balance"
+      class="mt-6"
+      :balance-cents="wallet.balance_cents"
+      :threshold-cents="wallet.low_balance_threshold_cents"
+      :currency="wallet.currency"
+      @add-credit="openTopupModal"
+    />
+
+    <div class="mt-6">
+      <div class="flex gap-1 border-b border-n-weak">
+        <button
+          v-for="tab in TABS"
+          :key="tab"
+          type="button"
+          :class="[
+            'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
+            activeTab === tab
+              ? 'border-n-brand text-n-slate-12'
+              : 'border-transparent text-n-slate-11 hover:text-n-slate-12',
+          ]"
+          @click="activeTab = tab"
+        >
+          {{ $t(`BILLING.TABS.${tab.toUpperCase()}`) }}
+        </button>
+      </div>
+    </div>
+
+    <div v-show="activeTab === 'overview'" class="mt-6 space-y-6">
       <div
         class="rounded-xl border border-n-weak bg-n-solid-2 px-6 py-5 flex items-center justify-between"
       >
@@ -121,22 +162,6 @@ onMounted(loadWallet);
           </div>
         </BillingCard>
         <BillingCard
-          :title="$t('BILLING.BILLING_HISTORY')"
-          :description="$t('BILLING.COMING_SOON')"
-        >
-          <div class="px-5 text-sm text-n-slate-11">
-            {{ $t('BILLING.COMING_SOON') }}
-          </div>
-        </BillingCard>
-        <BillingCard
-          :title="$t('BILLING.PREFERENCES')"
-          :description="$t('BILLING.COMING_SOON')"
-        >
-          <div class="px-5 text-sm text-n-slate-11">
-            {{ $t('BILLING.COMING_SOON') }}
-          </div>
-        </BillingCard>
-        <BillingCard
           :title="$t('BILLING.PRICING')"
           :description="$t('BILLING.COMING_SOON')"
         >
@@ -145,6 +170,14 @@ onMounted(loadWallet);
           </div>
         </BillingCard>
       </div>
+    </div>
+
+    <div v-if="activeTab === 'transactions'" class="mt-6">
+      <TransactionHistory />
+    </div>
+
+    <div v-if="activeTab === 'usage'" class="mt-6">
+      <UsageLogs />
     </div>
 
     <Modal v-model:show="showTopupModal" @close="closeTopupModal">
