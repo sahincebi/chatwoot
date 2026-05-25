@@ -1,5 +1,30 @@
 # Worklog
 
+## 2026-05-25 14:15
+- Tarih/Saat (TR): 2026-05-25 14:15
+- Amac: PayTR canli entegrasyonu — V3 (ai.cebimedya.com) ile ayni pos paylasimi
+- Sorun / Belirti: Cebi AI Chat'in PayTR ENV'leri bostu; PayTR magazasinda tek callback URL kayitli (V3'unki); Chat icin ayri callback alinamiyor
+- Kok Neden: PayTR magazasi tek callback URL kabul eder; iki proje ayni pos kullaniyorsa V3 router olmali
+- Yapilan Degisiklikler:
+  - /opt/chatwoot/.env (gitignored) — PAYTR_MERCHANT_ID/KEY/SALT V3 ile ayni; PAYTR_TEST_MODE=1; OK/FAIL_URL=https://panel.cebimedya.com/app
+  - /root/cebi-ai/app/api/payment.py — payment_callback icine minimal router: merchant_oid.startswith('AI') ise form aynen panel.cebimedya.com/api/v1/payments/paytr/callback'e forward edilir
+- Calistirilan Komutlar:
+  - docker compose -f docker-compose.cebi.yaml up -d --force-recreate rails sidekiq
+  - systemctl restart cebi-api.service
+  - curl health check (V3: /healthz, Chat: /)
+  - curl POST /api/payment/callback ile AI ve CEBI prefix'li simulasyon
+- Dogrulama:
+  - AI prefix testi: 422 (Chat HMAC reddi, beklenen — forward calisiyor)
+  - CEBI prefix testi: 400 (V3 HMAC reddi, beklenen — V3 normal akis korunmus)
+  - Container'da 6 PAYTR_* env yuklu (docker exec env | grep PAYTR_)
+- Notlar / Riskler:
+  - merchant_oid namespace ayrik: Chat 'AI...', V3 'CEBI...'
+  - PAYTR_TEST_MODE=1 (test modu) — canli kart cekilmez
+  - PayTR panel ayari degismedi (V3 callback URL'i ai.cebimedya.com'da)
+  - V3'un canli musteri akisi etkilenmedi (CEBI prefix'li ödemeler V3 isler)
+  - Forward timeout 15s, retry yok (PayTR kendi retry yapar)
+  - Geri alma: V3 forward blogu sil + systemctl restart; veya Chat .env'i bosalt + compose up -d
+
 ## 2026-05-25 13:50
 - Tarih/Saat (TR): 2026-05-25 13:50
 - Amac: Musteri tarafi billing UI'sini tamamlamak (islem gecmisi, kullanim detaylari, dusuk bakiye banner) + PayTR canli deployment runbook.
