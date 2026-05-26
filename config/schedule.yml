@@ -62,7 +62,9 @@ periodic_assignment_job:
 
 # executed every 15 minutes
 # reconciles OpenAI reported usage against locally recorded AiTransaction debits
-ai_usage_reconcile_job:
-  cron: '*/15 * * * *'
-  class: 'Ai::UsageReconcileJob'
-  queue: low
+# DISABLED 2026-05-26: OPENAI_ADMIN_API_KEY geçersiz, her run 401 -> dead set'i şişiriyordu.
+# Yeni admin key alındıktan sonra .env güncelle ve bu bloğu tekrar aç.
+# ai_usage_reconcile_job:
+#   cron: '*/15 * * * *'
+#   class: 'Ai::UsageReconcileJob'
+#   queue: low
